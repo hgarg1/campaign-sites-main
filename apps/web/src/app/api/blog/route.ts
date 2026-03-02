@@ -1,0 +1,42 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@campaignsites/database';
+import { cacheGet, cacheSet } from '../../../lib/redis';
+
+export async function GET() {
+  try {
+    // Try to get from Redis cache
+    const cachedPosts = await cacheGet('blog:posts:v2');
+    if (cachedPosts) {
+      return NextResponse.json(cachedPosts);
+    }
+
+    // Query from database
+    const posts = await prisma.blogPost.findMany({
+      where: {
+        published: true,
+      },
+      orderBy: {
+        publishedAt: 'desc',
+      },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        excerpt: true,
+        author: true,
+        coverImage: true,
+        tags: true,
+        publishedAt: true,
+      },
+    });
+
+    // Cache for 1 hour
+    await cacheSet('blog:posts:v2', posts, 3600);
+
+    return NextResponse.json(posts);
+  } catch (error) {
+    console.error('Failed to fetch blog posts:', error);
+    // Return empty array on error instead of crashing
+    return NextResponse.json([], { status: 500 });
+  }
+}

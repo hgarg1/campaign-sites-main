@@ -1,0 +1,76 @@
+import { createHmac, randomBytes } from 'node:crypto';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@campaignsites/database';
+import { verifyPassword } from '../../../../lib/password-hash';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function createSessionToken(userId: string) {
+  const secret = process.env.AUTH_SESSION_SECRET ?? 'dev-session-secret';
+  const issuedAt = Date.now();
+  const nonce = randomBytes(8).toString('hex');
+  const payload = `${userId}:${issuedAt}:${nonce}`;
+  const signature = createHmac('sha256', secret).update(payload).digest('hex');
+  const token = Buffer.from(`${payload}:${signature}`).toString('base64url');
+  return token;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = (await request.json()) as { email?: string; password?: string };
+
+    const email = body.email?.trim().toLowerCase();
+    const password = body.password?.trim();
+
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        passwordHash: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+    }
+
+    const validPassword = await verifyPassword(password, user.passwordHash);
+
+    if (!validPassword) {
+      return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+    }
+
+    const response = NextResponse.json({
+      success: true,
+      message: 'Logged in successfully.',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+
+    response.cookies.set('campaignsites_session', createSessionToken(user.id), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Login failed:', error);
+    return NextResponse.json({ error: 'Login failed. Please try again.' }, { status: 500 });
+  }
+}
