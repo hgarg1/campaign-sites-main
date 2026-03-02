@@ -30,7 +30,7 @@ model User {
 enum UserRole {
   USER
   ADMIN
-  SUPER_ADMIN
+  GLOBAL_ADMIN
 }
 
 // Multi-tenancy for white-labeling
@@ -343,4 +343,26 @@ model GetStartedIntake {
   @@index([organizationId])
   @@index([campaignName])
   @@map("get_started_intakes")
+}
+
+// Server Application Logs
+model ServerLog {
+  id        String   @id @default(cuid())
+  level     LogLevel
+  message   String   @db.Text
+  stack     String?  @db.Text
+  source    String   // e.g., "auth", "api", "startup", "database"
+  metadata  Json?
+  createdAt DateTime @default(now())
+  
+  @@index([level])
+  @@index([source])
+  @@index([createdAt])
+  @@map("server_logs")
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
 }

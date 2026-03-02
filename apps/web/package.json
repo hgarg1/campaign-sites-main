@@ -27,6 +27,7 @@
     "remark-gfm": "^4.0.0",
     "@campaignsites/ui": "workspace:*",
     "@campaignsites/types": "workspace:*",
+    "@campaignsites/logging": "workspace:*",
     "@campaignsites/database": "workspace:*"
   },
   "devDependencies": {

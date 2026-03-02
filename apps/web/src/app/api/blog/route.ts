@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@campaignsites/database';
 import { cacheGet, cacheSet } from '../../../lib/redis';
+import { logger } from '../../../lib/logger';
 
 export async function GET() {
   try {
@@ -35,7 +36,9 @@ export async function GET() {
 
     return NextResponse.json(posts);
   } catch (error) {
-    console.error('Failed to fetch blog posts:', error);
+    logger.error('Failed to fetch blog posts', 'api/blog', error, {
+      cacheKey: 'blog:posts:v2',
+    });
     // Return empty array on error instead of crashing
     return NextResponse.json([], { status: 500 });
   }

@@ -2,6 +2,7 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@campaignsites/database';
 import { verifyPassword } from '../../../../lib/password-hash';
+import { logger } from '../../../../lib/logger';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,10 +24,17 @@ export async function POST(request: NextRequest) {
     const password = body.password?.trim();
 
     if (!email || !password) {
+      logger.warn('Login attempt with missing credentials', 'auth', {
+        email: email ? '***' : 'missing',
+        hasPassword: !!password,
+      });
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
     }
 
     if (!EMAIL_REGEX.test(email)) {
+      logger.warn('Login attempt with invalid email format', 'auth', {
+        email: email ? email.split('@')[0] + '@***' : '***',
+      });
       return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     }
 
@@ -41,14 +49,30 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      logger.warn('Login attempt with non-existent email', 'auth', {
+        email: email.split('@')[0] + '@***',
+        timestamp: new Date().toISOString(),
+      });
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 
     const validPassword = await verifyPassword(password, user.passwordHash);
 
     if (!validPassword) {
+      logger.warn('Login attempt with incorrect password', 'auth', {
+        userId: user.id,
+        email: user.email.split('@')[0] + '@***',
+        timestamp: new Date().toISOString(),
+      });
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
+
+    logger.info('User logged in successfully', 'auth', {
+      userId: user.id,
+      email: user.email.split('@')[0] + '@***',
+      name: user.name,
+      timestamp: new Date().toISOString(),
+    });
 
     const response = NextResponse.json({
       success: true,
@@ -70,7 +94,9 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Login failed:', error);
+    logger.error('Login request failed with exception', 'auth', error, {
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json({ error: 'Login failed. Please try again.' }, { status: 500 });
   }
 }

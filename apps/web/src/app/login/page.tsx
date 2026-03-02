@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, KeyboardEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MarketingLayout } from '../../components/marketing-layout';
@@ -11,6 +11,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+
+  const updateCapsLockState = (event: KeyboardEvent<HTMLInputElement>) => {
+    setCapsLockOn(event.getModifierState('CapsLock'));
+  };
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,7 +38,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/get-started');
+      router.push('/welcome');
     } catch {
       setError('Unable to log in. Please try again.');
     } finally {
@@ -43,8 +48,8 @@ export default function LoginPage() {
 
   return (
     <MarketingLayout>
-      <section className="px-6 pt-28 pb-16 bg-gradient-to-b from-blue-50 via-white to-purple-50">
-        <div className="max-w-xl mx-auto rounded-3xl border border-blue-100 bg-white shadow-xl p-6 md:p-8">
+      <section className="min-h-screen flex items-center justify-center px-6 bg-gradient-to-b from-blue-50 via-white to-purple-50">
+        <div className="w-full max-w-xl rounded-3xl border border-blue-100 bg-white shadow-xl p-6 md:p-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Log in</h1>
           <p className="text-gray-600 mb-6">Existing user? Sign in and continue your intake.</p>
 
@@ -61,10 +66,15 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              onKeyDown={updateCapsLockState}
+              onKeyUp={updateCapsLockState}
+              onBlur={() => setCapsLockOn(false)}
               placeholder="Password"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none"
               required
             />
+
+            {capsLockOn && <p className="text-sm text-amber-700">Caps Lock is on.</p>}
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 

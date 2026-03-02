@@ -99,6 +99,9 @@ importers:
       '@campaignsites/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@campaignsites/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
       '@campaignsites/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -178,6 +181,9 @@ importers:
       '@campaignsites/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@campaignsites/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
       '@campaignsites/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -260,6 +266,12 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
+
+  packages/logging:
+    dependencies:
+      '@campaignsites/database':
+        specifier: workspace:*
+        version: link:../database
 
   packages/types:
     devDependencies:

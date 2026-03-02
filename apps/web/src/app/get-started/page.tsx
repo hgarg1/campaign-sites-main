@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MarketingLayout } from '../../components/marketing-layout';
 import {
@@ -10,8 +10,67 @@ import {
   passwordPolicyRequirementText,
   validatePasswordAgainstPolicy,
 } from '../../lib/password-policy';
+import { DEFAULT_INTAKE_STEP4_POLICY, IntakeStep4Policy } from '../../lib/intake-policy';
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+type CustomDropdownProps = {
+  label: string;
+  placeholder: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+};
+
+function CustomDropdown({ label, placeholder, value, options, onChange }: CustomDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', onDocumentClick);
+    return () => document.removeEventListener('mousedown', onDocumentClick);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <p className="text-sm font-semibold text-gray-700 mb-1">{label}</p>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-left focus:border-blue-500 focus:outline-none bg-white flex items-center justify-between"
+      >
+        <span className={value ? 'text-gray-900' : 'text-gray-500'}>{value || placeholder}</span>
+        <span className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-56 overflow-y-auto">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                onChange(option);
+                setOpen(false);
+              }}
+              className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                value === option ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function GetStartedPage() {
   const [step, setStep] = useState<Step>(1);
@@ -25,6 +84,7 @@ export default function GetStartedPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [existingUserMode, setExistingUserMode] = useState(false);
   const [passwordPolicy, setPasswordPolicy] = useState<PasswordPolicy>(DEFAULT_PASSWORD_POLICY);
+  const [intakeStep4Policy, setIntakeStep4Policy] = useState<IntakeStep4Policy>(DEFAULT_INTAKE_STEP4_POLICY);
 
   const [campaignName, setCampaignName] = useState('');
   const [officeSought, setOfficeSought] = useState('');
@@ -50,6 +110,7 @@ export default function GetStartedPage() {
   const [teamInvites, setTeamInvites] = useState('');
   const [notes, setNotes] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
 
   const stepProgress = useMemo(() => (step / 7) * 100, [step]);
   const passwordValidation = useMemo(() => validatePasswordAgainstPolicy(password, passwordPolicy), [password, passwordPolicy]);
@@ -61,6 +122,16 @@ export default function GetStartedPage() {
   const teamSizeOptions = ['1-3', '4-10', '11-25', '26+'];
   const budgetOptions = ['<$5K', '$5K-$20K', '$20K-$50K', '$50K+'];
 
+  const encouragementMessages = {
+    1: { text: 'Let\'s start with the basics', subtext: 'Create your account and secure your campaign' },
+    2: { text: 'Great! Now tell us about your campaign', subtext: 'We\'re learning your electoral goals' },
+    3: { text: 'Perfect! Let\'s talk about your team', subtext: 'Understanding your capacity and timeline' },
+    4: { text: 'You\'re doing amazing', subtext: 'Select the goals that matter most to you' },
+    5: { text: 'Almost halfway there!', subtext: 'Share your assets and campaign details' },
+    6: { text: 'Getting close! Security matters', subtext: 'Let\'s ensure your campaign is protected' },
+    7: { text: 'Final step! You\'re almost done', subtext: 'Review everything and launch your campaign' },
+  };
+
   useEffect(() => {
     const loadPasswordPolicy = async () => {
       try {
@@ -70,8 +141,13 @@ export default function GetStartedPage() {
         if (response.ok && data?.policy) {
           setPasswordPolicy(data.policy);
         }
+
+        if (response.ok && data?.intakeStep4Policy) {
+          setIntakeStep4Policy(data.intakeStep4Policy);
+        }
       } catch {
         setPasswordPolicy(DEFAULT_PASSWORD_POLICY);
+        setIntakeStep4Policy(DEFAULT_INTAKE_STEP4_POLICY);
       }
     };
 
@@ -117,6 +193,11 @@ export default function GetStartedPage() {
 
     if (step === 4 && goals.length === 0) {
       setError('Please select at least one campaign goal.');
+      return;
+    }
+
+    if (step === 4 && (!donationPlatform || !crmPlatform || !emailPlatform)) {
+      setError('Please select donation, CRM, and email platforms.');
       return;
     }
 
@@ -214,30 +295,7 @@ export default function GetStartedPage() {
       }
 
       setSuccess(data?.message || 'Success! Intake submitted.');
-      setStep(1);
-      setFullName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setCampaignName('');
-      setOfficeSought('');
-      setElectionDate('');
-      setTimeline('');
-      setTeamSize('');
-      setBudgetRange('');
-      setDonationPlatform('');
-      setCrmPlatform('');
-      setEmailPlatform('');
-      setGoals([]);
-      setBrandLogo(null);
-      setCampaignBrief(null);
-      setComplianceFile(null);
-      setPrivacyContact('');
-      setIncidentContact('');
-      setDataResidency('');
-      setTeamInvites('');
-      setNotes('');
-      setAgreeToTerms(false);
+      setShowCompletion(true);
     } catch (submitError) {
       console.error('Get started submission failed:', submitError);
       setError('Submission failed. Please try again.');
@@ -245,6 +303,46 @@ export default function GetStartedPage() {
       setSubmitting(false);
     }
   };
+
+  if (showCompletion) {
+    return (
+      <MarketingLayout>
+        <section className="px-6 pt-24 md:pt-32 pb-16 bg-gradient-to-b from-blue-50 via-white to-purple-50 min-h-screen">
+          <div className="max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="rounded-3xl border border-blue-100 bg-white shadow-xl p-8 md:p-10 text-center"
+            >
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-2xl mb-4">
+                ✓
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Onboarding Intake Complete</h1>
+              <p className="text-gray-600 mb-8">
+                {success || 'Your intake has been submitted successfully. We are preparing your campaign workspace now.'}
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/welcome"
+                  className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all"
+                >
+                  Continue to Welcome
+                </Link>
+                <Link
+                  href="/contact"
+                  className="px-6 py-3 rounded-full border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Contact Support
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      </MarketingLayout>
+    );
+  }
 
   return (
     <MarketingLayout>
@@ -273,6 +371,18 @@ export default function GetStartedPage() {
                   transition={{ duration: 0.25 }}
                 />
               </div>
+
+              <motion.div
+                key={`encouragement-${step}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="mt-6 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-purple-50 p-4"
+              >
+                <p className="text-lg font-semibold text-gray-900">{encouragementMessages[step].text}</p>
+                <p className="text-sm text-gray-600 mt-1">{encouragementMessages[step].subtext}</p>
+              </motion.div>
             </div>
 
             <form onSubmit={submit} className="space-y-6">
@@ -406,10 +516,29 @@ export default function GetStartedPage() {
                   {step === 4 && (
                     <div className="space-y-4">
                       <div className="grid md:grid-cols-3 gap-4">
-                        <input value={donationPlatform} onChange={(e) => setDonationPlatform(e.target.value)} placeholder="Donation Platform" className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none" />
-                        <input value={crmPlatform} onChange={(e) => setCrmPlatform(e.target.value)} placeholder="CRM Platform" className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none" />
-                        <input value={emailPlatform} onChange={(e) => setEmailPlatform(e.target.value)} placeholder="Email Platform" className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none" />
+                        <CustomDropdown
+                          label="Donation Platform"
+                          placeholder="Select Donation Platform"
+                          value={donationPlatform}
+                          options={intakeStep4Policy.donationPlatforms}
+                          onChange={setDonationPlatform}
+                        />
+                        <CustomDropdown
+                          label="CRM Platform"
+                          placeholder="Select CRM Platform"
+                          value={crmPlatform}
+                          options={intakeStep4Policy.crmPlatforms}
+                          onChange={setCrmPlatform}
+                        />
+                        <CustomDropdown
+                          label="Email Platform"
+                          placeholder="Select Email Platform"
+                          value={emailPlatform}
+                          options={intakeStep4Policy.emailPlatforms}
+                          onChange={setEmailPlatform}
+                        />
                       </div>
+                      <p className="text-xs text-gray-500">Step 4 platform dropdown options are configurable via INTAKE_STEP4_POLICY_JSON.</p>
                       <div>
                         <p className="text-sm font-semibold text-gray-700 mb-2">Primary Goals *</p>
                         <div className="flex flex-wrap gap-2">
@@ -444,7 +573,16 @@ export default function GetStartedPage() {
                     <div className="grid md:grid-cols-2 gap-4">
                       <input value={privacyContact} onChange={(e) => setPrivacyContact(e.target.value)} placeholder="Privacy Contact" className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none" />
                       <input value={incidentContact} onChange={(e) => setIncidentContact(e.target.value)} placeholder="Incident Contact" className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none" />
-                      <input value={dataResidency} onChange={(e) => setDataResidency(e.target.value)} placeholder="Preferred Data Residency" className="md:col-span-2 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none" />
+                      <div className="md:col-span-2">
+                        <CustomDropdown
+                          label="Preferred Data Residency"
+                          placeholder="Select Preferred Data Residency"
+                          value={dataResidency}
+                          options={intakeStep4Policy.dataResidencyOptions}
+                          onChange={setDataResidency}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Options are configurable via INTAKE_STEP4_POLICY_JSON.</p>
+                      </div>
                     </div>
                   )}
 
@@ -454,7 +592,13 @@ export default function GetStartedPage() {
                       <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="Anything else we should know?" className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none" />
                       <label className="flex items-start gap-3 text-sm text-gray-700">
                         <input type="checkbox" checked={agreeToTerms} onChange={(e) => setAgreeToTerms(e.target.checked)} className="mt-1" />
-                        <span>I confirm the provided information is accurate and I agree to onboarding terms.</span>
+                        <span>
+                          I confirm the provided information is accurate and I agree to the{' '}
+                          <Link href="/terms" className="text-blue-600 font-semibold hover:text-blue-700 underline">
+                            onboarding terms
+                          </Link>
+                          .
+                        </span>
                       </label>
                     </div>
                   )}

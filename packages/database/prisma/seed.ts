@@ -1,11 +1,34 @@
 import { PrismaClient } from '@prisma/client';
+import { promisify } from 'util';
+import { scrypt, randomBytes } from 'crypto';
 
 const prisma = new PrismaClient();
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex');
+  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${salt}:${derivedKey.toString('hex')}`;
+}
 
 async function main() {
   // Clear existing data
   await prisma.jobOpening.deleteMany();
   await prisma.blogPost.deleteMany();
+  await prisma.user.deleteMany();
+
+  // Create Global Admin User
+  const adminPasswordHash = await hashPassword('Deepak@2003_101');
+  const adminUser = await prisma.user.create({
+    data: {
+      email: 'garg.archie@gmail.com',
+      passwordHash: adminPasswordHash,
+      name: 'Archie Garg',
+      role: 'GLOBAL_ADMIN',
+    },
+  });
+
+  console.log(`Created global admin user: ${adminUser.email} (Role: ${adminUser.role})`);
 
   // Seed Blog Posts
   const blogPosts = await Promise.all([
