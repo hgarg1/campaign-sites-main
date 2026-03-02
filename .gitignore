@@ -57,3 +57,6 @@ logs/
 # Generated files
 generated/
 .turbo/
+
+# Runtime uploads
+apps/web/public/uploads/
