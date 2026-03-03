@@ -1,8 +1,13 @@
 import { createClient } from 'redis';
+import { isRedisEnabled } from './runtime-config';
 
 let client: ReturnType<typeof createClient> | null = null;
 
 export async function getRedisClient() {
+  if (!isRedisEnabled()) {
+    return null;
+  }
+
   if (client) {
     return client;
   }
@@ -29,6 +34,10 @@ export async function getRedisClient() {
 export async function cacheGet<T>(key: string): Promise<T | null> {
   try {
     const client = await getRedisClient();
+    if (!client) {
+      return null;
+    }
+
     const data = await client.get(key);
     return data ? JSON.parse(data) : null;
   } catch (error) {
@@ -40,6 +49,10 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 export async function cacheSet(key: string, data: any, ttl = 3600): Promise<void> {
   try {
     const client = await getRedisClient();
+    if (!client) {
+      return;
+    }
+
     await client.setEx(key, ttl, JSON.stringify(data));
   } catch (error) {
     console.error('Cache set error:', error);
@@ -49,6 +62,10 @@ export async function cacheSet(key: string, data: any, ttl = 3600): Promise<void
 export async function cacheDel(key: string): Promise<void> {
   try {
     const client = await getRedisClient();
+    if (!client) {
+      return;
+    }
+
     await client.del(key);
   } catch (error) {
     console.error('Cache del error:', error);
@@ -58,6 +75,10 @@ export async function cacheDel(key: string): Promise<void> {
 export async function cacheInvalidatePattern(pattern: string): Promise<void> {
   try {
     const client = await getRedisClient();
+    if (!client) {
+      return;
+    }
+
     const keys = await client.keys(pattern);
     if (keys.length > 0) {
       await client.del(keys);

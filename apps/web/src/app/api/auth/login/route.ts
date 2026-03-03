@@ -1,8 +1,9 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { verifyPassword } from '../../../../lib/password-hash';
 import { logger } from '../../../../lib/logger';
+import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,6 +19,11 @@ function createSessionToken(userId: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isDatabaseEnabled()) {
+      logger.warn('Login endpoint blocked because database access is disabled in this environment', 'auth');
+      return NextResponse.json({ error: 'Login is temporarily unavailable.' }, { status: 503 });
+    }
+
     const body = (await request.json()) as { email?: string; password?: string };
 
     const email = body.email?.trim().toLowerCase();

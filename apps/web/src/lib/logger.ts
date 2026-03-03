@@ -1,4 +1,4 @@
 import 'server-only';
-import { createLogger } from '@campaignsites/logging';
+import { createLogger } from './logging-core';
 
 export const logger = createLogger();

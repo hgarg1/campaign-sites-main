@@ -1,6 +1,7 @@
-import { prisma } from '@campaignsites/database';
-import { initializeProcessLogging } from '@campaignsites/logging';
+import { prisma } from './database';
+import { initializeProcessLogging } from './logging-core';
 import { logger } from './logger';
+import { isDatabaseEnabled } from './runtime-config';
 
 declare global {
   var __campaignsites_logging_initialized: boolean | undefined;
@@ -16,7 +17,9 @@ export function initializeLogging() {
   }
 
   try {
-    logger.initialize(prisma);
+    if (isDatabaseEnabled()) {
+      logger.initialize(prisma);
+    }
 
     // Log application startup
     logger.info(

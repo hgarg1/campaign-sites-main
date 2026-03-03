@@ -2,6 +2,9 @@
   "name": "@campaignsites/web",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -25,10 +28,9 @@
     "redis": "^4.6.10",
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0",
+    "@prisma/client": "^5.9.1",
     "@campaignsites/ui": "workspace:*",
-    "@campaignsites/types": "workspace:*",
-    "@campaignsites/logging": "workspace:*",
-    "@campaignsites/database": "workspace:*"
+    "@campaignsites/types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
@@ -36,6 +38,7 @@
     "@types/react-dom": "^18.2.18",
     "typescript": "^5.3.3",
     "eslint": "^8.56.0",
-    "eslint-config-next": "^14.1.0"
+    "eslint-config-next": "^14.1.0",
+    "prisma": "^5.9.1"
   }
 }

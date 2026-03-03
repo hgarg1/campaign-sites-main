@@ -1,4 +1,4 @@
-import { PrismaClient } from '@campaignsites/database';
+import type { PrismaClient } from '@prisma/client';
 
 type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 

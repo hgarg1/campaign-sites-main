@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { cacheGet, cacheSet } from '../../../lib/redis';
 import { MarketingLayout } from '../../../components/marketing-layout';
+import { isDatabaseEnabled } from '../../../lib/runtime-config';
 import { ApplicationWizard } from './application-wizard';
 
 interface JobDetail {
@@ -27,6 +28,10 @@ export default async function CareerDetailPage({
 }: {
   params: { slug: string };
 }) {
+  if (!isDatabaseEnabled()) {
+    notFound();
+  }
+
   const cacheKey = `careers:job:v1:${params.slug}`;
 
   let job = await cacheGet<JobDetail>(cacheKey);

@@ -2,9 +2,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { hashPassword, verifyPassword } from '../../../../lib/password-hash';
 import { parsePasswordPolicy, validatePasswordAgainstPolicy } from '../../../../lib/password-policy';
+import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -96,6 +97,10 @@ async function saveUpload(file: File, prefix: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isDatabaseEnabled()) {
+      return NextResponse.json({ error: 'Onboarding is temporarily unavailable.' }, { status: 503 });
+    }
+
     const formData = await request.formData();
 
     const fullName = toOptionalString(formData.get('fullName'));

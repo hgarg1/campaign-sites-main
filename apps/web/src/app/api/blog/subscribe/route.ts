@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
+import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isDatabaseEnabled()) {
+      return NextResponse.json({ error: 'Subscriptions are temporarily unavailable.' }, { status: 503 });
+    }
     const body = await request.json();
     const rawEmail = typeof body?.email === 'string' ? body.email : '';
     const email = rawEmail.trim().toLowerCase();

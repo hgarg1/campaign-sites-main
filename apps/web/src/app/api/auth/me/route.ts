@@ -1,12 +1,21 @@
 import { cookies } from 'next/headers';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { logger } from '../../../../lib/logger';
+import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 import { parseAndVerifySessionToken } from '../../../../lib/session-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    if (!isDatabaseEnabled()) {
+      logger.warn('Session lookup blocked because database access is disabled in this environment', 'auth');
+      return new Response(JSON.stringify({ error: 'Session lookup unavailable' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get('campaignsites_session')?.value;
 

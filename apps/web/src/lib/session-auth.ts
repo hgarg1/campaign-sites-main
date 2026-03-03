@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { prisma } from '@campaignsites/database';
+import { prisma } from './database';
+import { isDatabaseEnabled } from './runtime-config';
 
 function decodeBase64Url(input: string) {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
@@ -35,7 +36,7 @@ export function parseAndVerifySessionToken(token: string) {
 }
 
 export async function getSessionUserFromToken(sessionToken?: string) {
-  if (!sessionToken) {
+  if (!sessionToken || !isDatabaseEnabled()) {
     return null;
   }
 

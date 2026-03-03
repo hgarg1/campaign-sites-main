@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { cacheGet, cacheSet } from '../../../lib/redis';
 import { logger } from '../../../lib/logger';
+import { isDatabaseEnabled } from '../../../lib/runtime-config';
 
 export async function GET() {
   try {
+    if (!isDatabaseEnabled()) {
+      return NextResponse.json([]);
+    }
     // Try to get from Redis cache
     const cachedPosts = await cacheGet('blog:posts:v2');
     if (cachedPosts) {
