@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/database';
+import { prisma } from '@campaignsites/database';
 import { hashPassword, verifyPassword } from '../../../../lib/password-hash';
 import { parsePasswordPolicy, validatePasswordAgainstPolicy } from '../../../../lib/password-policy';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';

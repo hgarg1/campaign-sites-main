@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/database';
+import { prisma } from '@campaignsites/database';
 import { cacheGet, cacheSet } from '../../../lib/redis';
 import { isDatabaseEnabled } from '../../../lib/runtime-config';
 
