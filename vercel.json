@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "rootDirectory": "apps/web",
-  "buildCommand": "pnpm build"
+  "buildCommand": "pnpm --filter @campaignsites/web build"
 }
