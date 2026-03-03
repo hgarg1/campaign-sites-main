@@ -1,5 +1,5 @@
-import { prisma } from '@campaignsites/database';
-import { initializeProcessLogging } from '@campaignsites/logging';
+import { prisma } from './database';
+import { initializeProcessLogging } from './logging-core';
 import { logger } from './logger';
 import { isDatabaseEnabled } from './runtime-config';
 

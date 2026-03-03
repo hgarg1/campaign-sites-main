@@ -1,6 +1,6 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { verifyPassword } from '../../../../lib/password-hash';
 import { logger } from '../../../../lib/logger';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';

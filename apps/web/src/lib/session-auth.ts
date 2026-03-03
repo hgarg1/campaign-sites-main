@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { prisma } from '@campaignsites/database';
+import { prisma } from './database';
 import { isDatabaseEnabled } from './runtime-config';
 
 function decodeBase64Url(input: string) {

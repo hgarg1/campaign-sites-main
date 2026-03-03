@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { logger } from '../../../../lib/logger';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 import { parseAndVerifySessionToken } from '../../../../lib/session-auth';

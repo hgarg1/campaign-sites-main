@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { prisma } from '@campaignsites/database';
+import { prisma } from '@/lib/database';
 import { cacheGet, cacheSet } from '../../../lib/redis';
 import { MarketingLayout } from '../../../components/marketing-layout';
 import { isDatabaseEnabled } from '../../../lib/runtime-config';

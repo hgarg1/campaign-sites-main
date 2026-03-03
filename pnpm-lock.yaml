@@ -96,12 +96,6 @@ importers:
 
   apps/web:
     dependencies:
-      '@campaignsites/database':
-        specifier: workspace:*
-        version: link:../../packages/database
-      '@campaignsites/logging':
-        specifier: workspace:*
-        version: link:../../packages/logging
       '@headlessui/react':
         specifier: ^1.7.18
         version: 1.7.19(react-dom@18.3.1)(react@18.3.1)
