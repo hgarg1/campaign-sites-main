@@ -16,7 +16,7 @@ export default function ProductPage() {
         secondaryCta={{ label: 'Explore Features', href: '/features' }}
       />
 
-      <section className="px-6 py-20 bg-white">
+      <section id="content-section" className="px-6 py-20 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">What the Product Handles</h2>

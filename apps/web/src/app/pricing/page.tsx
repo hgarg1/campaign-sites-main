@@ -106,7 +106,7 @@ export default function PricingPage() {
         secondaryCta={{ label: 'View Features', href: '/features' }}
       />
 
-      <section className="px-6 py-24 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+      <section id="content-section" className="px-6 py-24 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Simple, transparent pricing</h2>
