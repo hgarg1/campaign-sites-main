@@ -34,15 +34,18 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="color-scheme" content="light dark" />
-        <script suppressHydrationWarning>
-          {`
-            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-              document.documentElement.classList.add('dark');
-            } else {
-              document.documentElement.classList.remove('dark');
-            }
-          `}
-        </script>
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
+            `,
+          }}
+        />
       </head>
       <body>
         <ToastProvider>
