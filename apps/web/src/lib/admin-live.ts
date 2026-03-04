@@ -170,7 +170,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
   ]);
 
   return {
-    users: users.map((user) => ({
+    users: users.map((user: typeof users[number]) => ({
       id: user.id,
       email: user.email,
       name: user.name,
@@ -181,7 +181,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
       createdAt: user.createdAt.toISOString(),
       lastLogin: undefined,
     })),
-    organizations: organizations.map((org) => ({
+    organizations: organizations.map((org: typeof organizations[number]) => ({
       id: org.id,
       name: org.name,
       slug: org.slug,
@@ -193,7 +193,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
       createdAt: org.createdAt.toISOString(),
       owner: org.members[0]?.user,
     })),
-    websites: websites.map((site) => ({
+    websites: websites.map((site: typeof websites[number]) => ({
       id: site.id,
       name: site.name,
       slug: site.slug,
@@ -205,7 +205,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
       organization: site.organization,
       owner: site.user,
     })),
-    jobs: jobs.map((job) => ({
+    jobs: jobs.map((job: typeof jobs[number]) => ({
       id: job.id,
       websiteId: job.websiteId,
       stage: job.stage,
