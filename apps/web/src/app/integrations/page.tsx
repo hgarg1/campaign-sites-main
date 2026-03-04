@@ -17,7 +17,7 @@ export default function IntegrationsPage() {
       />
 
       {/* Native Integrations Grid */}
-      <section className="py-20 mx-auto max-w-6xl px-6">
+      <section id="content-section" className="py-20 mx-auto max-w-6xl px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold mb-4">Native integrations</h2>
           <p className="text-lg text-gray-600 dark:text-gray-300">
