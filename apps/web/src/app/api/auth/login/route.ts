@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
         id: true,
         name: true,
         email: true,
+        role: true,
         passwordHash: true,
       },
     });
@@ -91,6 +92,14 @@ export async function POST(request: NextRequest) {
     });
 
     response.cookies.set('campaignsites_session', createSessionToken(user.id), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    response.cookies.set('userRole', user.role, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ToastProvider } from '@/components/admin/shared/ToastContext';
 
 export const metadata: Metadata = {
   title: 'CampaignSites - AI-Powered Campaign Website Builder',
@@ -42,7 +43,11 @@ export default function RootLayout({
           `}
         </script>
       </head>
-      <body>{children}</body>
+      <body>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }

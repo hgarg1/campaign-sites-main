@@ -224,16 +224,30 @@ type ProcessLoggingOptions = {
 
 export function initializeProcessLogging(logger: AppLogger, options?: ProcessLoggingOptions) {
   const sourcePrefix = options?.sourcePrefix || 'process';
+  const processLike = (globalThis as { process?: unknown }).process as
+    | { on?: (event: string, listener: (...args: unknown[]) => void) => unknown }
+    | undefined;
 
-  process.on('uncaughtException', (error: Error) => {
-    logger.error('Uncaught exception', `${sourcePrefix}/uncaughtException`, error, { fatal: true });
+  if (!processLike || typeof processLike.on !== 'function') {
+    logger.warn(
+      'Process event handlers are unavailable in this runtime; skipping process-level logging hooks',
+      `${sourcePrefix}/init`
+    );
+    return;
+  }
+
+  processLike.on('uncaughtException', (error: unknown) => {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    logger.error('Uncaught exception', `${sourcePrefix}/uncaughtException`, normalizedError, {
+      fatal: true,
+    });
 
     if (options?.rethrowUncaught ?? true) {
-      throw error;
+      throw normalizedError;
     }
   });
 
-  process.on('unhandledRejection', (reason: Error | string | unknown) => {
+  processLike.on('unhandledRejection', (reason: Error | string | unknown) => {
     logger.error(
       'Unhandled promise rejection',
       `${sourcePrefix}/unhandledRejection`,
@@ -242,20 +256,21 @@ export function initializeProcessLogging(logger: AppLogger, options?: ProcessLog
     );
   });
 
-  process.on('warning', (warning: Error) => {
-    logger.warn(`Process warning: ${warning.message}`, `${sourcePrefix}/warning`, {
-      warningName: warning.name,
-      warningMessage: warning.message,
-      warningStack: warning.stack,
-      code: (warning as any).code,
+  processLike.on('warning', (warning: unknown) => {
+    const normalizedWarning = warning instanceof Error ? warning : new Error(String(warning));
+    logger.warn(`Process warning: ${normalizedWarning.message}`, `${sourcePrefix}/warning`, {
+      warningName: normalizedWarning.name,
+      warningMessage: normalizedWarning.message,
+      warningStack: normalizedWarning.stack,
+      code: (normalizedWarning as any).code,
     });
   });
 
-  process.on('SIGTERM', () => {
+  processLike.on('SIGTERM', () => {
     logger.info('Received SIGTERM signal, graceful shutdown initiated', `${sourcePrefix}/shutdown`);
   });
 
-  process.on('SIGINT', () => {
+  processLike.on('SIGINT', () => {
     logger.info('Received SIGINT signal, graceful shutdown initiated', `${sourcePrefix}/shutdown`);
   });
 }

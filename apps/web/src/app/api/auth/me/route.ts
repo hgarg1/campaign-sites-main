@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { logger } from '../../../../lib/logger';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';
@@ -70,8 +71,7 @@ export async function GET() {
       organizationCount: user.organizations.length,
     });
 
-    return new Response(
-      JSON.stringify({
+    const response = NextResponse.json({
         id: user.id,
         email: user.email,
         name: user.name,
@@ -81,12 +81,19 @@ export async function GET() {
           name: om.organization.name,
           slug: om.organization.slug,
         })),
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      },
+      { status: 200 }
     );
+
+    response.cookies.set('userRole', user.role, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error) {
     logger.error('Error fetching user in /api/auth/me', 'auth', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
