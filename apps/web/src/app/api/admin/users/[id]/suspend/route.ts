@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 interface RouteParams {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 // POST /api/admin/users/[id]/suspend - Suspend user account
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: userId } = await params;
+    const userId = params.id;
     const body = await request.json();
     const { reason } = body;
 

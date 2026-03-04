@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
-
 interface RouteParams {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 // GET /api/admin/users/[id]/activity - Get user activity history
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: userId } = await params;
+    const userId = params.id;
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '50';
 
