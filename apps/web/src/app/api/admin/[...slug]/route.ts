@@ -1,14 +1,5 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  type AdminSnapshot,
-  getAdminSnapshot,
-  getPaginatedJobs,
-  getPaginatedOrganizations,
-  getPaginatedWebsites,
-} from '@/lib/admin-live';
-import { parseAndVerifySessionToken } from '@/lib/session-auth';
-import { isDatabaseEnabled } from '@/lib/runtime-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +11,7 @@ async function getAuthenticatedUserId(): Promise<string | null> {
     return null;
   }
 
+  const { parseAndVerifySessionToken } = await import('@/lib/session-auth');
   const parsedToken = parseAndVerifySessionToken(sessionToken);
   return parsedToken?.userId ?? null;
 }
@@ -31,7 +23,7 @@ function parsePagination(searchParams: URLSearchParams) {
   };
 }
 
-function getMonitoringHealth(snapshot: AdminSnapshot) {
+function getMonitoringHealth(snapshot: any) {
   const now = new Date().toISOString();
   return {
     data: [
@@ -250,6 +242,10 @@ function isActionPath(path: string[]) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  // Import at runtime to avoid database connection during build
+  const { isDatabaseEnabled } = await import('@/lib/runtime-config');
+  const { getAdminSnapshot, getPaginatedJobs, getPaginatedOrganizations, getPaginatedWebsites } = await import('@/lib/admin-live');
+
   // Authentication check
   if (!isDatabaseEnabled()) {
     return NextResponse.json(
