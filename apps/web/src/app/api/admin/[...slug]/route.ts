@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   type AdminSnapshot,
@@ -6,8 +7,22 @@ import {
   getPaginatedOrganizations,
   getPaginatedWebsites,
 } from '@/lib/admin-live';
+import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { isDatabaseEnabled } from '@/lib/runtime-config';
 
 export const dynamic = 'force-dynamic';
+
+async function getAuthenticatedUserId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('campaignsites_session')?.value;
+
+  if (!sessionToken) {
+    return null;
+  }
+
+  const parsedToken = parseAndVerifySessionToken(sessionToken);
+  return parsedToken?.userId ?? null;
+}
 
 function parsePagination(searchParams: URLSearchParams) {
   return {
@@ -235,6 +250,22 @@ function isActionPath(path: string[]) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  // Authentication check
+  if (!isDatabaseEnabled()) {
+    return NextResponse.json(
+      { error: 'Admin access unavailable' },
+      { status: 503 }
+    );
+  }
+
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Not authenticated' },
+      { status: 401 }
+    );
+  }
+
   const path = params.slug || [];
   const [first, second, third] = path;
   const searchParams = request.nextUrl.searchParams;
@@ -559,8 +590,9 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }, { status: 404 });
 }
 
-export async function POST(request: NextRequest, { params }: { params: { slug: string[] } }) {
-  const path = params.slug || [];
+export async function POST(request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const path = slug || [];
   const [first, second, third] = path;
 
   if (first === 'analytics' && second === 'reports' && third === 'generate') {
@@ -597,8 +629,9 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
   return NextResponse.json({ success: true });
 }
 
-export async function PATCH(_request: NextRequest, { params }: { params: { slug: string[] } }) {
-  const path = params.slug || [];
+export async function PATCH(_request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const path = slug || [];
 
   if (isActionPath(path) || path[0] === 'settings' || path[0] === 'monitoring') {
     return NextResponse.json({ success: true });
@@ -607,8 +640,9 @@ export async function PATCH(_request: NextRequest, { params }: { params: { slug:
   return NextResponse.json({ success: true });
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { slug: string[] } }) {
-  const path = params.slug || [];
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const path = slug || [];
 
   if (path[0] === 'settings' || path[0] === 'organizations' || path[0] === 'users' || path[0] === 'websites') {
     return new NextResponse(null, { status: 204 });

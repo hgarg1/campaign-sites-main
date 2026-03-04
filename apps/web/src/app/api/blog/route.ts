@@ -4,6 +4,8 @@ import { cacheGet, cacheSet } from '../../../lib/redis';
 import { logger } from '../../../lib/logger';
 import { isDatabaseEnabled } from '../../../lib/runtime-config';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     if (!isDatabaseEnabled()) {

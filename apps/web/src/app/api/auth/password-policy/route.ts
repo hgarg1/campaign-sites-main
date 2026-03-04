@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { parsePasswordPolicy } from '../../../../lib/password-policy';
 import { parseIntakeStep4Policy } from '../../../../lib/intake-policy';
 
+export const dynamic = 'force-dynamic';
+
 function getConfiguredPasswordPolicy() {
   return parsePasswordPolicy(process.env.PASSWORD_POLICY_JSON ?? process.env.NEXT_PUBLIC_PASSWORD_POLICY_JSON ?? null);
 }

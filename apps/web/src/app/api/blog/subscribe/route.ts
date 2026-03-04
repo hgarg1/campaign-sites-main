@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 
+export const dynamic = 'force-dynamic';
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {

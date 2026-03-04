@@ -5,6 +5,8 @@ import { verifyPassword } from '../../../../lib/password-hash';
 import { logger } from '../../../../lib/logger';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 
+export const dynamic = 'force-dynamic';
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function createSessionToken(userId: string) {

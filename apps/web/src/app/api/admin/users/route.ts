@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSnapshot, getPaginatedUsers } from '@/lib/admin-live';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/users - List all users
 export async function GET(request: NextRequest) {
   try {

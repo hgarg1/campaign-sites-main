@@ -7,6 +7,18 @@ import { parseAndVerifySessionToken } from '../../../../lib/session-auth';
 
 export const dynamic = 'force-dynamic';
 
+async function getAuthenticatedUserId() {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get('campaignsites_session')?.value;
+
+  if (!sessionToken) {
+    return null;
+  }
+
+  const parsedToken = parseAndVerifySessionToken(sessionToken);
+  return parsedToken?.userId ?? null;
+}
+
 export async function GET() {
   try {
     if (!isDatabaseEnabled()) {
@@ -17,10 +29,9 @@ export async function GET() {
       });
     }
 
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get('campaignsites_session')?.value;
+    const userId = await getAuthenticatedUserId();
 
-    if (!sessionToken) {
+    if (!userId) {
       logger.warn('Attempt to access /api/auth/me without session token', 'auth');
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
         status: 401,
@@ -28,18 +39,8 @@ export async function GET() {
       });
     }
 
-    const parsedToken = parseAndVerifySessionToken(sessionToken);
-
-    if (!parsedToken?.userId) {
-      logger.warn('Attempt to access /api/auth/me with invalid session token', 'auth');
-      return new Response(JSON.stringify({ error: 'Invalid session token' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
     const user = await prisma.user.findUnique({
-      where: { id: parsedToken.userId },
+      where: { id: userId },
       include: {
         organizations: {
           include: {
@@ -57,7 +58,7 @@ export async function GET() {
 
     if (!user) {
       logger.warn('User not found for valid session token', 'auth', {
-        userId: parsedToken.userId,
+        userId,
       });
       return new Response(JSON.stringify({ error: 'User not found' }), {
         status: 404,
@@ -100,5 +101,43 @@ export async function GET() {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    if (!isDatabaseEnabled()) {
+      return NextResponse.json({ error: 'Profile update unavailable' }, { status: 503 });
+    }
+
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const body = (await request.json()) as { name?: string | null };
+    const name = typeof body.name === 'string' ? body.name.trim() : null;
+
+    if (name && name.length > 120) {
+      return NextResponse.json({ error: 'Name must be 120 characters or less' }, { status: 400 });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: name && name.length > 0 ? name : null,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      },
+    });
+
+    return NextResponse.json(updatedUser, { status: 200 });
+  } catch (error) {
+    logger.error('Error updating user profile in /api/auth/me', 'auth', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

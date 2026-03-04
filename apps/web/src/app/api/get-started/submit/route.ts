@@ -7,6 +7,8 @@ import { hashPassword, verifyPassword } from '../../../../lib/password-hash';
 import { parsePasswordPolicy, validatePasswordAgainstPolicy } from '../../../../lib/password-policy';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';
 
+export const dynamic = 'force-dynamic';
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 
