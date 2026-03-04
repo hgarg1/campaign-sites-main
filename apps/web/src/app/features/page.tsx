@@ -199,7 +199,7 @@ export default function FeaturesPage() {
         secondaryCta={{ label: 'See Pricing', href: '/pricing' }}
       />
 
-      <section className="px-6 py-20 bg-white">
+      <section id="content-section" className="px-6 py-20 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <div className="inline-block mb-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
