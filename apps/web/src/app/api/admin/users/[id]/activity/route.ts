@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET /api/admin/users/[id]/activity - Get user activity history
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '50';
 

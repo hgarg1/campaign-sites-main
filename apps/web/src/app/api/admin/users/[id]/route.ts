@@ -3,9 +3,9 @@ import { prisma } from '@/lib/database';
 import { getSessionUserFromToken } from '@/lib/session-auth';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET /api/admin/users/[id] - Get user details
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const userId = params.id;
+    const { id: userId } = await params;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PATCH /api/admin/users/[id] - Update user
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
     const body = await request.json();
 
     // TODO: Implement user update logic
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/admin/users/[id] - Delete user
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
 
     // TODO: Implement user deletion logic
     // - Soft delete or hard delete

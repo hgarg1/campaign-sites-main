@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // POST /api/admin/users/[id]/reset-password - Send password reset email
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const userId = params.id;
+    const { id: userId } = await params;
 
     // TODO: Implement password reset logic
     // - Generate reset token
