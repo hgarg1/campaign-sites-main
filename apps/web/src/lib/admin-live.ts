@@ -1,6 +1,5 @@
 import { prisma } from './database';
 import { cacheGet, cacheSet } from './redis';
-import { isDatabaseEnabled } from './runtime-config';
 
 const SNAPSHOT_CACHE_KEY = 'admin:snapshot:v1';
 const SNAPSHOT_TTL_SECONDS = 15;
@@ -83,86 +82,6 @@ function paginate<T>(items: T[], page: number, pageSize: number) {
       total: items.length,
     },
   };
-}
-
-function getMockSnapshot(): AdminSnapshot {
-  const generatedAt = new Date().toISOString();
-
-  const users: AdminSnapshot['users'] = [
-    {
-      id: 'u1',
-      email: 'admin@example.com',
-      name: 'Admin User',
-      role: 'GLOBAL_ADMIN',
-      status: 'active',
-      organizationCount: 1,
-      websiteCount: 2,
-      createdAt: generatedAt,
-      lastLogin: generatedAt,
-    },
-  ];
-
-  const organizations: AdminSnapshot['organizations'] = [
-    {
-      id: 'o1',
-      name: 'Campaign Org',
-      slug: 'campaign-org',
-      whiteLabel: false,
-      customDomain: null,
-      memberCount: 1,
-      websiteCount: 2,
-      status: 'active',
-      createdAt: generatedAt,
-      owner: {
-        id: 'u1',
-        name: 'Admin User',
-        email: 'admin@example.com',
-      },
-    },
-  ];
-
-  const websites: AdminSnapshot['websites'] = [
-    {
-      id: 'w1',
-      name: 'Campaign Main Site',
-      slug: 'campaign-main-site',
-      domain: null,
-      status: 'PUBLISHED',
-      publishedAt: generatedAt,
-      createdAt: generatedAt,
-      updatedAt: generatedAt,
-      organization: {
-        id: 'o1',
-        name: 'Campaign Org',
-        slug: 'campaign-org',
-      },
-      owner: {
-        id: 'u1',
-        name: 'Admin User',
-        email: 'admin@example.com',
-      },
-    },
-  ];
-
-  const jobs: AdminSnapshot['jobs'] = [
-    {
-      id: 'j1',
-      websiteId: 'w1',
-      stage: 'DEPLOYMENT',
-      status: 'COMPLETED',
-      error: null,
-      startedAt: generatedAt,
-      completedAt: generatedAt,
-      createdAt: generatedAt,
-      website: {
-        id: 'w1',
-        name: 'Campaign Main Site',
-        slug: 'campaign-main-site',
-      },
-    },
-  ];
-
-  return { users, organizations, websites, jobs, generatedAt };
 }
 
 async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
@@ -315,16 +234,9 @@ export async function getAdminSnapshot(forceRefresh = false): Promise<AdminSnaps
 
   inflightSnapshot = (async () => {
     try {
-      const snapshot = isDatabaseEnabled()
-        ? await buildSnapshotFromDatabase()
-        : getMockSnapshot();
-
+      const snapshot = await buildSnapshotFromDatabase();
       await cacheSet(SNAPSHOT_CACHE_KEY, snapshot, SNAPSHOT_TTL_SECONDS);
       return snapshot;
-    } catch (error) {
-      const fallback = getMockSnapshot();
-      await cacheSet(SNAPSHOT_CACHE_KEY, fallback, SNAPSHOT_TTL_SECONDS);
-      return fallback;
     } finally {
       inflightSnapshot = null;
     }
