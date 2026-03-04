@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,7 +11,9 @@ interface TopBarProps {
 }
 
 export function TopBar({ title, subtitle }: TopBarProps) {
+  const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [sessionUser, setSessionUser] = useState<{
     id: string;
     email: string;
@@ -37,8 +40,16 @@ export function TopBar({ title, subtitle }: TopBarProps) {
 
     fetchSessionUser();
 
+    // Listen for user profile updates from profile/password pages
+    const handleUserUpdate = () => {
+      fetchSessionUser();
+    };
+
+    window.addEventListener('user-profile-updated', handleUserUpdate);
+
     return () => {
       active = false;
+      window.removeEventListener('user-profile-updated', handleUserUpdate);
     };
   }, []);
 
@@ -56,6 +67,21 @@ export function TopBar({ title, subtitle }: TopBarProps) {
     hidden: { opacity: 0, y: -10, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1 },
     exit: { opacity: 0, y: -10, scale: 0.95 },
+  };
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } finally {
+      setShowUserMenu(false);
+      setIsSigningOut(false);
+      router.push('/login');
+      router.refresh();
+    }
   };
 
   return (
@@ -100,23 +126,36 @@ export function TopBar({ title, subtitle }: TopBarProps) {
                   <p className="text-sm font-medium text-gray-900">{displayName}</p>
                   <p className="text-xs text-gray-600">{displayEmail}</p>
                 </div>
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <Link
+                  href="/admin/portal/profile"
+                  className="w-full block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => setShowUserMenu(false)}
+                >
                   👤 Profile Settings
-                </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                </Link>
+                <Link
+                  href="/admin/portal/password"
+                  className="w-full block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => setShowUserMenu(false)}
+                >
                   🔐 Change Password
-                </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                </Link>
+                <Link
+                  href="/admin/portal/notifications"
+                  className="w-full block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => setShowUserMenu(false)}
+                >
                   🔔 Notifications
-                </button>
+                </Link>
                 <div className="border-t border-gray-100">
-                  <Link
-                    href="/login"
-                    className="w-full block text-left px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors"
-                    onClick={() => setShowUserMenu(false)}
+                  <button
+                    type="button"
+                    className="w-full block text-left px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors disabled:opacity-60"
+                    onClick={handleSignOut}
+                    disabled={isSigningOut}
                   >
-                    🚪 Sign Out
-                  </Link>
+                    {isSigningOut ? 'Signing out...' : '🚪 Sign Out'}
+                  </button>
                 </div>
               </motion.div>
             )}

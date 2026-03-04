@@ -92,7 +92,7 @@ export function useGrowthMetrics() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/analytics/growth');
+      const response = await fetch('/api/admin/analytics/growth', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch growth metrics');
       const result = await response.json();
       setData(result);
@@ -123,7 +123,7 @@ export function useUsageAnalytics() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/analytics/usage');
+      const response = await fetch('/api/admin/analytics/usage', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch usage analytics');
       const result = await response.json();
       setData(result);
@@ -154,7 +154,7 @@ export function useEngagementMetrics() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/analytics/engagement');
+      const response = await fetch('/api/admin/analytics/engagement', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch engagement metrics');
       const result = await response.json();
       setData(result);
@@ -185,7 +185,7 @@ export function useCostAnalytics(period: 'day' | 'week' | 'month' | 'year' = 'mo
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/analytics/costs?period=${period}`);
+      const response = await fetch(`/api/admin/analytics/costs?period=${period}`, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch cost analytics');
       const result = await response.json();
       setData(result);
@@ -216,7 +216,7 @@ export function useBillingData() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/analytics/billing');
+      const response = await fetch('/api/admin/analytics/billing', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch billing data');
       const result = await response.json();
       setData(result);
@@ -248,7 +248,7 @@ export function useReportGeneration() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/analytics/reports');
+      const response = await fetch('/api/admin/analytics/reports', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch reports');
       const result = await response.json();
       setReports(result);
@@ -269,6 +269,7 @@ export function useReportGeneration() {
         const response = await fetch('/api/admin/analytics/reports/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(options),
         });
 
@@ -293,7 +294,7 @@ export function useReportGeneration() {
 
   const downloadReport = useCallback(async (reportId: string) => {
     try {
-      const response = await fetch(`/api/admin/analytics/reports/${reportId}/download`);
+      const response = await fetch(`/api/admin/analytics/reports/${reportId}/download`, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to download report');
 
       const blob = await response.blob();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/shared';
 import {
   ServiceStatusDashboard,
@@ -25,6 +25,12 @@ export default function MonitoringPage() {
   const [activeTab, setActiveTab] = useState<TabType>('health');
   const handleTabChange = useCallback((tabId: TabType) => {
     setActiveTab(tabId);
+  }, []);
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab === 'alerts' || tab === 'rules' || tab === 'channels') {
+      setActiveTab(tab);
+    }
   }, []);
   const [metricsTimeRange, setMetricsTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h');
   const isHealthTab = activeTab === 'health';

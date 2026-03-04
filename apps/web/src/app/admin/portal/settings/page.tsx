@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/shared';
 import {
   SmtpSettingsForm,
@@ -26,6 +26,19 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('email');
   const handleTabChange = useCallback((tabId: TabType) => {
     setActiveTab(tabId);
+  }, []);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (
+      tab === 'api' ||
+      tab === 'security' ||
+      tab === 'ratelimit' ||
+      tab === 'retention' ||
+      tab === 'features'
+    ) {
+      setActiveTab(tab);
+    }
   }, []);
 
   // Hooks

@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  type AdminSnapshot,
-  getAdminSnapshot,
-  getPaginatedJobs,
-  getPaginatedOrganizations,
-  getPaginatedWebsites,
-} from '@/lib/admin-live';
+import type { AdminSnapshot } from '@/lib/admin-live';
 
 export const dynamic = 'force-dynamic';
 
@@ -235,6 +229,8 @@ function isActionPath(path: string[]) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  const { getAdminSnapshot, getPaginatedWebsites, getPaginatedOrganizations, getPaginatedJobs } =
+    await import('@/lib/admin-live');
   const path = params.slug || [];
   const [first, second, third] = path;
   const searchParams = request.nextUrl.searchParams;
