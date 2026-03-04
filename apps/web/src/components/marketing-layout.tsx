@@ -276,10 +276,11 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
 
       <main>{children}</main>
 
-      <footer className="bg-gray-900 text-white py-12 px-6">
+      <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-8 mb-8">
-            <div className="sm:col-span-2 md:col-span-1">
+          {/* Mobile: Horizontal scrollable chip layout, Desktop: Grid layout */}
+          <div className="hidden md:grid md:grid-cols-4 gap-8 mb-8">
+            <div>
               <Link
                 href="/"
                 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 inline-block"
@@ -299,8 +300,8 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
 
             {footerSections.map((section) => (
               <div key={section.title}>
-                <h4 className="font-semibold mb-3 md:mb-4 text-white">{section.title}</h4>
-                <ul className="space-y-2.5 md:space-y-2 text-gray-400 text-sm">
+                <h4 className="font-semibold mb-4 text-white">{section.title}</h4>
+                <ul className="space-y-2.5 text-gray-400 text-sm">
                   {section.links.map((link) => (
                     <li key={link.href}>
                       <Link 
@@ -316,7 +317,42 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
             ))}
           </div>
 
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
+          {/* Mobile: Innovative chip-based layout */}
+          <div className="md:hidden mb-8">
+            <Link
+              href="/"
+              className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 block"
+            >
+              CampaignSites
+            </Link>
+            <p className="text-gray-400 text-xs mb-6 leading-relaxed">
+              AI-powered campaign website builder for the modern era.
+            </p>
+            
+            {/* All links as wrapping chips */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {footerSections.flatMap((section) =>
+                section.links.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full bg-gray-800 hover:bg-blue-600/30 text-gray-300 hover:text-white text-xs font-medium transition-all border border-gray-700 hover:border-blue-500/50"
+                  >
+                    {link.label}
+                  </Link>
+                ))
+              )}
+            </div>
+
+            <Link
+              href="/login"
+              className="w-full inline-flex items-center justify-center rounded-lg border border-blue-400/40 bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-900/20 transition-all hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-700/30 active:scale-95"
+            >
+              Sign In
+            </Link>
+          </div>
+
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-xs sm:text-sm">
             © {new Date().getFullYear()} CampaignSites. Built with ❤️ for democracy.
           </div>
         </div>
