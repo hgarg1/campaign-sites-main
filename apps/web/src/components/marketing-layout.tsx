@@ -276,22 +276,22 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
 
       <main>{children}</main>
 
-      <footer className="bg-gray-900 text-white py-12 px-6">
+      <footer className="bg-gray-900 text-white py-8 sm:py-12 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-8 mb-8">
-            <div className="sm:col-span-2 md:col-span-1">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8">
+            <div className="col-span-2 sm:col-span-1 md:col-span-1">
               <Link
                 href="/"
-                className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 inline-block"
+                className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-3 sm:mb-4 inline-block"
               >
                 CampaignSites
               </Link>
-              <p className="text-gray-400 text-sm mb-5">
+              <p className="text-gray-400 text-xs sm:text-sm mb-4 sm:mb-5 leading-relaxed">
                 AI-powered campaign website builder for the modern era.
               </p>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center rounded-full border border-blue-400/40 bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition-all hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-700/30 active:scale-95"
+                className="inline-flex items-center justify-center rounded-full border border-blue-400/40 bg-gradient-to-r from-blue-600 to-purple-600 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition-all hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-700/30 active:scale-95"
               >
                 Sign In
               </Link>
@@ -299,8 +299,8 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
 
             {footerSections.map((section) => (
               <div key={section.title}>
-                <h4 className="font-semibold mb-3 md:mb-4 text-white">{section.title}</h4>
-                <ul className="space-y-2.5 md:space-y-2 text-gray-400 text-sm">
+                <h4 className="font-semibold mb-2 sm:mb-3 md:mb-4 text-white text-sm sm:text-base">{section.title}</h4>
+                <ul className="space-y-1.5 sm:space-y-2.5 md:space-y-2 text-gray-400 text-xs sm:text-sm">
                   {section.links.map((link) => (
                     <li key={link.href}>
                       <Link 
@@ -316,7 +316,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
             ))}
           </div>
 
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
+          <div className="border-t border-gray-800 pt-6 sm:pt-8 text-center text-gray-400 text-xs sm:text-sm">
             © {new Date().getFullYear()} CampaignSites. Built with ❤️ for democracy.
           </div>
         </div>
