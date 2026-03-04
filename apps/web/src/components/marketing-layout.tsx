@@ -278,20 +278,20 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
 
       <footer className="bg-gray-900 text-white py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-8 mb-8">
+            <div className="sm:col-span-2 md:col-span-1">
               <Link
                 href="/"
                 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4 inline-block"
               >
                 CampaignSites
               </Link>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-400 text-sm mb-5">
                 AI-powered campaign website builder for the modern era.
               </p>
               <Link
                 href="/login"
-                className="mt-5 inline-flex items-center justify-center rounded-full border border-blue-400/40 bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition-all hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-700/30"
+                className="inline-flex items-center justify-center rounded-full border border-blue-400/40 bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition-all hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-700/30 active:scale-95"
               >
                 Sign In
               </Link>
@@ -299,11 +299,14 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
 
             {footerSections.map((section) => (
               <div key={section.title}>
-                <h4 className="font-semibold mb-4">{section.title}</h4>
-                <ul className="space-y-2 text-gray-400 text-sm">
+                <h4 className="font-semibold mb-3 md:mb-4 text-white">{section.title}</h4>
+                <ul className="space-y-2.5 md:space-y-2 text-gray-400 text-sm">
                   {section.links.map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className="hover:text-white transition-colors">
+                      <Link 
+                        href={link.href} 
+                        className="hover:text-white transition-colors inline-block py-0.5"
+                      >
                         {link.label}
                       </Link>
                     </li>
@@ -314,7 +317,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            © 2026 CampaignSites. Built with ❤️ for democracy.
+            © {new Date().getFullYear()} CampaignSites. Built with ❤️ for democracy.
           </div>
         </div>
       </footer>
