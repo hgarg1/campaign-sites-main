@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const proposalInclude = {
   childOrg: { select: { id: true, name: true } },
   initiatorOrg: { select: { id: true, name: true } },
-  votes: { select: { id: true, voterOrgId: true, decision: true } },
+  votes: { select: { id: true, voterOrgId: true, decision: true, comment: true, createdAt: true } },
 };
 
 export async function GET(
@@ -57,6 +57,14 @@ export async function GET(
     ).length;
 
     return NextResponse.json({ pendingCount, mineCount, historyCount, incomingCount });
+  }
+
+  if (tab === 'children') {
+    const owned = await prisma.organizationOwnership.findMany({
+      where: { parentOrgId: orgId, status: 'ACTIVE' },
+      include: { childOrg: { select: { id: true, name: true, slug: true } } },
+    });
+    return NextResponse.json(owned.map((o) => o.childOrg));
   }
 
   if (tab === 'pending') {

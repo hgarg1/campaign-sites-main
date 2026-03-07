@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -94,26 +94,68 @@ function isExpiringSoon(expiresAt: string | null) {
   return new Date(expiresAt).getTime() - Date.now() < 24 * 60 * 60 * 1000;
 }
 
+function timeUntil(iso: string | null): { text: string; color: string } | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return null;
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours < 24) return { text: `Expires in ${hours}h ${minutes}m`, color: 'text-red-600 font-medium' };
+  if (hours < 48) return { text: `Expires in ${hours}h ${minutes}m`, color: 'text-orange-500 font-medium' };
+  return null;
+}
+
 // ─── Proposal Detail Slide-over ────────────────────────────────────────────────
 
 function ProposalDetailSlideOver({
   orgId,
   proposalId,
   onClose,
+  onVoted,
 }: {
   orgId: string;
   proposalId: string;
   onClose: () => void;
+  onVoted?: () => void;
 }) {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(true);
+  const [voteState, setVoteState] = useState<{ decision: 'APPROVE' | 'REJECT' | null; comment: string; submitting: boolean; error: string; success: boolean }>({
+    decision: null, comment: '', submitting: false, error: '', success: false,
+  });
 
-  useEffect(() => {
+  const fetchProposal = useCallback(() => {
+    setLoading(true);
     fetch(`/api/tenant/${orgId}/governance/${proposalId}`)
       .then((r) => r.json())
       .then(setProposal)
       .finally(() => setLoading(false));
   }, [orgId, proposalId]);
+
+  useEffect(() => { fetchProposal(); }, [fetchProposal]);
+
+  async function submitVote() {
+    if (!voteState.decision) return;
+    setVoteState((s) => ({ ...s, submitting: true, error: '' }));
+    try {
+      const res = await fetch(`/api/tenant/${orgId}/governance/${proposalId}?action=vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision: voteState.decision, comment: voteState.comment }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setVoteState((s) => ({ ...s, submitting: false, error: data.error ?? 'Failed to cast vote' }));
+        return;
+      }
+      setVoteState({ decision: null, comment: '', submitting: false, error: '', success: true });
+      fetchProposal();
+      onVoted?.();
+      setTimeout(() => setVoteState((s) => ({ ...s, success: false })), 3000);
+    } catch {
+      setVoteState((s) => ({ ...s, submitting: false, error: 'Network error' }));
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -162,7 +204,7 @@ function ProposalDetailSlideOver({
                     <li key={v.id} className="flex items-start gap-3 text-sm border rounded p-2">
                       <VoteBadge decision={v.decision} />
                       <div>
-                        <div className="font-medium">{v.voterOrgId}</div>
+                        <div className="font-medium font-mono">{v.voterOrgId.slice(0, 8)}…</div>
                         {v.comment && <div className="text-gray-500 mt-0.5">{v.comment}</div>}
                         {v.createdAt && <div className="text-xs text-gray-400">{formatDate(v.createdAt)}</div>}
                       </div>
@@ -171,6 +213,48 @@ function ProposalDetailSlideOver({
                 </ul>
               )}
             </div>
+
+            {proposal.status === 'PENDING_VOTES' && (
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Cast Your Vote</h3>
+                {voteState.success && (
+                  <div className="bg-green-50 border border-green-200 text-green-800 rounded px-3 py-2 text-sm mb-3">
+                    ✓ Your vote has been recorded.
+                  </div>
+                )}
+                {voteState.error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm mb-3">
+                    {voteState.error}
+                  </div>
+                )}
+                {voteState.decision === null ? (
+                  <div className="flex gap-2">
+                    <button onClick={() => setVoteState((s) => ({ ...s, decision: 'APPROVE' }))} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm">✓ Approve</button>
+                    <button onClick={() => setVoteState((s) => ({ ...s, decision: 'REJECT' }))} className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm">✗ Reject</button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <textarea
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                      placeholder="Optional comment…"
+                      rows={2}
+                      value={voteState.comment}
+                      onChange={(e) => setVoteState((s) => ({ ...s, comment: e.target.value }))}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={submitVote}
+                        disabled={voteState.submitting}
+                        className={`flex-1 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50 ${voteState.decision === 'APPROVE' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                      >
+                        {voteState.submitting ? 'Submitting…' : `Confirm ${voteState.decision === 'APPROVE' ? 'Approve' : 'Reject'}`}
+                      </button>
+                      <button onClick={() => setVoteState((s) => ({ ...s, decision: null, comment: '' }))} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Back</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -201,6 +285,20 @@ function NewProposalSlideOver({
   const [integrationConfigJson, setIntegrationConfigJson] = useState('{}');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [childOrgs, setChildOrgs] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [childOrgsLoading, setChildOrgsLoading] = useState(true);
+  const [childOrgsFetchFailed, setChildOrgsFetchFailed] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/tenant/${orgId}/governance?tab=children`)
+      .then((r) => {
+        if (!r.ok) throw new Error('failed');
+        return r.json();
+      })
+      .then((data: { id: string; name: string; slug: string }[]) => setChildOrgs(data))
+      .catch(() => setChildOrgsFetchFailed(true))
+      .finally(() => setChildOrgsLoading(false));
+  }, [orgId]);
 
   function buildPayload(): Record<string, unknown> {
     if (['SUSPEND', 'REACTIVATE', 'DEACTIVATE'].includes(actionType)) {
@@ -304,8 +402,23 @@ function NewProposalSlideOver({
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Child Org ID *</label>
-            <input required className="w-full border rounded-lg px-3 py-2 text-sm" value={childOrgId} onChange={(e) => setChildOrgId(e.target.value)} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Child Org *</label>
+            {childOrgsLoading ? (
+              <div className="animate-pulse bg-gray-200 rounded h-9 w-full" />
+            ) : childOrgsFetchFailed ? (
+              <input required className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Paste child org ID…" value={childOrgId} onChange={(e) => setChildOrgId(e.target.value)} />
+            ) : childOrgs.length === 0 ? (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                You have no owned child organizations. Add co-parents on the Hierarchy page first.
+              </p>
+            ) : (
+              <select required className="w-full border rounded-lg px-3 py-2 text-sm" value={childOrgId} onChange={(e) => setChildOrgId(e.target.value)}>
+                <option value="">Select a child org…</option>
+                {childOrgs.map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Action Type *</label>
@@ -315,6 +428,11 @@ function NewProposalSlideOver({
               ))}
             </select>
           </div>
+          {['SUSPEND', 'DEACTIVATE'].includes(actionType) && (
+            <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg px-3 py-2 text-sm">
+              ⚠️ This is a destructive action. All co-owners must approve before it takes effect.
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea className="w-full border rounded-lg px-3 py-2 text-sm" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -322,7 +440,7 @@ function NewProposalSlideOver({
           {renderPayloadFields()}
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={submitting} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50">
+            <button type="submit" disabled={submitting || (!childOrgsFetchFailed && !childOrgsLoading && childOrgs.length === 0)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50">
               {submitting ? 'Submitting…' : 'Create Proposal'}
             </button>
             <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancel</button>
@@ -335,10 +453,10 @@ function NewProposalSlideOver({
 
 // ─── Pending Vote Tab ──────────────────────────────────────────────────────────
 
-function PendingVoteTab({ orgId, onRefresh }: { orgId: string; onRefresh: () => void }) {
+function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onRefresh: () => void; onViewDetail: (id: string) => void }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [voting, setVoting] = useState<Record<string, { decision: 'APPROVE' | 'REJECT' | null; comment: string; submitting: boolean }>>({});
+  const [voting, setVoting] = useState<Record<string, { decision: 'APPROVE' | 'REJECT' | null; comment: string; submitting: boolean; error: string; voteSuccess: boolean }>>({});
 
   const load = useCallback(() => {
     setLoading(true);
@@ -351,22 +469,30 @@ function PendingVoteTab({ orgId, onRefresh }: { orgId: string; onRefresh: () => 
   useEffect(() => { load(); }, [load]);
 
   function startVote(id: string, decision: 'APPROVE' | 'REJECT') {
-    setVoting((v) => ({ ...v, [id]: { ...(v[id] ?? { comment: '', submitting: false }), decision } }));
+    setVoting((v) => ({ ...v, [id]: { ...(v[id] ?? { comment: '', submitting: false, error: '', voteSuccess: false }), decision } }));
   }
 
   async function submitVote(p: Proposal) {
     const v = voting[p.id];
     if (!v?.decision) return;
-    setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], submitting: true } }));
+    setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], submitting: true, error: '' } }));
     try {
       const res = await fetch(`/api/tenant/${orgId}/governance/${p.id}?action=vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ decision: v.decision, comment: v.comment }),
       });
-      if (res.ok) { load(); onRefresh(); }
-    } finally {
-      setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], submitting: false } }));
+      const data = await res.json();
+      if (!res.ok) {
+        setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], submitting: false, error: data.error ?? 'Failed to cast vote' } }));
+        return;
+      }
+      setVoting((prev) => ({ ...prev, [p.id]: { decision: null, comment: '', submitting: false, error: '', voteSuccess: true } }));
+      load();
+      onRefresh();
+      setTimeout(() => setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], voteSuccess: false } })), 3000);
+    } catch {
+      setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], submitting: false, error: 'Network error' } }));
     }
   }
 
@@ -379,6 +505,7 @@ function PendingVoteTab({ orgId, onRefresh }: { orgId: string; onRefresh: () => 
         const approvals = p.votes.filter((v) => v.decision === 'APPROVE').length;
         const rejections = p.votes.filter((v) => v.decision === 'REJECT').length;
         const voteState = voting[p.id];
+        const countdown = timeUntil(p.expiresAt);
         const expiringSoon = isExpiringSoon(p.expiresAt);
 
         return (
@@ -387,17 +514,27 @@ function PendingVoteTab({ orgId, onRefresh }: { orgId: string; onRefresh: () => 
               <div>
                 <div className="font-semibold text-gray-900">{p.childOrg?.name ?? p.childOrgId}</div>
                 <div className="text-sm text-gray-500">{ACTION_LABELS[p.actionType] ?? p.actionType}</div>
-                <div className="text-xs text-gray-400 mt-1">Initiated by {p.initiatorOrg?.name ?? p.initiatorOrgId} · {formatDate(p.createdAt)}</div>
+                {!!p.actionPayload?.description && (
+                  <p className="text-xs text-gray-400 italic mt-0.5">{String(p.actionPayload.description)}</p>
+                )}
+                <div className="text-xs text-gray-400 mt-1">Initiated by{p.initiatorOrg?.name ?? p.initiatorOrgId} · {formatDate(p.createdAt)}</div>
               </div>
-              <StatusBadge status={p.status} />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => onViewDetail(p.id)} className="text-blue-600 hover:text-blue-800 text-xs font-medium border border-blue-200 rounded px-2 py-1">👁️ Details</button>
+                <StatusBadge status={p.status} />
+              </div>
             </div>
 
             <div className="mt-3">
               <div className="flex justify-between text-xs text-gray-500 mb-1">
                 <span>{approvals + rejections} of {p.requiredVoterCount} voted</span>
-                <span className={expiringSoon ? 'text-red-600 font-medium' : ''}>
-                  Expires {formatDate(p.expiresAt)}
-                </span>
+                {countdown ? (
+                  <span className={countdown.color}>{countdown.text}</span>
+                ) : (
+                  <span className={expiringSoon ? 'text-red-600 font-medium' : ''}>
+                    Expires {formatDate(p.expiresAt)}
+                  </span>
+                )}
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2">
                 <div
@@ -411,7 +548,13 @@ function PendingVoteTab({ orgId, onRefresh }: { orgId: string; onRefresh: () => 
               </div>
             </div>
 
-            {!voteState ? (
+            {voteState?.voteSuccess && (
+              <div className="mt-3 bg-green-50 border border-green-200 text-green-800 rounded px-3 py-2 text-sm">
+                ✓ Your vote has been recorded.
+              </div>
+            )}
+
+            {!voteState || voteState.decision === null ? (
               <div className="flex gap-2 mt-4">
                 <button onClick={() => startVote(p.id, 'APPROVE')} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm">✓ Approve</button>
                 <button onClick={() => startVote(p.id, 'REJECT')} className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm">✗ Reject</button>
@@ -425,6 +568,11 @@ function PendingVoteTab({ orgId, onRefresh }: { orgId: string; onRefresh: () => 
                   value={voteState.comment}
                   onChange={(e) => setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], comment: e.target.value } }))}
                 />
+                {voteState.error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">
+                    {voteState.error}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button
                     onClick={() => submitVote(p)}
@@ -449,6 +597,7 @@ function PendingVoteTab({ orgId, onRefresh }: { orgId: string; onRefresh: () => 
 function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onViewDetail: (id: string) => void; onRefresh: () => void }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelError, setCancelError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -462,7 +611,13 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
 
   async function cancelProp(p: Proposal) {
     if (!window.confirm(`Cancel proposal for "${ACTION_LABELS[p.actionType] ?? p.actionType}" on "${p.childOrg?.name}"?`)) return;
-    await fetch(`/api/tenant/${orgId}/governance/${p.id}?action=cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    setCancelError('');
+    const res = await fetch(`/api/tenant/${orgId}/governance/${p.id}?action=cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setCancelError(data.error ?? 'Failed to cancel proposal');
+      return;
+    }
     load(); onRefresh();
   }
 
@@ -471,10 +626,18 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
 
   return (
     <div className="overflow-x-auto">
+      {cancelError && (
+        <div className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">{cancelError}</div>
+      )}
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
-            {['Child Org','Action','Status','Created','Expires/Resolved','Votes','Actions'].map(h=>(
+            <th colSpan={8} className="px-4 py-2 text-right">
+              <button onClick={load} className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1">🔄 Refresh</button>
+            </th>
+          </tr>
+          <tr>
+            {['Child Org','Action','Status','Created','Expires/Resolved','Resolved Reason','Votes','Actions'].map(h=>(
               <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
             ))}
           </tr>
@@ -492,6 +655,7 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
                 <td className={`px-4 py-3 ${isExpiringSoon(p.expiresAt) && p.status === 'PENDING_VOTES' ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
                   {p.resolvedAt ? formatDate(p.resolvedAt) : formatDate(p.expiresAt)}
                 </td>
+                <td className="px-4 py-3 text-gray-400 text-xs italic">{p.resolvedReason ?? '—'}</td>
                 <td className="px-4 py-3">
                   <span className="text-green-600">✓{approvals}</span> <span className="text-red-500 ml-1">✗{rejections}</span>
                 </td>
@@ -545,8 +709,18 @@ function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id
             return (
               <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onViewDetail(p.id)}>
                 <td className="px-4 py-3 font-medium">{p.initiatorOrg?.name ?? p.initiatorOrgId}</td>
-                <td className="px-4 py-3">{ACTION_LABELS[p.actionType] ?? p.actionType}</td>
-                <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
+                <td className="px-4 py-3">
+                  <div>{ACTION_LABELS[p.actionType] ?? p.actionType}</div>
+                  {!!p.actionPayload?.description && (
+                    <p className="text-xs text-gray-400 italic mt-0.5">{String(p.actionPayload.description)}</p>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={p.status} />
+                  {p.resolvedReason && (
+                    <p className="text-xs text-gray-400 italic mt-1">{p.resolvedReason}</p>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
                 <td className={`px-4 py-3 ${isExpiringSoon(p.expiresAt) && p.status === 'PENDING_VOTES' ? 'text-red-600 font-medium' : 'text-gray-500'}`}>{formatDate(p.expiresAt)}</td>
                 <td className="px-4 py-3">
@@ -566,6 +740,7 @@ function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id
 function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id: string) => void }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionFilter, setActionFilter] = useState('');
 
   useEffect(() => {
     fetch(`/api/tenant/${orgId}/governance?tab=history`)
@@ -577,18 +752,33 @@ function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id:
   if (loading) return <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-12" />)}</div>;
   if (!proposals.length) return <div className="text-center py-12 text-gray-500">No resolved proposals yet.</div>;
 
+  const filtered = actionFilter ? proposals.filter((p) => p.actionType === actionFilter) : proposals;
+
   return (
     <div className="overflow-x-auto">
+      <div className="mb-3 flex items-center gap-2">
+        <label className="text-xs text-gray-500 font-medium">Filter by action:</label>
+        <select
+          className="border rounded px-2 py-1 text-sm"
+          value={actionFilter}
+          onChange={(e) => setActionFilter(e.target.value)}
+        >
+          <option value="">All Actions</option>
+          {ALL_ACTION_TYPES.map((t) => (
+            <option key={t} value={t}>{ACTION_LABELS[t]}</option>
+          ))}
+        </select>
+      </div>
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
-            {['Child Org','Action','Status','Initiated By','Created','Resolved','Votes'].map(h=>(
+            {['Child Org','Action','Status','Initiated By','Created','Resolved','Resolved Reason','Votes'].map(h=>(
               <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-100">
-          {proposals.map((p) => {
+          {filtered.map((p) => {
             const approvals = p.votes.filter((v) => v.decision === 'APPROVE').length;
             const rejections = p.votes.filter((v) => v.decision === 'REJECT').length;
             return (
@@ -599,6 +789,7 @@ function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id:
                 <td className="px-4 py-3 text-gray-500">{p.initiatorOrg?.name ?? p.initiatorOrgId}</td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(p.resolvedAt)}</td>
+                <td className="px-4 py-3 text-xs text-gray-400 italic">{p.resolvedReason ?? '—'}</td>
                 <td className="px-4 py-3">
                   <span className="text-green-600">✓{approvals}</span> <span className="text-red-500 ml-1">✗{rejections}</span>
                 </td>
@@ -618,8 +809,11 @@ type TabKey = 'pending' | 'mine' | 'incoming' | 'history';
 export default function GovernancePage() {
   const params = useParams();
   const orgId = params.id as string;
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<TabKey>('pending');
+  const initialTab = (searchParams.get('tab') as TabKey | null) ?? 'pending';
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [counts, setCounts] = useState<TabCounts | null>(null);
   const [detailProposalId, setDetailProposalId] = useState<string | null>(null);
   const [showNewProposal, setShowNewProposal] = useState(false);
@@ -633,6 +827,11 @@ export default function GovernancePage() {
   }, [orgId]);
 
   useEffect(() => { loadCounts(); }, [loadCounts]);
+
+  function switchTab(tab: TabKey) {
+    setActiveTab(tab);
+    router.replace(`?tab=${tab}`);
+  }
 
   function handleNewProposalSuccess(msg: string) {
     setShowNewProposal(false);
@@ -662,7 +861,7 @@ export default function GovernancePage() {
             {tabs.map((t) => (
               <button
                 key={t.key}
-                onClick={() => setActiveTab(t.key)}
+                onClick={() => switchTab(t.key)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === t.key
                     ? 'bg-white shadow text-gray-900'
@@ -687,7 +886,7 @@ export default function GovernancePage() {
         </div>
 
         <div>
-          {activeTab === 'pending' && <PendingVoteTab orgId={orgId} onRefresh={loadCounts} />}
+          {activeTab === 'pending' && <PendingVoteTab orgId={orgId} onRefresh={loadCounts} onViewDetail={setDetailProposalId} />}
           {activeTab === 'mine' && <MyProposalsTab orgId={orgId} onViewDetail={setDetailProposalId} onRefresh={loadCounts} />}
           {activeTab === 'incoming' && <IncomingTab orgId={orgId} onViewDetail={setDetailProposalId} />}
           {activeTab === 'history' && <HistoryTab orgId={orgId} onViewDetail={setDetailProposalId} />}
@@ -695,7 +894,7 @@ export default function GovernancePage() {
       </div>
 
       {detailProposalId && (
-        <ProposalDetailSlideOver orgId={orgId} proposalId={detailProposalId} onClose={() => setDetailProposalId(null)} />
+        <ProposalDetailSlideOver orgId={orgId} proposalId={detailProposalId} onClose={() => setDetailProposalId(null)} onVoted={loadCounts} />
       )}
       {showNewProposal && (
         <NewProposalSlideOver orgId={orgId} onClose={() => setShowNewProposal(false)} onSuccess={handleNewProposalSuccess} />
