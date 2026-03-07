@@ -35,20 +35,83 @@ enum UserRole {
 
 // Multi-tenancy for white-labeling
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  whiteLabel  Boolean  @default(false)
-  customDomain String?
-  branding    Json?    // Logo, colors, etc.
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  members     OrganizationMember[]
-  websites    Website[]
-  intakes     GetStartedIntake[]
-  
+  id                String              @id @default(cuid())
+  name              String
+  slug              String              @unique
+  whiteLabel        Boolean             @default(false)
+  customDomain      String?
+  branding          Json?               // Logo, colors, etc.
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Hierarchy fields
+  parentId          String?
+  partyAffiliation  PartyAffiliation?
+  ownStatus         OrganizationStatus  @default(ACTIVE)
+  canCreateChildren Boolean             @default(false)
+  maxChildDepth     Int?                // null = unlimited depth from this node
+  setupCompletedAt  DateTime?           // null = first-login modal not yet completed
+  suspendedAt       DateTime?
+  suspendedByOrgId  String?             // which org triggered the suspension (null = system admin)
+
+  // Relations
+  members           OrganizationMember[]
+  invites           OrganizationInvite[]
+  websites          Website[]
+  intakes           GetStartedIntake[]
+
+  parent            Organization?       @relation("OrgHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children          Organization[]      @relation("OrgHierarchy")
+
+  ancestors         OrganizationAncestry[] @relation("AncestryDescendant")
+  descendants       OrganizationAncestry[] @relation("AncestryAncestor")
+
+  masterTenantMapping MasterTenantMapping?
+
   @@map("organizations")
+}
+
+// Closure table: every ancestor→descendant pair at every depth
+model OrganizationAncestry {
+  ancestorId    String
+  descendantId  String
+  depth         Int   // 1 = direct parent, 2 = grandparent, …
+
+  ancestor      Organization @relation("AncestryAncestor", fields: [ancestorId], references: [id], onDelete: Cascade)
+  descendant    Organization @relation("AncestryDescendant", fields: [descendantId], references: [id], onDelete: Cascade)
+
+  @@id([ancestorId, descendantId])
+  @@index([descendantId])
+  @@index([ancestorId])
+  @@map("organization_ancestry")
+}
+
+// Maps each party affiliation to its master/root tenant org
+model MasterTenantMapping {
+  id               String           @id @default(cuid())
+  partyAffiliation PartyAffiliation @unique
+  organizationId   String           @unique
+  createdAt        DateTime         @default(now())
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("master_tenant_mappings")
+}
+
+enum PartyAffiliation {
+  REPUBLICAN
+  DEMOCRAT
+  LIBERTARIAN
+  GREEN
+  INDEPENDENT
+  NONPARTISAN
+  OTHER
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
 }
 
 model OrganizationMember {
@@ -343,6 +406,22 @@ model GetStartedIntake {
   @@index([organizationId])
   @@index([campaignName])
   @@map("get_started_intakes")
+}
+
+// Organization Invites
+model OrganizationInvite {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email           String
+  role            String       @default("MEMBER")
+  token           String       @unique @default(cuid())
+  status          String       @default("PENDING") // PENDING | ACCEPTED | REVOKED | EXPIRED
+  createdAt       DateTime     @default(now())
+  expiresAt       DateTime
+  invitedByUserId String?
+
+  @@map("organization_invites")
 }
 
 // Server Application Logs
