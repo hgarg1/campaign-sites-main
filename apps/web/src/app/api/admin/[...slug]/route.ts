@@ -594,6 +594,19 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
   // ─── Governance ──────────────────────────────────────────────────────────────
   if (first === 'governance') {
+    if (second === 'stats' && !third) {
+      const now = new Date();
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const [pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules] = await Promise.all([
+        prisma.governanceProposal.count({ where: { status: 'PENDING_VOTES' } }),
+        prisma.governanceProposal.count({ where: { status: 'APPROVED', resolvedAt: { gte: yesterday } } }),
+        prisma.governanceProposal.count({ where: { status: 'EXPIRED', resolvedAt: { gte: yesterday } } }),
+        prisma.organizationOwnership.count({ where: { status: 'ACTIVE' } }),
+        prisma.governanceRuleSet.count({ where: { isActive: true } }),
+      ]);
+      return NextResponse.json({ pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules });
+    }
+
     if (second === 'config') {
       const rows = await prisma.systemConfig.findMany();
       const config: Record<string, string> = {};
@@ -616,6 +629,19 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       return NextResponse.json({ data: rules });
     }
 
+    if (second === 'proposals' && third && !path[3]) {
+      const proposal = await prisma.governanceProposal.findUnique({
+        where: { id: third },
+        include: {
+          childOrg: { select: { id: true, name: true, slug: true } },
+          initiatorOrg: { select: { id: true, name: true, slug: true } },
+          votes: { select: { id: true, voterOrgId: true, voterUserId: true, decision: true, comment: true, votedAt: true } },
+        },
+      });
+      if (!proposal) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
+      return NextResponse.json({ data: proposal });
+    }
+
     if (second === 'proposals') {
       const statusFilter = searchParams.get('status');
       const orgIdFilter = searchParams.get('orgId');
@@ -635,13 +661,20 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
           include: {
             childOrg: { select: { id: true, name: true } },
             initiatorOrg: { select: { id: true, name: true } },
-            votes: { select: { id: true } },
+            votes: { select: { id: true, decision: true } },
           },
         }),
       ]);
 
+      // Aggregate vote breakdown per proposal
+      const enriched = proposals.map((p) => {
+        const approveCount = p.votes.filter((v) => v.decision === 'APPROVE').length;
+        const rejectCount = p.votes.filter((v) => v.decision === 'REJECT').length;
+        return { ...p, approveCount, rejectCount };
+      });
+
       return NextResponse.json({
-        data: proposals,
+        data: enriched,
         total,
         page: pPage,
         pageSize: pSize,
