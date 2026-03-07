@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { AdminSnapshot } from '@/lib/admin-live';
+import { prisma } from '@/lib/database';
+import {
+  buildOrgTree,
+  getAncestors,
+  getDescendantIds,
+  insertAncestry,
+  removeAncestry,
+  wouldCreateCycle,
+} from '@/lib/ancestry';
+import type { PartyAffiliation } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -550,6 +560,36 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     return NextResponse.json({ data: [] });
   }
 
+  // ─── Hierarchy: global tree ─────────────────────────────────────────────────
+  if (first === 'hierarchy') {
+    const rootOrgs = await prisma.organization.findMany({
+      where: { parentId: null },
+      select: { id: true },
+    });
+    const trees = await Promise.all(rootOrgs.map((o) => buildOrgTree(o.id)));
+    return NextResponse.json({ data: trees.filter(Boolean) });
+  }
+
+  // ─── Hierarchy: per-org subtree ──────────────────────────────────────────────
+  if (first === 'organizations' && second && third === 'hierarchy') {
+    const tree = await buildOrgTree(second);
+    if (!tree) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    const ancestors = await getAncestors(second);
+    return NextResponse.json({ tree, ancestors });
+  }
+
+  // ─── Master tenant mappings ──────────────────────────────────────────────────
+  if (first === 'master-tenants' && !second) {
+    const mappings = await prisma.masterTenantMapping.findMany({
+      include: {
+        organization: {
+          select: { id: true, name: true, slug: true, ownStatus: true, canCreateChildren: true },
+        },
+      },
+    });
+    return NextResponse.json({ data: mappings });
+  }
+
   return NextResponse.json({
     error: `Unsupported admin endpoint: /api/admin/${path.join('/')}`,
   }, { status: 404 });
@@ -586,6 +626,111 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
     );
   }
 
+  // ─── Assign parent org ───────────────────────────────────────────────────────
+  if (first === 'organizations' && second && third === 'parent') {
+    const body = (await request.json().catch(() => ({}))) as { parentId?: string };
+    if (!body.parentId) return NextResponse.json({ error: 'parentId required' }, { status: 400 });
+
+    const org = await prisma.organization.findUnique({ where: { id: second } });
+    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+
+    const parent = await prisma.organization.findUnique({ where: { id: body.parentId } });
+    if (!parent) return NextResponse.json({ error: 'Parent organization not found' }, { status: 404 });
+
+    if (await wouldCreateCycle(second, body.parentId)) {
+      return NextResponse.json({ error: 'Cannot set parent: would create a cycle' }, { status: 409 });
+    }
+
+    // Check max depth constraint on the new parent
+    if (parent.maxChildDepth !== null) {
+      const descendantIds = await getDescendantIds(second);
+      const subtreeDepth = descendantIds.length > 0 ? Math.max(...(await Promise.all(
+        descendantIds.map(async (id) => {
+          const row = await prisma.organizationAncestry.findFirst({
+            where: { ancestorId: second, descendantId: id },
+            select: { depth: true },
+          });
+          return row?.depth ?? 0;
+        })
+      ))) : 0;
+      if (subtreeDepth >= parent.maxChildDepth) {
+        return NextResponse.json(
+          { error: `Parent org allows max depth of ${parent.maxChildDepth}` },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Rebuild ancestry
+    if (org.parentId) await removeAncestry(second);
+    await insertAncestry(second, body.parentId);
+    const updated = await prisma.organization.update({
+      where: { id: second },
+      data: { parentId: body.parentId },
+    });
+    return NextResponse.json(updated);
+  }
+
+  // ─── Suspend org + all descendants ──────────────────────────────────────────
+  if (first === 'organizations' && second && third === 'suspend') {
+    const org = await prisma.organization.findUnique({ where: { id: second } });
+    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+
+    const descendantIds = await getDescendantIds(second);
+    const now = new Date();
+
+    // Only cascade-suspend descendants that are currently ACTIVE (don't overwrite their own suspension reason)
+    await prisma.organization.updateMany({
+      where: { id: { in: descendantIds }, ownStatus: 'ACTIVE' },
+      data: { ownStatus: 'SUSPENDED', suspendedAt: now, suspendedByOrgId: second },
+    });
+    // Suspend the org itself (by system — suspendedByOrgId = null)
+    const updated = await prisma.organization.update({
+      where: { id: second },
+      data: { ownStatus: 'SUSPENDED', suspendedAt: now, suspendedByOrgId: null },
+    });
+    return NextResponse.json({ ...updated, cascadedCount: descendantIds.length });
+  }
+
+  // ─── Deactivate org + all descendants ──────────────────────────────────────
+  if (first === 'organizations' && second && third === 'deactivate') {
+    const org = await prisma.organization.findUnique({ where: { id: second } });
+    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+
+    const descendantIds = await getDescendantIds(second);
+    const now = new Date();
+
+    // Cascade-deactivate all active or suspended descendants
+    await prisma.organization.updateMany({
+      where: { id: { in: descendantIds }, ownStatus: { not: 'DEACTIVATED' } },
+      data: { ownStatus: 'DEACTIVATED', suspendedAt: now, suspendedByOrgId: second },
+    });
+    const updated = await prisma.organization.update({
+      where: { id: second },
+      data: { ownStatus: 'DEACTIVATED', suspendedAt: now, suspendedByOrgId: null },
+    });
+    return NextResponse.json({ ...updated, cascadedCount: descendantIds.length });
+  }
+
+  // ─── Reactivate org + descendants suspended by this cascade ─────────────────
+  if (first === 'organizations' && second && third === 'reactivate') {
+    const org = await prisma.organization.findUnique({ where: { id: second } });
+    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+
+    const descendantIds = await getDescendantIds(second);
+
+    // Restore only descendants that were suspended by this org's cascade
+    const { count } = await prisma.organization.updateMany({
+      where: { id: { in: descendantIds }, suspendedByOrgId: second },
+      data: { ownStatus: 'ACTIVE', suspendedAt: null, suspendedByOrgId: null },
+    });
+    const updated = await prisma.organization.update({
+      where: { id: second },
+      data: { ownStatus: 'ACTIVE', suspendedAt: null, suspendedByOrgId: null },
+    });
+    return NextResponse.json({ ...updated, restoredCount: count });
+  }
+
   if (isActionPath(path)) {
     return NextResponse.json({ success: true });
   }
@@ -593,8 +738,25 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
   return NextResponse.json({ success: true });
 }
 
-export async function PATCH(_request: NextRequest, { params }: { params: { slug: string[] } }) {
+export async function PATCH(request: NextRequest, { params }: { params: { slug: string[] } }) {
   const path = params.slug || [];
+  const [first, second, third] = path;
+
+  // ─── Hierarchy settings ──────────────────────────────────────────────────────
+  if (first === 'organizations' && second && third === 'hierarchy-settings') {
+    const body = (await request.json().catch(() => ({}))) as {
+      canCreateChildren?: boolean;
+      maxChildDepth?: number | null;
+    };
+    const updated = await prisma.organization.update({
+      where: { id: second },
+      data: {
+        ...(body.canCreateChildren !== undefined && { canCreateChildren: body.canCreateChildren }),
+        ...(body.maxChildDepth !== undefined && { maxChildDepth: body.maxChildDepth }),
+      },
+    });
+    return NextResponse.json(updated);
+  }
 
   if (isActionPath(path) || path[0] === 'settings' || path[0] === 'monitoring') {
     return NextResponse.json({ success: true });
@@ -603,8 +765,65 @@ export async function PATCH(_request: NextRequest, { params }: { params: { slug:
   return NextResponse.json({ success: true });
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { slug: string[] } }) {
+export async function PUT(request: NextRequest, { params }: { params: { slug: string[] } }) {
   const path = params.slug || [];
+  const [first, second] = path;
+
+  // ─── Set/update master tenant for a party ───────────────────────────────────
+  if (first === 'master-tenants' && second) {
+    const body = (await request.json().catch(() => ({}))) as { organizationId?: string };
+    if (!body.organizationId) {
+      return NextResponse.json({ error: 'organizationId required' }, { status: 400 });
+    }
+    const org = await prisma.organization.findUnique({ where: { id: body.organizationId } });
+    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+
+    const mapping = await prisma.masterTenantMapping.upsert({
+      where: { partyAffiliation: second as PartyAffiliation },
+      create: {
+        partyAffiliation: second as PartyAffiliation,
+        organizationId: body.organizationId,
+      },
+      update: { organizationId: body.organizationId },
+      include: { organization: { select: { id: true, name: true, slug: true } } },
+    });
+    return NextResponse.json(mapping);
+  }
+
+  return NextResponse.json({ error: 'Not found' }, { status: 404 });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  const path = params.slug || [];
+  const [first, second, third] = path;
+
+  // ─── Remove parent (detach org from hierarchy) ───────────────────────────────
+  if (first === 'organizations' && second && third === 'parent') {
+    const org = await prisma.organization.findUnique({ where: { id: second } });
+    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    if (!org.parentId) return NextResponse.json({ error: 'Organization has no parent' }, { status: 400 });
+
+    await removeAncestry(second);
+    // Rebuild self-ancestry for the detached subtree so its own children still find it
+    await prisma.organizationAncestry.upsert({
+      where: { ancestorId_descendantId: { ancestorId: second, descendantId: second } },
+      create: { ancestorId: second, descendantId: second, depth: 0 },
+      update: {},
+    });
+    const updated = await prisma.organization.update({
+      where: { id: second },
+      data: { parentId: null },
+    });
+    return NextResponse.json(updated);
+  }
+
+  // ─── Delete master tenant mapping ────────────────────────────────────────────
+  if (first === 'master-tenants' && second) {
+    await prisma.masterTenantMapping.delete({
+      where: { partyAffiliation: second as PartyAffiliation },
+    });
+    return new NextResponse(null, { status: 204 });
+  }
 
   if (path[0] === 'settings' || path[0] === 'organizations' || path[0] === 'users' || path[0] === 'websites') {
     return new NextResponse(null, { status: 204 });

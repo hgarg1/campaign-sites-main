@@ -1,0 +1,108 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: string;
+}
+
+interface TenantNavigationProps {
+  orgId: string;
+}
+
+export function TenantNavigation({ orgId }: TenantNavigationProps) {
+  const pathname = usePathname();
+
+  const navItems: NavItem[] = [
+    { label: 'Dashboard', href: `/tenant/${orgId}`, icon: '📊' },
+    { label: 'Websites', href: `/tenant/${orgId}/websites`, icon: '🌐' },
+    { label: 'Hierarchy', href: `/tenant/${orgId}/hierarchy`, icon: '🌳' },
+    { label: 'Team', href: `/tenant/${orgId}/team`, icon: '👥' },
+    { label: 'Integrations', href: `/tenant/${orgId}/integrations`, icon: '🔌' },
+    { label: 'Analytics', href: `/tenant/${orgId}/analytics`, icon: '📈' },
+    { label: 'Usage', href: `/tenant/${orgId}/usage`, icon: '💾' },
+    { label: 'Settings', href: `/tenant/${orgId}/settings`, icon: '⚙️' },
+  ];
+
+  return (
+    <aside className="sticky top-0 h-screen w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white border-r border-slate-700 overflow-y-auto">
+      {/* Logo Section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="p-6 border-b border-slate-700"
+      >
+        <Link href={`/tenant/${orgId}`} className="flex items-center gap-2">
+          <span className="text-2xl">🏢</span>
+          <div>
+            <h2 className="font-bold text-lg">CampaignSites</h2>
+            <p className="text-xs text-slate-400">Tenant Portal</p>
+          </div>
+        </Link>
+        <Link
+          href="/tenant-chooser"
+          className="mt-3 block text-xs text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          ↩ Switch Org
+        </Link>
+      </motion.div>
+
+      {/* Navigation Items */}
+      <nav className="p-4 space-y-2">
+        {navItems.map((item, index) => {
+          const isDashboardRoute = item.href === `/tenant/${orgId}`;
+          const isActive = isDashboardRoute
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + '/');
+
+          return (
+            <motion.div
+              key={item.href}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+            >
+              <Link
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="tenantActiveIndicator"
+                    className="ml-auto w-1 h-6 bg-white rounded-r"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                )}
+              </Link>
+            </motion.div>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700 bg-slate-900"
+      >
+        <p className="text-xs text-slate-500 text-center">
+          Tenant Portal v1.0
+        </p>
+      </motion.div>
+    </aside>
+  );
+}

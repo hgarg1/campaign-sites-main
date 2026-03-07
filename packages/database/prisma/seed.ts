@@ -12,10 +12,14 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 async function main() {
-  // Clear existing data
+  // Clear existing data (order matters for FK constraints)
+  await prisma.masterTenantMapping.deleteMany();
+  await prisma.organizationAncestry.deleteMany();
+  await prisma.organizationMember.deleteMany();
   await prisma.jobOpening.deleteMany();
   await prisma.blogPost.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.organization.deleteMany();
 
   // Create Global Admin User
   const adminPasswordHash = await hashPassword('Deepak@2003_101');
@@ -435,8 +439,103 @@ You'll be the voice of the customer internally and drive improvements based on w
   ]);
 
   console.log(`Created ${jobs.length} job openings`);
-}
 
+  // ─── Seed Master Party Tenants ───────────────────────────────────────────────
+  const masterTenants = await Promise.all([
+    prisma.organization.create({
+      data: {
+        name: 'Republican National Committee',
+        slug: 'rnc',
+        whiteLabel: true,
+        canCreateChildren: true,
+        ownStatus: 'ACTIVE',
+        partyAffiliation: 'REPUBLICAN',
+        setupCompletedAt: new Date(),
+        branding: {
+          primaryColor: '#B22234',
+          secondaryColor: '#3C3B6E',
+          logoText: 'RNC',
+        },
+      },
+    }),
+    prisma.organization.create({
+      data: {
+        name: 'Democratic National Committee',
+        slug: 'dnc',
+        whiteLabel: true,
+        canCreateChildren: true,
+        ownStatus: 'ACTIVE',
+        partyAffiliation: 'DEMOCRAT',
+        setupCompletedAt: new Date(),
+        branding: {
+          primaryColor: '#232066',
+          secondaryColor: '#E81B23',
+          logoText: 'DNC',
+        },
+      },
+    }),
+    prisma.organization.create({
+      data: {
+        name: 'Libertarian Party',
+        slug: 'lp-national',
+        whiteLabel: true,
+        canCreateChildren: true,
+        ownStatus: 'ACTIVE',
+        partyAffiliation: 'LIBERTARIAN',
+        setupCompletedAt: new Date(),
+        branding: {
+          primaryColor: '#FFD700',
+          secondaryColor: '#000000',
+          logoText: 'LP',
+        },
+      },
+    }),
+    prisma.organization.create({
+      data: {
+        name: 'Green Party of the United States',
+        slug: 'gpus',
+        whiteLabel: true,
+        canCreateChildren: true,
+        ownStatus: 'ACTIVE',
+        partyAffiliation: 'GREEN',
+        setupCompletedAt: new Date(),
+        branding: {
+          primaryColor: '#17AA5C',
+          secondaryColor: '#0A4E2E',
+          logoText: 'GP',
+        },
+      },
+    }),
+  ]);
+
+  // Create MasterTenantMapping entries
+  await Promise.all(
+    masterTenants.map((org) =>
+      prisma.masterTenantMapping.create({
+        data: {
+          partyAffiliation: org.partyAffiliation!,
+          organizationId: org.id,
+        },
+      })
+    )
+  );
+
+  // Self-ancestry entries (each org is an ancestor of itself at depth 0) — useful
+  // for "get all descendants including self" queries
+  await Promise.all(
+    masterTenants.map((org) =>
+      prisma.organizationAncestry.create({
+        data: {
+          ancestorId: org.id,
+          descendantId: org.id,
+          depth: 0,
+        },
+      })
+    )
+  );
+
+  console.log(`Created ${masterTenants.length} master party tenants (RNC, DNC, LP, GPUS)`);
+}
 main()
   .then(async () => {
     await prisma.$disconnect();
