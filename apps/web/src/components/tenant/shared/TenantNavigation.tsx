@@ -21,6 +21,7 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
     { label: 'Dashboard', href: `/tenant/${orgId}`, icon: '📊' },
     { label: 'Websites', href: `/tenant/${orgId}/websites`, icon: '🌐' },
     { label: 'Hierarchy', href: `/tenant/${orgId}/hierarchy`, icon: '🌳' },
+    { label: 'Governance', href: `/tenant/${orgId}/governance`, icon: '⚖️' },
     { label: 'Team', href: `/tenant/${orgId}/team`, icon: '👥' },
     { label: 'Integrations', href: `/tenant/${orgId}/integrations`, icon: '🔌' },
     { label: 'Analytics', href: `/tenant/${orgId}/analytics`, icon: '📈' },
