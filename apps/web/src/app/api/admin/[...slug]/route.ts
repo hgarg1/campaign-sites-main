@@ -246,9 +246,100 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   const path = params.slug || [];
   const [first, second, third] = path;
   const searchParams = request.nextUrl.searchParams;
+  const { page, pageSize } = parsePagination(searchParams);
+
+  // Governance routes do their own direct DB queries — skip the heavy snapshot
+  if (first === 'governance') {
+    if (second === 'stats' && !third) {
+      const now = new Date();
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const [pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules] = await Promise.all([
+        prisma.governanceProposal.count({ where: { status: 'PENDING_VOTES' } }),
+        prisma.governanceProposal.count({ where: { status: 'APPROVED', resolvedAt: { gte: yesterday } } }),
+        prisma.governanceProposal.count({ where: { status: 'EXPIRED', resolvedAt: { gte: yesterday } } }),
+        prisma.organizationOwnership.count({ where: { status: 'ACTIVE' } }),
+        prisma.governanceRuleSet.count({ where: { isActive: true } }),
+      ]);
+      return NextResponse.json({ pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules });
+    }
+
+    if (second === 'config') {
+      const rows = await prisma.systemConfig.findMany();
+      const config: Record<string, string> = {};
+      for (const row of rows) config[row.key] = String(row.value ?? '');
+      return NextResponse.json({ data: config });
+    }
+
+    if (second === 'rules') {
+      const rules = await prisma.governanceRuleSet.findMany({
+        select: {
+          id: true,
+          actionType: true,
+          votingMode: true,
+          quorumPercent: true,
+          rejectMode: true,
+          ttlDays: true,
+          isActive: true,
+        },
+      });
+      return NextResponse.json({ data: rules });
+    }
+
+    if (second === 'proposals' && third && !path[3]) {
+      const proposal = await prisma.governanceProposal.findUnique({
+        where: { id: third },
+        include: {
+          childOrg: { select: { id: true, name: true, slug: true } },
+          initiatorOrg: { select: { id: true, name: true, slug: true } },
+          votes: { select: { id: true, voterOrgId: true, voterUserId: true, decision: true, comment: true, votedAt: true } },
+        },
+      });
+      if (!proposal) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
+      return NextResponse.json({ data: proposal });
+    }
+
+    if (second === 'proposals') {
+      const statusFilter = searchParams.get('status');
+      const orgIdFilter = searchParams.get('orgId');
+      const { page: pPage, pageSize: pSize } = parsePagination(searchParams);
+
+      const where: Record<string, unknown> = {};
+      if (statusFilter) where['status'] = statusFilter;
+      if (orgIdFilter) where['childOrgId'] = orgIdFilter;
+
+      const [total, proposals] = await Promise.all([
+        prisma.governanceProposal.count({ where }),
+        prisma.governanceProposal.findMany({
+          where,
+          skip: (pPage - 1) * pSize,
+          take: pSize,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            childOrg: { select: { id: true, name: true } },
+            initiatorOrg: { select: { id: true, name: true } },
+            votes: { select: { id: true, decision: true } },
+          },
+        }),
+      ]);
+
+      const enriched = proposals.map((p) => {
+        const approveCount = p.votes.filter((v) => v.decision === 'APPROVE').length;
+        const rejectCount = p.votes.filter((v) => v.decision === 'REJECT').length;
+        return { ...p, approveCount, rejectCount };
+      });
+
+      return NextResponse.json({
+        data: enriched,
+        total,
+        page: pPage,
+        pageSize: pSize,
+      });
+    }
+
+    return NextResponse.json({ error: `Unsupported governance endpoint` }, { status: 404 });
+  }
 
   const snapshot = await getAdminSnapshot(searchParams.get('refresh') === 'true');
-  const { page, pageSize } = parsePagination(searchParams);
 
   if (first === 'websites' && !second) {
     return NextResponse.json(
@@ -590,96 +681,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       },
     });
     return NextResponse.json({ data: mappings });
-  }
-
-  // ─── Governance ──────────────────────────────────────────────────────────────
-  if (first === 'governance') {
-    if (second === 'stats' && !third) {
-      const now = new Date();
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const [pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules] = await Promise.all([
-        prisma.governanceProposal.count({ where: { status: 'PENDING_VOTES' } }),
-        prisma.governanceProposal.count({ where: { status: 'APPROVED', resolvedAt: { gte: yesterday } } }),
-        prisma.governanceProposal.count({ where: { status: 'EXPIRED', resolvedAt: { gte: yesterday } } }),
-        prisma.organizationOwnership.count({ where: { status: 'ACTIVE' } }),
-        prisma.governanceRuleSet.count({ where: { isActive: true } }),
-      ]);
-      return NextResponse.json({ pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules });
-    }
-
-    if (second === 'config') {
-      const rows = await prisma.systemConfig.findMany();
-      const config: Record<string, string> = {};
-      for (const row of rows) config[row.key] = String(row.value ?? '');
-      return NextResponse.json({ data: config });
-    }
-
-    if (second === 'rules') {
-      const rules = await prisma.governanceRuleSet.findMany({
-        select: {
-          id: true,
-          actionType: true,
-          votingMode: true,
-          quorumPercent: true,
-          rejectMode: true,
-          ttlDays: true,
-          isActive: true,
-        },
-      });
-      return NextResponse.json({ data: rules });
-    }
-
-    if (second === 'proposals' && third && !path[3]) {
-      const proposal = await prisma.governanceProposal.findUnique({
-        where: { id: third },
-        include: {
-          childOrg: { select: { id: true, name: true, slug: true } },
-          initiatorOrg: { select: { id: true, name: true, slug: true } },
-          votes: { select: { id: true, voterOrgId: true, voterUserId: true, decision: true, comment: true, votedAt: true } },
-        },
-      });
-      if (!proposal) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
-      return NextResponse.json({ data: proposal });
-    }
-
-    if (second === 'proposals') {
-      const statusFilter = searchParams.get('status');
-      const orgIdFilter = searchParams.get('orgId');
-      const { page: pPage, pageSize: pSize } = parsePagination(searchParams);
-
-      const where: Record<string, unknown> = {};
-      if (statusFilter) where['status'] = statusFilter;
-      if (orgIdFilter) where['childOrgId'] = orgIdFilter;
-
-      const [total, proposals] = await Promise.all([
-        prisma.governanceProposal.count({ where }),
-        prisma.governanceProposal.findMany({
-          where,
-          skip: (pPage - 1) * pSize,
-          take: pSize,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            childOrg: { select: { id: true, name: true } },
-            initiatorOrg: { select: { id: true, name: true } },
-            votes: { select: { id: true, decision: true } },
-          },
-        }),
-      ]);
-
-      // Aggregate vote breakdown per proposal
-      const enriched = proposals.map((p) => {
-        const approveCount = p.votes.filter((v) => v.decision === 'APPROVE').length;
-        const rejectCount = p.votes.filter((v) => v.decision === 'REJECT').length;
-        return { ...p, approveCount, rejectCount };
-      });
-
-      return NextResponse.json({
-        data: enriched,
-        total,
-        page: pPage,
-        pageSize: pSize,
-      });
-    }
   }
 
   return NextResponse.json({
