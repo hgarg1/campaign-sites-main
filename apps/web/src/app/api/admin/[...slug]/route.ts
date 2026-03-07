@@ -9,7 +9,9 @@ import {
   removeAncestry,
   wouldCreateCycle,
 } from '@/lib/ancestry';
+import { executeAction } from '@/lib/governance';
 import type { PartyAffiliation } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -590,6 +592,63 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     return NextResponse.json({ data: mappings });
   }
 
+  // ─── Governance ──────────────────────────────────────────────────────────────
+  if (first === 'governance') {
+    if (second === 'config') {
+      const rows = await prisma.systemConfig.findMany();
+      const config: Record<string, string> = {};
+      for (const row of rows) config[row.key] = String(row.value ?? '');
+      return NextResponse.json({ data: config });
+    }
+
+    if (second === 'rules') {
+      const rules = await prisma.governanceRuleSet.findMany({
+        select: {
+          id: true,
+          actionType: true,
+          votingMode: true,
+          quorumPercent: true,
+          rejectMode: true,
+          ttlDays: true,
+          isActive: true,
+        },
+      });
+      return NextResponse.json({ data: rules });
+    }
+
+    if (second === 'proposals') {
+      const statusFilter = searchParams.get('status');
+      const orgIdFilter = searchParams.get('orgId');
+      const { page: pPage, pageSize: pSize } = parsePagination(searchParams);
+
+      const where: Record<string, unknown> = {};
+      if (statusFilter) where['status'] = statusFilter;
+      if (orgIdFilter) where['childOrgId'] = orgIdFilter;
+
+      const [total, proposals] = await Promise.all([
+        prisma.governanceProposal.count({ where }),
+        prisma.governanceProposal.findMany({
+          where,
+          skip: (pPage - 1) * pSize,
+          take: pSize,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            childOrg: { select: { id: true, name: true } },
+            initiatorOrg: { select: { id: true, name: true } },
+            votes: { select: { id: true } },
+          },
+        }),
+      ]);
+
+      return NextResponse.json({
+        data: proposals,
+        total,
+        page: pPage,
+        pageSize: pSize,
+      });
+    }
+  }
+
   return NextResponse.json({
     error: `Unsupported admin endpoint: /api/admin/${path.join('/')}`,
   }, { status: 404 });
@@ -731,6 +790,69 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
     return NextResponse.json({ ...updated, restoredCount: count });
   }
 
+  // ─── Governance: force-resolve proposal ─────────────────────────────────────
+  if (first === 'governance' && second === 'proposals' && third && path[3] === 'force-resolve') {
+    const proposalId = third;
+    const body = (await request.json().catch(() => ({}))) as {
+      decision?: 'APPROVED' | 'REJECTED';
+      reason?: string;
+    };
+
+    if (!body.decision || !['APPROVED', 'REJECTED'].includes(body.decision)) {
+      return NextResponse.json({ error: 'decision must be APPROVED or REJECTED' }, { status: 400 });
+    }
+
+    const proposal = await prisma.governanceProposal.findUnique({
+      where: { id: proposalId },
+      include: { childOrg: { select: { id: true } } },
+    });
+    if (!proposal) {
+      return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
+    }
+    if (proposal.status !== 'PENDING_VOTES') {
+      return NextResponse.json({ error: 'Proposal is not pending' }, { status: 409 });
+    }
+
+    const resolvedReason = body.reason ?? 'Force-resolved by admin';
+    const now = new Date();
+
+    const updated = await prisma.governanceProposal.update({
+      where: { id: proposalId },
+      data: {
+        status: body.decision,
+        resolvedAt: now,
+        resolvedReason,
+      },
+    });
+
+    if (body.decision === 'APPROVED') {
+      try {
+        await executeAction(proposal);
+      } catch {
+        // Best-effort — action may fail but we still record the resolution
+      }
+    }
+
+    // Emit notifications inline
+    const notifType: NotificationType =
+      body.decision === 'APPROVED' ? 'PROPOSAL_APPROVED' : 'PROPOSAL_REJECTED';
+    const owners = await prisma.organizationOwnership.findMany({
+      where: { childOrgId: proposal.childOrgId, status: 'ACTIVE' },
+      select: { parentOrgId: true },
+    });
+    if (owners.length > 0) {
+      await prisma.governanceNotification.createMany({
+        data: owners.map((o) => ({
+          proposalId,
+          recipientOrgId: o.parentOrgId,
+          type: notifType,
+        })),
+      });
+    }
+
+    return NextResponse.json(updated);
+  }
+
   if (isActionPath(path)) {
     return NextResponse.json({ success: true });
   }
@@ -756,6 +878,44 @@ export async function PATCH(request: NextRequest, { params }: { params: { slug: 
       },
     });
     return NextResponse.json(updated);
+  }
+
+  // ─── Governance PATCH ────────────────────────────────────────────────────────
+  if (first === 'governance') {
+    if (second === 'config') {
+      const body = (await request.json().catch(() => ({}))) as Record<string, string | number>;
+      await Promise.all(
+        Object.entries(body).map(([key, value]) =>
+          prisma.systemConfig.upsert({
+            where: { key },
+            create: { key, value: String(value) },
+            update: { value: String(value) },
+          })
+        )
+      );
+      return NextResponse.json({ success: true });
+    }
+
+    if (second === 'rules' && third) {
+      const body = (await request.json().catch(() => ({}))) as {
+        votingMode?: string;
+        quorumPercent?: number;
+        rejectMode?: string;
+        ttlDays?: number;
+        isActive?: boolean;
+      };
+      const updated = await prisma.governanceRuleSet.update({
+        where: { id: third },
+        data: {
+          ...(body.votingMode !== undefined && { votingMode: body.votingMode as never }),
+          ...(body.quorumPercent !== undefined && { quorumPercent: body.quorumPercent }),
+          ...(body.rejectMode !== undefined && { rejectMode: body.rejectMode as never }),
+          ...(body.ttlDays !== undefined && { ttlDays: body.ttlDays }),
+          ...(body.isActive !== undefined && { isActive: body.isActive }),
+        },
+      });
+      return NextResponse.json(updated);
+    }
   }
 
   if (isActionPath(path) || path[0] === 'settings' || path[0] === 'monitoring') {

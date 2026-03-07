@@ -22,6 +22,8 @@ export function AdminNavigation() {
     { label: 'Build & LLM', href: '/admin/portal/jobs', icon: '⚙️' },
     { label: 'Monitoring', href: '/admin/portal/monitoring', icon: '📈' },
     { label: 'Logs & Audit', href: '/admin/portal/logs', icon: '📝' },
+    { label: 'Hierarchy', href: '/admin/portal/hierarchy', icon: '🌳' },
+    { label: 'Governance', href: '/admin/portal/governance', icon: '⚖️' },
     { label: 'Settings', href: '/admin/portal/settings', icon: '⚙️' },
     { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉' },
   ];
