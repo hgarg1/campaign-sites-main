@@ -11,11 +11,40 @@ interface TenantTopBarProps {
   orgId: string;
 }
 
+const NOTIF_TYPE_LABELS: Record<string, string> = {
+  PROPOSAL_CREATED: 'New proposal',
+  VOTE_CAST: 'Vote cast',
+  PROPOSAL_APPROVED: 'Proposal approved',
+  PROPOSAL_REJECTED: 'Proposal rejected',
+  PROPOSAL_EXPIRED: 'Proposal expired',
+  PROPOSAL_CANCELLED: 'Proposal cancelled',
+  CO_OWNER_ADDED: 'Co-owner added',
+  CO_OWNER_REMOVED: 'Co-owner removed',
+};
+
+function humanizeNotifType(t: string) {
+  return NOTIF_TYPE_LABELS[t] ?? t.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  SUSPEND: 'Suspend Org',
+  REACTIVATE: 'Reactivate Org',
+  DEACTIVATE: 'Deactivate Org',
+  UPDATE_SETTINGS: 'Update Settings',
+  UPDATE_BRANDING: 'Update Branding',
+  UPDATE_INTEGRATIONS: 'Update Integrations',
+  UPDATE_RBAC: 'Change Member Role',
+  ADD_PARENT: 'Add Parent',
+  REMOVE_PARENT: 'Remove Parent',
+  ADD_CHILD: 'Add Child Org',
+};
+
 export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
   const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [markingRead, setMarkingRead] = useState(false);
   const [notifs, setNotifs] = useState<Array<{
     id: string;
     type: string;
@@ -154,16 +183,24 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                   {unreadCount > 0 && (
                     <button
                       onClick={async () => {
-                        await fetch(`/api/tenant/${orgId}/notifications/governance`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ all: true }),
-                        });
-                        fetchNotifs();
+                        setMarkingRead(true);
+                        try {
+                          await fetch(`/api/tenant/${orgId}/notifications/governance`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ all: true }),
+                          });
+                          await fetchNotifs();
+                        } catch {
+                          // silent — badge will correct on next poll
+                        } finally {
+                          setMarkingRead(false);
+                        }
                       }}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      disabled={markingRead}
+                      className="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
                     >
-                      Mark all read
+                      {markingRead ? 'Marking…' : 'Mark all read'}
                     </button>
                   )}
                 </div>
@@ -171,19 +208,29 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                   {notifs.length === 0 ? (
                     <div className="px-4 py-6 text-center text-sm text-gray-500">No notifications</div>
                   ) : (
-                    notifs.slice(0, 10).map((n) => (
-                      <div
-                        key={n.id}
-                        className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${!n.readAt ? 'bg-blue-50' : ''}`}
-                      >
-                        <div className="text-xs font-medium text-gray-900">
-                          {n.type.replace(/_/g, ' ')} — {n.proposal?.childOrg?.name ?? 'Unknown Org'}
+                    <>
+                      {notifs.slice(0, 10).map((n) => (
+                        <div
+                          key={n.id}
+                          className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${!n.readAt ? 'bg-blue-50' : ''}`}
+                        >
+                          <div className="text-xs font-medium text-gray-900">
+                            {humanizeNotifType(n.type)}
+                            {n.proposal?.childOrg?.name ? ` — ${n.proposal.childOrg.name}` : ''}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {n.proposal?.actionType ? (ACTION_TYPE_LABELS[n.proposal.actionType] ?? n.proposal.actionType) : ''}
+                            {n.proposal?.actionType ? ' · ' : ''}
+                            {new Date(n.createdAt).toLocaleDateString()}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          {n.proposal?.actionType?.replace(/_/g, ' ')} · {new Date(n.createdAt).toLocaleDateString()}
+                      ))}
+                      {notifs.length > 10 && (
+                        <div className="px-4 py-2 text-center text-xs text-gray-400">
+                          +{notifs.length - 10} more — view all below
                         </div>
-                      </div>
-                    ))
+                      )}
+                    </>
                   )}
                 </div>
                 <div className="px-4 py-2 border-t border-gray-100">

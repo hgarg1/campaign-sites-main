@@ -357,11 +357,16 @@ function NewProposalSlideOver({
       <>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Member ID</label>
-          <input className="w-full border rounded-lg px-3 py-2 text-sm" value={memberId} onChange={(e) => setMemberId(e.target.value)} />
+          <input className="w-full border rounded-lg px-3 py-2 text-sm" value={memberId} onChange={(e) => setMemberId(e.target.value)} placeholder="Member's user ID" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">New Role</label>
-          <input className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="ADMIN / MEMBER / OWNER" value={newRole} onChange={(e) => setNewRole(e.target.value)} />
+          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+            <option value="">Select a role…</option>
+            <option value="OWNER">Owner</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MEMBER">Member</option>
+          </select>
         </div>
       </>
     );
@@ -409,7 +414,9 @@ function NewProposalSlideOver({
               <input required className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Paste child org ID…" value={childOrgId} onChange={(e) => setChildOrgId(e.target.value)} />
             ) : childOrgs.length === 0 ? (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                You have no owned child organizations. Add co-parents on the Hierarchy page first.
+                You haven&apos;t been added as a co-parent of any child organizations yet. Go to the{' '}
+                <a href={`/tenant/${orgId}/hierarchy`} className="underline font-medium">Hierarchy page</a>{' '}
+                to set up co-ownership links.
               </p>
             ) : (
               <select required className="w-full border rounded-lg px-3 py-2 text-sm" value={childOrgId} onChange={(e) => setChildOrgId(e.target.value)}>
@@ -428,7 +435,7 @@ function NewProposalSlideOver({
               ))}
             </select>
           </div>
-          {['SUSPEND', 'DEACTIVATE'].includes(actionType) && (
+          {['SUSPEND', 'DEACTIVATE', 'REMOVE_PARENT'].includes(actionType) && (
             <div className="bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg px-3 py-2 text-sm">
               ⚠️ This is a destructive action. All co-owners must approve before it takes effect.
             </div>
@@ -456,13 +463,16 @@ function NewProposalSlideOver({
 function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onRefresh: () => void; onViewDetail: (id: string) => void }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [voting, setVoting] = useState<Record<string, { decision: 'APPROVE' | 'REJECT' | null; comment: string; submitting: boolean; error: string; voteSuccess: boolean }>>({});
 
   const load = useCallback(() => {
     setLoading(true);
+    setLoadError(false);
     fetch(`/api/tenant/${orgId}/governance?tab=pending`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error('failed'); return r.json(); })
       .then(setProposals)
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [orgId]);
 
@@ -497,6 +507,12 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
   }
 
   if (loading) return <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-20" />)}</div>;
+  if (loadError) return (
+    <div className="text-center py-12">
+      <p className="text-red-600 mb-3">Failed to load pending votes.</p>
+      <button onClick={load} className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5">🔄 Retry</button>
+    </div>
+  );
   if (!proposals.length) return <div className="text-center py-12 text-gray-500">No pending votes — you&apos;re all caught up! 🎉</div>;
 
   return (
@@ -517,7 +533,7 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
                 {!!p.actionPayload?.description && (
                   <p className="text-xs text-gray-400 italic mt-0.5">{String(p.actionPayload.description)}</p>
                 )}
-                <div className="text-xs text-gray-400 mt-1">Initiated by{p.initiatorOrg?.name ?? p.initiatorOrgId} · {formatDate(p.createdAt)}</div>
+                <div className="text-xs text-gray-400 mt-1">Initiated by {p.initiatorOrg?.name ?? p.initiatorOrgId} · {formatDate(p.createdAt)}</div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button onClick={() => onViewDetail(p.id)} className="text-blue-600 hover:text-blue-800 text-xs font-medium border border-blue-200 rounded px-2 py-1">👁️ Details</button>
@@ -598,6 +614,7 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelError, setCancelError] = useState('');
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -612,12 +629,15 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
   async function cancelProp(p: Proposal) {
     if (!window.confirm(`Cancel proposal for "${ACTION_LABELS[p.actionType] ?? p.actionType}" on "${p.childOrg?.name}"?`)) return;
     setCancelError('');
+    setCancelling(p.id);
     const res = await fetch(`/api/tenant/${orgId}/governance/${p.id}?action=cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setCancelError(data.error ?? 'Failed to cancel proposal');
+      setCancelling(null);
       return;
     }
+    setCancelling(null);
     load(); onRefresh();
   }
 
@@ -663,7 +683,9 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
                   <div className="flex gap-2">
                     <button onClick={() => onViewDetail(p.id)} className="text-blue-600 hover:text-blue-800 text-xs font-medium">👁️ View</button>
                     {p.status === 'PENDING_VOTES' && (
-                      <button onClick={() => cancelProp(p)} className="text-red-600 hover:text-red-800 text-xs font-medium">✕ Cancel</button>
+                      <button onClick={() => cancelProp(p)} disabled={cancelling === p.id} className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50">
+                        {cancelling === p.id ? '…' : '✕ Cancel'}
+                      </button>
                     )}
                   </div>
                 </td>
@@ -681,19 +703,34 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
 function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id: string) => void }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
     fetch(`/api/tenant/${orgId}/governance?tab=incoming`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error('failed'); return r.json(); })
       .then(setProposals)
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [orgId]);
 
+  useEffect(() => { load(); }, [load]);
+
   if (loading) return <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-12" />)}</div>;
+  if (loadError) return (
+    <div className="text-center py-12">
+      <p className="text-red-600 mb-3">Failed to load incoming proposals.</p>
+      <button onClick={load} className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5">🔄 Retry</button>
+    </div>
+  );
   if (!proposals.length) return <div className="text-center py-12 text-gray-500">No incoming proposals targeting your org.</div>;
 
   return (
     <div className="overflow-x-auto">
+      <div className="mb-3 flex justify-end">
+        <button onClick={load} className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1">🔄 Refresh</button>
+      </div>
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
@@ -740,34 +777,49 @@ function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id
 function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id: string) => void }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [actionFilter, setActionFilter] = useState('');
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
     fetch(`/api/tenant/${orgId}/governance?tab=history`)
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error('failed'); return r.json(); })
       .then(setProposals)
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [orgId]);
 
+  useEffect(() => { load(); }, [load]);
+
   if (loading) return <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-12" />)}</div>;
+  if (loadError) return (
+    <div className="text-center py-12">
+      <p className="text-red-600 mb-3">Failed to load history.</p>
+      <button onClick={load} className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5">🔄 Retry</button>
+    </div>
+  );
   if (!proposals.length) return <div className="text-center py-12 text-gray-500">No resolved proposals yet.</div>;
 
   const filtered = actionFilter ? proposals.filter((p) => p.actionType === actionFilter) : proposals;
 
   return (
     <div className="overflow-x-auto">
-      <div className="mb-3 flex items-center gap-2">
-        <label className="text-xs text-gray-500 font-medium">Filter by action:</label>
-        <select
-          className="border rounded px-2 py-1 text-sm"
-          value={actionFilter}
-          onChange={(e) => setActionFilter(e.target.value)}
-        >
-          <option value="">All Actions</option>
-          {ALL_ACTION_TYPES.map((t) => (
-            <option key={t} value={t}>{ACTION_LABELS[t]}</option>
-          ))}
-        </select>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500 font-medium">Filter by action:</label>
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            value={actionFilter}
+            onChange={(e) => setActionFilter(e.target.value)}
+          >
+            <option value="">All Actions</option>
+            {ALL_ACTION_TYPES.map((t) => (
+              <option key={t} value={t}>{ACTION_LABELS[t]}</option>
+            ))}
+          </select>
+        </div>
+        <button onClick={load} className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1">🔄 Refresh</button>
       </div>
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">

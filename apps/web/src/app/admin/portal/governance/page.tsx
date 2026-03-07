@@ -100,13 +100,16 @@ function StatsPanel() {
   const [stats, setStats] = useState<GovernanceStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     fetch('/api/admin/governance/stats')
       .then((r) => r.json())
       .then((d) => setStats(d))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const cards = [
     {
@@ -157,6 +160,15 @@ function StatsPanel() {
           <div className="text-xs font-medium">{card.label}</div>
         </div>
       ))}
+      <div className="col-span-2 lg:col-span-5 flex justify-end">
+        <button
+          onClick={load}
+          disabled={loading}
+          className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1 disabled:opacity-50"
+        >
+          {loading ? '…' : '🔄 Refresh stats'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -361,18 +373,23 @@ function RulesTab() {
     setBulkApplying(true);
     setBulkSuccess(false);
     try {
-      await Promise.all(
+      const results = await Promise.allSettled(
         activeRules.map((r) =>
           fetch(`/api/admin/governance/rules/${r.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ votingMode: bulkVotingMode, rejectMode: bulkRejectMode }),
-          })
+          }).then((res) => { if (!res.ok) throw new Error(`${r.actionType}: HTTP ${res.status}`); return res; })
         )
       );
+      const failed = results.filter((r) => r.status === 'rejected');
       await loadRules();
-      setBulkSuccess(true);
-      setTimeout(() => setBulkSuccess(false), 3000);
+      if (failed.length > 0) {
+        setError(`${failed.length} rule(s) failed to update. Reload to verify.`);
+      } else {
+        setBulkSuccess(true);
+        setTimeout(() => setBulkSuccess(false), 3000);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Bulk apply failed');
     } finally {
@@ -425,8 +442,9 @@ function RulesTab() {
       </div>
 
       {error && (
-        <div className="mx-6 my-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-          {error}
+        <div className="mx-6 my-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between gap-2">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 font-bold text-base leading-none flex-shrink-0">×</button>
         </div>
       )}
 
@@ -700,6 +718,7 @@ function ProposalsTab() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [forceSuccess, setForceSuccess] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [orgSearch, setOrgSearch] = useState('');
   const [resolving, setResolving] = useState<string | null>(null);
@@ -737,6 +756,7 @@ function ProposalsTab() {
     try {
       setResolving(id);
       setError(null);
+      setForceSuccess('');
       const res = await fetch(`/api/admin/governance/proposals/${id}/force-resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -744,6 +764,8 @@ function ProposalsTab() {
       });
       if (!res.ok) throw new Error(`Force resolve failed: ${res.status}`);
       await loadProposals(statusFilter, page);
+      setForceSuccess(`Proposal force-${decision.toLowerCase()} successfully.`);
+      setTimeout(() => setForceSuccess(''), 4000);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to resolve proposal');
     } finally {
@@ -800,6 +822,7 @@ function ProposalsTab() {
               value={orgSearch}
               onChange={(e) => setOrgSearch(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-44"
+              title="Searches within the current page only"
             />
             <select
               value={statusFilter}
@@ -819,9 +842,16 @@ function ProposalsTab() {
           </div>
         </div>
 
+        {forceSuccess && (
+          <div className="mx-6 my-3 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+            ✓ {forceSuccess}
+          </div>
+        )}
+
         {error && (
-          <div className="mx-6 my-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-            {error}
+          <div className="mx-6 my-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between gap-2">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 font-bold text-base leading-none flex-shrink-0">×</button>
           </div>
         )}
 
