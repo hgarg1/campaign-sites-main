@@ -68,6 +68,16 @@ model Organization {
 
   masterTenantMapping MasterTenantMapping?
 
+  // Multi-parent co-ownership
+  ownerships        OrganizationOwnership[] @relation("OwnershipParent")  // orgs this org owns
+  coOwners          OrganizationOwnership[] @relation("OwnershipChild")   // this org's parent owners
+
+  // Governance
+  initiatedProposals  GovernanceProposal[]   @relation("ProposalInitiator")
+  childProposals      GovernanceProposal[]   @relation("ProposalChild")
+  governanceVotes     GovernanceVote[]       @relation("VoteVoter")
+  governanceNotifs    GovernanceNotification[] @relation("NotifRecipient")
+
   @@map("organizations")
 }
 
@@ -407,6 +417,172 @@ model GetStartedIntake {
   @@index([campaignName])
   @@map("get_started_intakes")
 }
+
+// ─── Multi-Parent Co-Ownership & Governance ────────────────────────────────
+
+// Many-to-many parent↔child ownership (replaces single parentId for governance)
+model OrganizationOwnership {
+  parentOrgId     String
+  childOrgId      String
+  isPrimary       Boolean            @default(false) // oldest/first parent
+  status          OwnershipStatus    @default(ACTIVE)
+  addedAt         DateTime           @default(now())
+  addedByUserId   String?
+  removedAt       DateTime?
+  removedByUserId String?
+
+  parentOrg       Organization       @relation("OwnershipParent", fields: [parentOrgId], references: [id], onDelete: Cascade)
+  childOrg        Organization       @relation("OwnershipChild", fields: [childOrgId], references: [id], onDelete: Cascade)
+
+  @@id([parentOrgId, childOrgId])
+  @@index([childOrgId])
+  @@index([parentOrgId])
+  @@map("organization_ownerships")
+}
+
+enum OwnershipStatus {
+  ACTIVE
+  REMOVED
+}
+
+// System-wide key-value config store (admin-managed)
+model SystemConfig {
+  key             String   @id
+  value           Json
+  updatedAt       DateTime @updatedAt
+  updatedByUserId String?
+
+  @@map("system_config")
+}
+
+// Per-action-type voting rules (admin-configurable)
+model GovernanceRuleSet {
+  id            String              @id @default(cuid())
+  actionType    GovernanceActionType @unique
+  votingMode    VotingMode          @default(UNANIMOUS)
+  quorumPercent Int?                // required when votingMode = QUORUM (e.g., 51 = >50%)
+  rejectMode    RejectMode          @default(SINGLE_VETO)
+  ttlDays       Int                 @default(7)
+  isActive      Boolean             @default(true)
+  updatedAt     DateTime            @updatedAt
+
+  @@map("governance_rule_sets")
+}
+
+// A proposed change to a child org, requiring votes from all co-parents
+model GovernanceProposal {
+  id                  String               @id @default(cuid())
+  childOrgId          String
+  initiatorOrgId      String
+  initiatorUserId     String
+  actionType          GovernanceActionType
+  actionPayload       Json                 // snapshot of what will change
+  status              ProposalStatus       @default(PENDING_VOTES)
+  // Rule snapshots at creation time — immune to subsequent rule changes
+  votingMode          VotingMode
+  quorumPercent       Int?
+  rejectMode          RejectMode
+  requiredVoterCount  Int                  // N parents at creation time
+  expiresAt           DateTime
+  createdAt           DateTime             @default(now())
+  resolvedAt          DateTime?
+  resolvedReason      String?
+
+  childOrg            Organization         @relation("ProposalChild", fields: [childOrgId], references: [id], onDelete: Cascade)
+  initiatorOrg        Organization         @relation("ProposalInitiator", fields: [initiatorOrgId], references: [id], onDelete: Cascade)
+
+  votes               GovernanceVote[]
+  notifications       GovernanceNotification[]
+
+  @@index([childOrgId])
+  @@index([initiatorOrgId])
+  @@index([status])
+  @@map("governance_proposals")
+}
+
+// One vote per parent org per proposal
+model GovernanceVote {
+  id           String       @id @default(cuid())
+  proposalId   String
+  voterOrgId   String
+  voterUserId  String
+  decision     VoteDecision
+  comment      String?
+  votedAt      DateTime     @default(now())
+
+  proposal     GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  voterOrg     Organization       @relation("VoteVoter", fields: [voterOrgId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, voterOrgId])
+  @@index([voterOrgId])
+  @@map("governance_votes")
+}
+
+// In-app notification per recipient org per governance event
+model GovernanceNotification {
+  id             String           @id @default(cuid())
+  proposalId     String
+  recipientOrgId String
+  type           NotificationType
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+
+  proposal       GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  recipientOrg   Organization       @relation("NotifRecipient", fields: [recipientOrgId], references: [id], onDelete: Cascade)
+
+  @@index([recipientOrgId, readAt])
+  @@index([proposalId])
+  @@map("governance_notifications")
+}
+
+// ─── Governance Enums ──────────────────────────────────────────────────────
+
+enum GovernanceActionType {
+  SUSPEND
+  REACTIVATE
+  DEACTIVATE
+  UPDATE_SETTINGS
+  UPDATE_BRANDING
+  UPDATE_INTEGRATIONS
+  UPDATE_RBAC
+  ADD_PARENT
+  REMOVE_PARENT
+  ADD_CHILD
+}
+
+enum VotingMode {
+  UNANIMOUS
+  QUORUM
+}
+
+enum RejectMode {
+  SINGLE_VETO    // any single REJECT kills the proposal
+  MAJORITY_VETO  // only a majority REJECT kills the proposal
+}
+
+enum ProposalStatus {
+  PENDING_VOTES
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum VoteDecision {
+  APPROVE
+  REJECT
+}
+
+enum NotificationType {
+  VOTE_REQUESTED
+  VOTE_CAST
+  PROPOSAL_APPROVED
+  PROPOSAL_REJECTED
+  PROPOSAL_EXPIRED
+  PROPOSAL_CANCELLED
+}
+
+// ─── Organization Invites ──────────────────────────────────────────────────
 
 // Organization Invites
 model OrganizationInvite {

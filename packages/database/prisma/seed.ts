@@ -13,6 +13,12 @@ async function hashPassword(password: string): Promise<string> {
 
 async function main() {
   // Clear existing data (order matters for FK constraints)
+  await prisma.governanceNotification.deleteMany();
+  await prisma.governanceVote.deleteMany();
+  await prisma.governanceProposal.deleteMany();
+  await prisma.governanceRuleSet.deleteMany();
+  await prisma.systemConfig.deleteMany();
+  await prisma.organizationOwnership.deleteMany();
   await prisma.masterTenantMapping.deleteMany();
   await prisma.organizationAncestry.deleteMany();
   await prisma.organizationMember.deleteMany();
@@ -535,6 +541,62 @@ You'll be the voice of the customer internally and drive improvements based on w
   );
 
   console.log(`Created ${masterTenants.length} master party tenants (RNC, DNC, LP, GPUS)`);
+
+  // ─── Seed SystemConfig defaults ─────────────────────────────────────────────
+  await Promise.all([
+    prisma.systemConfig.create({ data: { key: 'maxCoParentsPerOrg', value: 1 } }),
+    prisma.systemConfig.create({ data: { key: 'proposalDefaultTtlDays', value: 7 } }),
+  ]);
+  console.log('Created SystemConfig defaults (maxCoParentsPerOrg=1, proposalDefaultTtlDays=7)');
+
+  // ─── Seed GovernanceRuleSet for every action type ────────────────────────────
+  const governanceActionTypes = [
+    'SUSPEND', 'REACTIVATE', 'DEACTIVATE',
+    'UPDATE_SETTINGS', 'UPDATE_BRANDING', 'UPDATE_INTEGRATIONS', 'UPDATE_RBAC',
+    'ADD_PARENT', 'REMOVE_PARENT', 'ADD_CHILD',
+  ] as const;
+
+  await Promise.all(
+    governanceActionTypes.map((actionType) =>
+      prisma.governanceRuleSet.create({
+        data: {
+          actionType,
+          votingMode: 'UNANIMOUS',
+          quorumPercent: null,
+          rejectMode: 'SINGLE_VETO',
+          ttlDays: 7,
+          isActive: true,
+        },
+      })
+    )
+  );
+  console.log(`Created ${governanceActionTypes.length} GovernanceRuleSet entries (all UNANIMOUS + SINGLE_VETO, 7-day TTL)`);
+
+  // ─── Backfill OrganizationOwnership from existing parentId ──────────────────
+  // For master tenants (no parentId) nothing to backfill — already handled above.
+  // This upsert pattern is safe to run on any database that has orgs with parentId set.
+  const orgsWithParent = await prisma.organization.findMany({
+    where: { parentId: { not: null } },
+    select: { id: true, parentId: true },
+  });
+
+  if (orgsWithParent.length > 0) {
+    await Promise.all(
+      orgsWithParent.map((org) =>
+        prisma.organizationOwnership.upsert({
+          where: { parentOrgId_childOrgId: { parentOrgId: org.parentId!, childOrgId: org.id } },
+          create: {
+            parentOrgId: org.parentId!,
+            childOrgId: org.id,
+            isPrimary: true,
+            status: 'ACTIVE',
+          },
+          update: {},
+        })
+      )
+    );
+    console.log(`Backfilled ${orgsWithParent.length} OrganizationOwnership records from parentId`);
+  }
 }
 main()
   .then(async () => {
