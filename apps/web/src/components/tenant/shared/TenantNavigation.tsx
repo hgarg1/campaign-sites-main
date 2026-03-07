@@ -48,13 +48,13 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
   ];
 
   return (
-    <aside className="sticky top-0 h-screen w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white border-r border-slate-700 overflow-y-auto">
+    <aside className="sticky top-0 h-screen w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white border-r border-slate-700 flex flex-col overflow-hidden">
       {/* Logo Section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="p-6 border-b border-slate-700"
+        className="flex-shrink-0 p-6 border-b border-slate-700"
       >
         <Link href={`/tenant/${orgId}`} className="flex items-center gap-2">
           <span className="text-2xl">🏢</span>
@@ -71,8 +71,8 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
         </Link>
       </motion.div>
 
-      {/* Navigation Items */}
-      <nav className="p-4 space-y-2">
+      {/* Navigation Items — scrollable */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-2">
         {navItems.map((item, index) => {
           const isDashboardRoute = item.href === `/tenant/${orgId}`;
           const isActive = isDashboardRoute
@@ -121,7 +121,7 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700 bg-slate-900"
+        className="flex-shrink-0 p-4 border-t border-slate-700 bg-slate-900"
       >
         <p className="text-xs text-slate-500 text-center">
           Tenant Portal v1.0
