@@ -231,6 +231,7 @@ export default function HierarchyPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [governanceMessage, setGovernanceMessage] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -273,7 +274,12 @@ export default function HierarchyPage() {
   const handleSuspend = async (childId: string) => {
     setActionLoading(childId + '-suspend');
     try {
-      await globalThis.fetch(`/api/tenant/${orgId}/children/${childId}/suspend`, { method: 'POST' });
+      const res = await globalThis.fetch(`/api/tenant/${orgId}/children/${childId}/suspend`, { method: 'POST' });
+      const data = await res.json();
+      if (res.status === 202 && data.proposalCreated) {
+        setGovernanceMessage('Governance proposal created — all co-owners must approve before the suspension takes effect.');
+        setTimeout(() => setGovernanceMessage(null), 8000);
+      }
       await fetchAll();
     } finally {
       setActionLoading(null);
@@ -283,7 +289,12 @@ export default function HierarchyPage() {
   const handleReactivate = async (childId: string) => {
     setActionLoading(childId + '-reactivate');
     try {
-      await globalThis.fetch(`/api/tenant/${orgId}/children/${childId}/reactivate`, { method: 'POST' });
+      const res = await globalThis.fetch(`/api/tenant/${orgId}/children/${childId}/reactivate`, { method: 'POST' });
+      const data = await res.json();
+      if (res.status === 202 && data.proposalCreated) {
+        setGovernanceMessage('Governance proposal created — all co-owners must approve before reactivation takes effect.');
+        setTimeout(() => setGovernanceMessage(null), 8000);
+      }
       await fetchAll();
     } finally {
       setActionLoading(null);
@@ -325,6 +336,21 @@ export default function HierarchyPage() {
           ))}
           <span className="text-gray-400">→</span>
           <span className="font-bold text-gray-900">{currentOrg?.name ?? 'Your Org'}</span>
+        </div>
+      )}
+
+      {/* Governance info banner */}
+      {governanceMessage && (
+        <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+          <span className="mt-0.5">ℹ️</span>
+          <span className="flex-1">{governanceMessage}</span>
+          <button
+            onClick={() => setGovernanceMessage(null)}
+            className="text-blue-600 hover:text-blue-800 font-bold text-base leading-none ml-2"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
         </div>
       )}
 

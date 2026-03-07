@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -16,6 +17,23 @@ interface TenantNavigationProps {
 
 export function TenantNavigation({ orgId }: TenantNavigationProps) {
   const pathname = usePathname();
+  const [govUnread, setGovUnread] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch(`/api/tenant/${orgId}/notifications/governance?unreadCount=true`);
+        if (res.ok) {
+          const data = await res.json();
+          setGovUnread(data.count ?? 0);
+        }
+      } catch {}
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [orgId]);
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: `/tenant/${orgId}`, icon: '📊' },
@@ -78,6 +96,11 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
               >
                 <span className="text-lg">{item.icon}</span>
                 <span className="font-medium">{item.label}</span>
+                {item.label === 'Governance' && govUnread > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {govUnread > 9 ? '9+' : govUnread}
+                  </span>
+                )}
                 {isActive && (
                   <motion.div
                     layoutId="tenantActiveIndicator"

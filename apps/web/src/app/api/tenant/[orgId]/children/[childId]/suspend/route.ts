@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserId, verifyOrgAdmin } from '@/app/api/tenant/auth-utils';
-import { isAncestor, getDescendantIds } from '@/lib/ancestry';
+import { isAncestor } from '@/lib/ancestry';
 import { prisma } from '@/lib/database';
+import { createProposal } from '@/lib/governance';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,18 +28,23 @@ export async function POST(
   const target = await prisma.organization.findUnique({ where: { id: params.childId } });
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const descendantIds = await getDescendantIds(params.childId);
-  const now = new Date();
+  try {
+    const result = await createProposal({
+      childOrgId: params.childId,
+      initiatorOrgId: params.orgId,
+      initiatorUserId: userId,
+      actionType: 'SUSPEND',
+      payload: { description: 'Suspend organization and descendants' },
+    });
 
-  // Cascade suspend all ACTIVE descendants
-  await prisma.organization.updateMany({
-    where: { id: { in: descendantIds }, ownStatus: 'ACTIVE' },
-    data: { ownStatus: 'SUSPENDED', suspendedAt: now, suspendedByOrgId: params.childId },
-  });
-  const updated = await prisma.organization.update({
-    where: { id: params.childId },
-    data: { ownStatus: 'SUSPENDED', suspendedAt: now, suspendedByOrgId: params.orgId },
-  });
+    if (result.autoExecuted) {
+      const updated = await prisma.organization.findUnique({ where: { id: params.childId } });
+      return NextResponse.json({ ...updated, cascadedCount: 0, autoExecuted: true });
+    }
 
-  return NextResponse.json({ ...updated, cascadedCount: descendantIds.length });
+    return NextResponse.json({ proposalCreated: true, proposal: result.proposal }, { status: 202 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to create suspension proposal';
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUserId, verifyOrgAdmin } from '@/app/api/tenant/auth-utils';
-import { isAncestor, getEffectiveStatus, getDescendantIds } from '@/lib/ancestry';
+import { isAncestor, getEffectiveStatus } from '@/lib/ancestry';
 import { prisma } from '@/lib/database';
+import { createProposal } from '@/lib/governance';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,17 +37,26 @@ export async function POST(
     }
   }
 
-  const descendantIds = await getDescendantIds(params.childId);
+  const target = await prisma.organization.findUnique({ where: { id: params.childId } });
+  if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Restore only those suspended by this org's cascade
-  const { count } = await prisma.organization.updateMany({
-    where: { id: { in: descendantIds }, suspendedByOrgId: params.childId },
-    data: { ownStatus: 'ACTIVE', suspendedAt: null, suspendedByOrgId: null },
-  });
-  const updated = await prisma.organization.update({
-    where: { id: params.childId },
-    data: { ownStatus: 'ACTIVE', suspendedAt: null, suspendedByOrgId: null },
-  });
+  try {
+    const result = await createProposal({
+      childOrgId: params.childId,
+      initiatorOrgId: params.orgId,
+      initiatorUserId: userId,
+      actionType: 'REACTIVATE',
+      payload: { description: 'Reactivate organization and descendants' },
+    });
 
-  return NextResponse.json({ ...updated, restoredCount: count });
+    if (result.autoExecuted) {
+      const updated = await prisma.organization.findUnique({ where: { id: params.childId } });
+      return NextResponse.json({ ...updated, restoredCount: 0, autoExecuted: true });
+    }
+
+    return NextResponse.json({ proposalCreated: true, proposal: result.proposal }, { status: 202 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to create reactivation proposal';
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }
