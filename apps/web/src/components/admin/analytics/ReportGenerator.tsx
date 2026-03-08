@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReportOptions } from '@/hooks/useAnalytics';
 import { useToast } from '@/components/admin/shared/ToastContext';
+import { DatePicker } from '@/components/admin/shared/DatePicker';
 
 interface ReportGeneratorProps {
   loading: boolean;
@@ -110,24 +111,20 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
             <div className="p-5">
               <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Date Range</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Start</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">End</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+                <DatePicker
+                  label="Start"
+                  value={startDate}
+                  onChange={setStartDate}
+                  max={endDate || undefined}
+                  placeholder="Start date"
+                />
+                <DatePicker
+                  label="End"
+                  value={endDate}
+                  onChange={setEndDate}
+                  min={startDate || undefined}
+                  placeholder="End date"
+                />
               </div>
             </div>
           </motion.div>

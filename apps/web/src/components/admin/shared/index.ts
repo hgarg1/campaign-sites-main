@@ -9,3 +9,5 @@ export { ToastContainer } from './Toast';
 export type { Toast } from './Toast';
 export { ToastProvider, useToast } from './ToastContext';
 export { DateRangePicker } from './DateRangePicker';
+export { DatePicker } from './DatePicker';
+export type { DatePickerProps } from './DatePicker';
