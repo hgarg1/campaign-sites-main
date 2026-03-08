@@ -4,15 +4,16 @@ import {
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { prisma } from '@/lib/database';
-import { cacheGet, cacheSet, cacheDel } from '@/lib/redis';
 import { createSessionToken } from '@/lib/session-auth';
 
-const CHALLENGE_TTL = 300;
+const CHALLENGE_TTL = 300; // seconds
+const CHALLENGE_COOKIE = 'passkey_challenge_token';
 
-// Challenges are keyed by a random nonce stored in a short-lived cookie so
-// we can support multiple concurrent passkey attempts without collisions.
-const NONCE_COOKIE = 'passkey_nonce';
+function getSecret() {
+  return process.env.AUTH_SESSION_SECRET ?? 'dev-session-secret';
+}
 
 /** Derive rpID and origin from the inbound request — works on localhost, Vercel, and production. */
 function getRpConfig(request: NextRequest) {
@@ -23,8 +24,32 @@ function getRpConfig(request: NextRequest) {
   return { rpID, origin };
 }
 
-function challengeKey(nonce: string) {
-  return `passkey:auth-challenge:${nonce}`;
+/** Encode challenge into a signed, time-stamped cookie token (no external storage needed). */
+function encodeChallengeToken(challenge: string): string {
+  const ts = Math.floor(Date.now() / 1000);
+  const payload = `${challenge}:${ts}`;
+  const sig = createHmac('sha256', getSecret()).update(payload).digest('base64url');
+  return Buffer.from(`${payload}:${sig}`).toString('base64url');
+}
+
+/** Decode and verify a challenge token. Returns the challenge string or null if invalid/expired. */
+function decodeChallengeToken(token: string): string | null {
+  try {
+    const raw = Buffer.from(token, 'base64url').toString('utf8');
+    const lastColon = raw.lastIndexOf(':');
+    const secondLastColon = raw.lastIndexOf(':', lastColon - 1);
+    if (lastColon < 0 || secondLastColon < 0) return null;
+    const payload = raw.substring(0, lastColon);
+    const sig = raw.substring(lastColon + 1);
+    const ts = parseInt(raw.substring(secondLastColon + 1, lastColon), 10);
+    if (isNaN(ts) || Math.floor(Date.now() / 1000) - ts > CHALLENGE_TTL) return null;
+    const expectedSig = createHmac('sha256', getSecret()).update(payload).digest('base64url');
+    const a = Buffer.from(sig), b = Buffer.from(expectedSig);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    return payload.substring(0, secondLastColon);
+  } catch {
+    return null;
+  }
 }
 
 // GET — generate an authentication challenge (no userId required — discoverable creds)
@@ -37,15 +62,14 @@ export async function GET(request: NextRequest) {
     allowCredentials: [], // discoverable — browser shows all matching credentials
   });
 
-  const nonce = crypto.randomUUID();
-  await cacheSet(challengeKey(nonce), options.challenge, CHALLENGE_TTL);
-
+  const token = encodeChallengeToken(options.challenge);
   const res = NextResponse.json(options);
-  res.cookies.set(NONCE_COOKIE, nonce, {
+  res.cookies.set(CHALLENGE_COOKIE, token, {
     httpOnly: true,
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: CHALLENGE_TTL,
     path: '/',
+    secure: process.env.NODE_ENV === 'production',
   });
   return res;
 }
@@ -53,16 +77,16 @@ export async function GET(request: NextRequest) {
 // POST — verify assertion and issue session
 export async function POST(request: NextRequest) {
   const { rpID, origin } = getRpConfig(request);
-  const nonce = request.cookies.get(NONCE_COOKIE)?.value;
-  if (!nonce) return NextResponse.json({ error: 'Missing challenge nonce' }, { status: 400 });
+  const token = request.cookies.get(CHALLENGE_COOKIE)?.value;
+  if (!token) return NextResponse.json({ error: 'Missing challenge — please try again' }, { status: 400 });
 
-  const body = (await request.json().catch(() => null)) as AuthenticationResponseJSON | null;
-  if (!body) return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
-
-  const expectedChallenge = await cacheGet<string>(challengeKey(nonce));
+  const expectedChallenge = decodeChallengeToken(token);
   if (!expectedChallenge) {
     return NextResponse.json({ error: 'Challenge expired — please try again' }, { status: 400 });
   }
+
+  const body = (await request.json().catch(() => null)) as AuthenticationResponseJSON | null;
+  if (!body) return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
 
   // Resolve credential by credentialId
   const rawId = Buffer.from(body.rawId, 'base64url');
@@ -104,13 +128,11 @@ export async function POST(request: NextRequest) {
     data: { counter: verification.authenticationInfo.newCounter, lastUsedAt: new Date() },
   });
 
-  await cacheDel(challengeKey(nonce));
-
   // Issue session — same as password login, with passkeyVerified flag
-  const token = createSessionToken(stored.user.id);
+  const sessionToken = createSessionToken(stored.user.id);
 
   const res = NextResponse.json({ success: true, redirectTo: '/admin/portal' });
-  res.cookies.set('campaignsites_session', token, {
+  res.cookies.set('campaignsites_session', sessionToken, {
     httpOnly: true,
     sameSite: 'strict',
     maxAge: 60 * 60 * 24 * 7,
@@ -121,6 +143,6 @@ export async function POST(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
   });
-  res.cookies.delete(NONCE_COOKIE);
+  res.cookies.delete(CHALLENGE_COOKIE);
   return res;
 }

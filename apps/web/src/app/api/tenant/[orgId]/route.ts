@@ -6,12 +6,17 @@ import { parseAndVerifySessionToken } from '@/lib/session-auth';
 
 export const dynamic = 'force-dynamic';
 
-async function getAuthUserId(): Promise<string | null> {
+async function getAuthUser(): Promise<{ id: string; role: string } | null> {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get('campaignsites_session')?.value;
   if (!sessionToken) return null;
   const parsed = parseAndVerifySessionToken(sessionToken);
-  return parsed?.userId ?? null;
+  if (!parsed?.userId) return null;
+  const user = await prisma.user.findUnique({
+    where: { id: parsed.userId },
+    select: { id: true, role: true },
+  }).catch(() => null);
+  return user ?? null;
 }
 
 async function verifyOrgMember(userId: string, orgId: string, requiredRoles?: string[]) {
@@ -23,16 +28,23 @@ async function verifyOrgMember(userId: string, orgId: string, requiredRoles?: st
   return member;
 }
 
+function isSystemAdmin(role: string) {
+  return role === 'GLOBAL_ADMIN' || role === 'ADMIN';
+}
+
 export async function GET(req: NextRequest, { params }: { params: { orgId: string } }) {
   if (!isDatabaseEnabled()) {
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const userId = await getAuthUserId();
-  if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  const authUser = await getAuthUser();
+  if (!authUser) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const member = await verifyOrgMember(userId, params.orgId);
-  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  // System admins can view any org without being a member
+  if (!isSystemAdmin(authUser.role)) {
+    const member = await verifyOrgMember(authUser.id, params.orgId);
+    if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   try {
     const now = new Date();
@@ -113,7 +125,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { orgId: str
     return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
   }
 
-  const userId = await getAuthUserId();
+  const userId = await getAuthUser().then(u => u?.id ?? null);
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
   const member = await verifyOrgMember(userId, params.orgId, ['OWNER', 'ADMIN']);

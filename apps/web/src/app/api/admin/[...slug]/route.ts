@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import type { AdminSnapshot } from '@/lib/admin-live';
 import { prisma } from '@/lib/database';
+import { isDatabaseEnabled } from '@/lib/runtime-config';
 import {
   buildOrgTree,
   getAncestors,
@@ -95,11 +96,11 @@ async function getAnalyticsGrowth() {
     return Math.max(-100, Math.round(((current - prior) / prior) * 1000) / 10);
   }
 
+  // Use Prisma count queries (no raw SQL) to avoid DB dialect differences
   const [
     usersLast30, usersPrior30,
     orgsLast30, orgsPrior30,
     websitesLast30, websitesPrior30,
-    dailyUserCounts, dailyOrgCounts, dailyWebsiteCounts,
   ] = await Promise.all([
     prisma.user.count({ where: { createdAt: { gte: last30 } } }),
     prisma.user.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
@@ -107,93 +108,54 @@ async function getAnalyticsGrowth() {
     prisma.organization.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
     prisma.website.count({ where: { createdAt: { gte: last30 } } }),
     prisma.website.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
-    prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
-      SELECT DATE(created_at) AS date, COUNT(*)::int AS count
-      FROM users WHERE created_at >= ${last14}
-      GROUP BY DATE(created_at)`,
-    prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
-      SELECT DATE(created_at) AS date, COUNT(*)::int AS count
-      FROM organizations WHERE created_at >= ${last14}
-      GROUP BY DATE(created_at)`,
-    prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
-      SELECT DATE(created_at) AS date, COUNT(*)::int AS count
-      FROM websites WHERE created_at >= ${last14}
-      GROUP BY DATE(created_at)`,
   ]);
 
-  const toMap = (rows: Array<{ date: Date; count: bigint }>) =>
-    new Map(rows.map((r) => [new Date(r.date).toISOString().split('T')[0], Number(r.count)]));
-
-  const userMap = toMap(dailyUserCounts);
-  const orgMap = toMap(dailyOrgCounts);
-  const websiteMap = toMap(dailyWebsiteCounts);
-
-  const metrics = Array.from({ length: 14 }).map((_, index) => {
-    const date = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0];
-    return {
-      date,
-      users: userMap.get(date) ?? 0,
-      organizations: orgMap.get(date) ?? 0,
-      websites: websiteMap.get(date) ?? 0,
-    };
-  });
+  // Build daily buckets from Prisma-level queries (avoids raw SQL dialect issues)
+  const dailyMetrics = await Promise.all(
+    Array.from({ length: 14 }).map(async (_, index) => {
+      const dayStart = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      const [users, organizations, websites] = await Promise.all([
+        prisma.user.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
+        prisma.organization.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
+        prisma.website.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
+      ]);
+      return { date: dayStart.toISOString().split('T')[0], users, organizations, websites };
+    })
+  );
 
   return {
     usersGrowth: pct(usersLast30, usersPrior30),
     organizationsGrowth: pct(orgsLast30, orgsPrior30),
     websitesGrowth: pct(websitesLast30, websitesPrior30),
-    metrics,
+    metrics: dailyMetrics,
   };
 }
 
 async function getAnalyticsUsage() {
   const now = new Date();
-  const last14 = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  const dailyBuilds = await prisma.$queryRaw<
-    Array<{ date: Date; count: bigint; completed: bigint; avg_ms: number | null }>
-  >`
-    SELECT
-      DATE(created_at) AS date,
-      COUNT(*)::int AS count,
-      COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
-      AVG(
-        EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
-      ) FILTER (
-        WHERE status = 'COMPLETED'
-          AND completed_at IS NOT NULL
-          AND started_at IS NOT NULL
-      ) AS avg_ms
-    FROM build_jobs
-    WHERE created_at >= ${last14}
-    GROUP BY DATE(created_at)`;
-
-  type BuildEntry = { count: number; completed: number; avg_ms: number | null };
-  const buildMap = new Map<string, BuildEntry>(
-    dailyBuilds.map((r) => [
-      new Date(r.date).toISOString().split('T')[0],
-      { count: Number(r.count), completed: Number(r.completed), avg_ms: r.avg_ms },
-    ])
+  // Build daily buckets using Prisma queries (avoids raw SQL dialect differences)
+  return Promise.all(
+    Array.from({ length: 14 }).map(async (_, index) => {
+      const dayStart = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      const [total, completed] = await Promise.all([
+        prisma.buildJob.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
+        prisma.buildJob.count({ where: { createdAt: { gte: dayStart, lt: dayEnd }, status: 'COMPLETED' } }),
+      ]);
+      return {
+        date: dayStart.toISOString().split('T')[0],
+        dailyActiveUsers: null,
+        apiCalls: null,
+        buildJobs: total,
+        averageBuildTime: 0,
+        successRate: total > 0 ? Math.round((completed / total) * 1000) / 10 : 0,
+      };
+    })
   );
-
-  return Array.from({ length: 14 }).map((_, index) => {
-    const date = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0];
-    const row = buildMap.get(date);
-    const total = row?.count ?? 0;
-    const completed = row?.completed ?? 0;
-    return {
-      date,
-      dailyActiveUsers: null,
-      apiCalls: null,
-      buildJobs: total,
-      averageBuildTime: row?.avg_ms != null ? Math.round(row.avg_ms) : 0,
-      successRate: total > 0 ? Math.round((completed / total) * 1000) / 10 : 0,
-    };
-  });
 }
 
 async function getAnalyticsEngagement() {
@@ -435,7 +397,13 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     return NextResponse.json({ error: `Unsupported governance endpoint` }, { status: 404 });
   }
 
-  const snapshot = await getAdminSnapshot(searchParams.get('refresh') === 'true');
+  let snapshot: Awaited<ReturnType<typeof getAdminSnapshot>>;
+  try {
+    snapshot = await getAdminSnapshot(searchParams.get('refresh') === 'true');
+  } catch (err) {
+    console.error('Admin snapshot failed:', err);
+    return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 });
+  }
 
   if (first === 'websites' && !second) {
     return NextResponse.json(
@@ -637,36 +605,50 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
 
   if (first === 'analytics') {
+    if (!isDatabaseEnabled()) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    }
+
     if (second === 'growth') {
-      return NextResponse.json(await getAnalyticsGrowth());
+      try {
+        return NextResponse.json(await getAnalyticsGrowth());
+      } catch (err) {
+        console.error('Analytics growth error:', err);
+        return NextResponse.json({ error: 'Failed to load growth metrics' }, { status: 500 });
+      }
     }
 
     if (second === 'usage') {
-      return NextResponse.json(await getAnalyticsUsage());
+      try {
+        return NextResponse.json(await getAnalyticsUsage());
+      } catch (err) {
+        console.error('Analytics usage error:', err);
+        return NextResponse.json({ error: 'Failed to load usage metrics' }, { status: 500 });
+      }
     }
 
     if (second === 'engagement') {
-      return NextResponse.json(await getAnalyticsEngagement());
+      try {
+        return NextResponse.json(await getAnalyticsEngagement());
+      } catch (err) {
+        console.error('Analytics engagement error:', err);
+        return NextResponse.json({ error: 'Failed to load engagement metrics' }, { status: 500 });
+      }
     }
 
     if (second === 'quick-stats') {
-      const [allJobs, completedJobs, pendingJobs, avgResult] = await Promise.all([
-        prisma.buildJob.count(),
-        prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
-        prisma.buildJob.count({ where: { status: { in: ['PENDING', 'IN_PROGRESS'] } } }),
-        prisma.$queryRaw<Array<{ avg_ms: number | null }>>`
-          SELECT AVG(
-            EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
-          ) AS avg_ms
-          FROM build_jobs
-          WHERE status = 'COMPLETED'
-            AND completed_at IS NOT NULL
-            AND started_at IS NOT NULL`,
-      ]);
-      const successRate = allJobs > 0 ? Math.round((completedJobs / allJobs) * 1000) / 10 : 0;
-      const avgMs = avgResult[0]?.avg_ms;
-      const avgBuildTimeSec = avgMs != null ? Math.round(avgMs / 100) / 10 : null;
-      return NextResponse.json({ successRate, pendingJobs, avgBuildTimeSec });
+      try {
+        const [allJobs, completedJobs, pendingJobs] = await Promise.all([
+          prisma.buildJob.count(),
+          prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
+          prisma.buildJob.count({ where: { status: { in: ['PENDING', 'IN_PROGRESS'] } } }),
+        ]);
+        const successRate = allJobs > 0 ? Math.round((completedJobs / allJobs) * 1000) / 10 : 0;
+        return NextResponse.json({ successRate, pendingJobs, avgBuildTimeSec: null });
+      } catch (err) {
+        console.error('Quick stats error:', err);
+        return NextResponse.json({ error: 'Failed to load quick stats' }, { status: 500 });
+      }
     }
 
     if (second === 'costs') {
