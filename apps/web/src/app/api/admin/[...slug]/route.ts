@@ -397,6 +397,123 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     return NextResponse.json({ error: `Unsupported governance endpoint` }, { status: 404 });
   }
 
+  // ─── Analytics (no snapshot needed for DB-backed metrics) ──────────────────
+  if (first === 'analytics') {
+    if (!isDatabaseEnabled()) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    }
+
+    if (second === 'growth') {
+      try {
+        return NextResponse.json(await getAnalyticsGrowth());
+      } catch (err) {
+        console.error('Analytics growth error:', err);
+        return NextResponse.json({ error: 'Failed to load growth metrics' }, { status: 500 });
+      }
+    }
+
+    if (second === 'usage') {
+      try {
+        return NextResponse.json(await getAnalyticsUsage());
+      } catch (err) {
+        console.error('Analytics usage error:', err);
+        return NextResponse.json({ error: 'Failed to load usage metrics' }, { status: 500 });
+      }
+    }
+
+    if (second === 'engagement') {
+      try {
+        return NextResponse.json(await getAnalyticsEngagement());
+      } catch (err) {
+        console.error('Analytics engagement error:', err);
+        return NextResponse.json({ error: 'Failed to load engagement metrics' }, { status: 500 });
+      }
+    }
+
+    if (second === 'quick-stats') {
+      try {
+        const [allJobs, completedJobs, pendingJobs] = await Promise.all([
+          prisma.buildJob.count(),
+          prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
+          prisma.buildJob.count({ where: { status: { in: ['PENDING', 'IN_PROGRESS'] } } }),
+        ]);
+        const successRate = allJobs > 0 ? Math.round((completedJobs / allJobs) * 1000) / 10 : 0;
+        return NextResponse.json({ successRate, pendingJobs, avgBuildTimeSec: null });
+      } catch (err) {
+        console.error('Quick stats error:', err);
+        return NextResponse.json({ error: 'Failed to load quick stats' }, { status: 500 });
+      }
+    }
+
+    if (second === 'costs') {
+      // Cost estimates derived from live counts (no snapshot required)
+      try {
+        const [orgCount, siteCount, jobCount] = await Promise.all([
+          prisma.organization.count(),
+          prisma.website.count(),
+          prisma.buildJob.count(),
+        ]);
+        const orgs = await prisma.organization.findMany({ select: { id: true, name: true }, take: 50 });
+        const sites = await prisma.website.findMany({ select: { id: true, name: true }, take: 50 });
+        return NextResponse.json({
+          totalCost: Number((jobCount * 0.12).toFixed(2)),
+          period: searchParams.get('period') || 'month',
+          byOrganization: orgs.map((org) => ({
+            organizationId: org.id,
+            organizationName: org.name,
+            cost: Number((0.3).toFixed(2)),
+          })),
+          byUser: [],
+          byWebsite: sites.map((site) => ({
+            websiteId: site.id,
+            websiteName: site.name,
+            cost: 0.25,
+          })),
+          byProvider: [{ provider: 'openai', cost: Number((jobCount * 0.12).toFixed(2)) }],
+          infrastructure: Number((siteCount * 2.5).toFixed(2)),
+        });
+      } catch (err) {
+        console.error('Analytics costs error:', err);
+        return NextResponse.json({ error: 'Failed to load cost analytics' }, { status: 500 });
+      }
+    }
+
+    if (second === 'billing') {
+      return NextResponse.json({
+        invoices: [],
+        paymentHistory: [],
+        outstandingBalance: 0,
+        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        subscriptionStatus: 'active',
+      });
+    }
+
+    if (second === 'reports') {
+      return NextResponse.json([
+        {
+          id: 'report_daily_ops',
+          name: 'Daily Ops Snapshot',
+          type: 'daily',
+          generatedAt: new Date().toISOString(),
+          downloadUrl: '/api/admin/analytics/reports/report_daily_ops/download',
+          format: 'pdf',
+        },
+      ]);
+    }
+
+    if (second === 'reports' && third && path[3] === 'download') {
+      return new NextResponse('Report content placeholder', {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename=${third}.pdf`,
+        },
+      });
+    }
+
+    return NextResponse.json({ data: [] });
+  }
+
   let snapshot: Awaited<ReturnType<typeof getAdminSnapshot>>;
   try {
     snapshot = await getAdminSnapshot(searchParams.get('refresh') === 'true');
@@ -602,113 +719,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         ],
       });
     }
-  }
-
-  if (first === 'analytics') {
-    if (!isDatabaseEnabled()) {
-      return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
-    }
-
-    if (second === 'growth') {
-      try {
-        return NextResponse.json(await getAnalyticsGrowth());
-      } catch (err) {
-        console.error('Analytics growth error:', err);
-        return NextResponse.json({ error: 'Failed to load growth metrics' }, { status: 500 });
-      }
-    }
-
-    if (second === 'usage') {
-      try {
-        return NextResponse.json(await getAnalyticsUsage());
-      } catch (err) {
-        console.error('Analytics usage error:', err);
-        return NextResponse.json({ error: 'Failed to load usage metrics' }, { status: 500 });
-      }
-    }
-
-    if (second === 'engagement') {
-      try {
-        return NextResponse.json(await getAnalyticsEngagement());
-      } catch (err) {
-        console.error('Analytics engagement error:', err);
-        return NextResponse.json({ error: 'Failed to load engagement metrics' }, { status: 500 });
-      }
-    }
-
-    if (second === 'quick-stats') {
-      try {
-        const [allJobs, completedJobs, pendingJobs] = await Promise.all([
-          prisma.buildJob.count(),
-          prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
-          prisma.buildJob.count({ where: { status: { in: ['PENDING', 'IN_PROGRESS'] } } }),
-        ]);
-        const successRate = allJobs > 0 ? Math.round((completedJobs / allJobs) * 1000) / 10 : 0;
-        return NextResponse.json({ successRate, pendingJobs, avgBuildTimeSec: null });
-      } catch (err) {
-        console.error('Quick stats error:', err);
-        return NextResponse.json({ error: 'Failed to load quick stats' }, { status: 500 });
-      }
-    }
-
-    if (second === 'costs') {
-      return NextResponse.json({
-        totalCost: Number((snapshot.jobs.length * 0.12).toFixed(2)),
-        period: searchParams.get('period') || 'month',
-        byOrganization: snapshot.organizations.map((org) => ({
-          organizationId: org.id,
-          organizationName: org.name,
-          cost: Number((org.websiteCount * 0.3).toFixed(2)),
-        })),
-        byUser: snapshot.users.map((user) => ({
-          userId: user.id,
-          userName: user.name ?? user.email,
-          cost: Number((user.websiteCount * 0.15).toFixed(2)),
-        })),
-        byWebsite: snapshot.websites.map((site) => ({
-          websiteId: site.id,
-          websiteName: site.name,
-          cost: 0.25,
-        })),
-        byProvider: [{ provider: 'openai', cost: Number((snapshot.jobs.length * 0.12).toFixed(2)) }],
-        infrastructure: Number((snapshot.websites.length * 2.5).toFixed(2)),
-      });
-    }
-
-    if (second === 'billing') {
-      return NextResponse.json({
-        invoices: [],
-        paymentHistory: [],
-        outstandingBalance: 0,
-        nextBillingDate: new Date().toISOString(),
-        subscriptionStatus: 'active',
-      });
-    }
-
-    if (second === 'reports') {
-      return NextResponse.json([
-        {
-          id: 'report_daily_ops',
-          name: 'Daily Ops Snapshot',
-          type: 'daily',
-          generatedAt: snapshot.generatedAt,
-          downloadUrl: '/api/admin/analytics/reports/report_daily_ops/download',
-          format: 'pdf',
-        },
-      ]);
-    }
-
-    if (second === 'reports' && third && path[3] === 'download') {
-      return new NextResponse('Report content placeholder', {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename=${third}.pdf`,
-        },
-      });
-    }
-
-    return NextResponse.json({ data: [] });
   }
 
   if (first === 'settings') {

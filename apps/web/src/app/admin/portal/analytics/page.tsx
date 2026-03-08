@@ -24,21 +24,24 @@ type TabType = 'growth' | 'usage' | 'engagement' | 'costs' | 'billing' | 'report
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('growth');
+  const [loadedTabs, setLoadedTabs] = useState<Set<TabType>>(new Set(['growth']));
   const [costPeriod, setCostPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+
   const handleTabChange = useCallback((tabId: TabType) => {
     setActiveTab(tabId);
+    setLoadedTabs((prev) => { const next = new Set(prev); next.add(tabId); return next; });
   }, []);
   const handleCostPeriodChange = useCallback((period: 'day' | 'week' | 'month' | 'year') => {
     setCostPeriod(period);
   }, []);
 
-  // Hooks
-  const growthMetrics = useGrowthMetrics();
-  const usageAnalytics = useUsageAnalytics();
-  const engagementMetrics = useEngagementMetrics();
-  const costAnalytics = useCostAnalytics(costPeriod);
-  const billingData = useBillingData();
-  const reportGeneration = useReportGeneration();
+  // Each hook only fires its initial fetch when its tab has been activated at least once
+  const growthMetrics = useGrowthMetrics(loadedTabs.has('growth'));
+  const usageAnalytics = useUsageAnalytics(loadedTabs.has('usage'));
+  const engagementMetrics = useEngagementMetrics(loadedTabs.has('engagement'));
+  const costAnalytics = useCostAnalytics(costPeriod, loadedTabs.has('costs'));
+  const billingData = useBillingData(loadedTabs.has('billing'));
+  const reportGeneration = useReportGeneration(loadedTabs.has('reports'));
 
   const tabs = useMemo<{ id: TabType; label: string; icon: string }[]>(() => [
     { id: 'growth', label: 'Growth', icon: '📈' },

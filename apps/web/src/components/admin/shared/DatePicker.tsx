@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MONTHS = [
@@ -60,6 +61,30 @@ export function DatePicker({
   const [viewMonth, setViewMonth] = useState(selected?.getMonth() ?? today.getMonth());
   const [inputText, setInputText] = useState(formatDisplay(value));
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const [portalPos, setPortalPos] = useState<{ top: number; left: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Recalculate portal position whenever opened or on scroll/resize
+  const updatePortalPos = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setPortalPos({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updatePortalPos();
+    window.addEventListener('scroll', updatePortalPos, true);
+    window.addEventListener('resize', updatePortalPos);
+    return () => {
+      window.removeEventListener('scroll', updatePortalPos, true);
+      window.removeEventListener('resize', updatePortalPos);
+    };
+  }, [open, updatePortalPos]);
 
   // Sync display when value changes externally
   useEffect(() => {
@@ -70,13 +95,14 @@ export function DatePicker({
     }
   }, [value]);
 
-  // Close on outside click
+  // Close on outside click — check both trigger container and portal
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      const inContainer = containerRef.current?.contains(target);
+      const inPortal = portalRef.current?.contains(target);
+      if (!inContainer && !inPortal) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -250,6 +276,7 @@ export function DatePicker({
         <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
       )}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(o => !o)}
         className={`
@@ -272,10 +299,14 @@ export function DatePicker({
         </svg>
       </button>
 
-      {open && (
-        <div className="absolute top-full mt-2 left-0 z-50">
+      {open && mounted && portalPos && createPortal(
+        <div
+          ref={portalRef}
+          style={{ position: 'absolute', top: portalPos.top, left: portalPos.left, zIndex: 9999 }}
+        >
           {calendar}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

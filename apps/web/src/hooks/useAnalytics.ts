@@ -78,15 +78,15 @@ export interface GeneratedReport {
 }
 
 // Growth Metrics Hook
-export function useGrowthMetrics() {
+export function useGrowthMetrics(enabled = true) {
   const [data, setData] = useState<GrowthStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { error: showError } = useToast();
 
   useEffect(() => {
-    fetchGrowthMetrics();
-  }, []);
+    if (enabled) fetchGrowthMetrics();
+  }, [enabled]);
 
   const fetchGrowthMetrics = useCallback(async () => {
     setLoading(true);
@@ -109,15 +109,15 @@ export function useGrowthMetrics() {
 }
 
 // Usage Analytics Hook
-export function useUsageAnalytics() {
+export function useUsageAnalytics(enabled = true) {
   const [data, setData] = useState<UsageMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { error: showError } = useToast();
 
   useEffect(() => {
-    fetchUsageAnalytics();
-  }, []);
+    if (enabled) fetchUsageAnalytics();
+  }, [enabled]);
 
   const fetchUsageAnalytics = useCallback(async () => {
     setLoading(true);
@@ -140,15 +140,15 @@ export function useUsageAnalytics() {
 }
 
 // Engagement Metrics Hook
-export function useEngagementMetrics() {
+export function useEngagementMetrics(enabled = true) {
   const [data, setData] = useState<EngagementMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { error: showError } = useToast();
 
   useEffect(() => {
-    fetchEngagementMetrics();
-  }, []);
+    if (enabled) fetchEngagementMetrics();
+  }, [enabled]);
 
   const fetchEngagementMetrics = useCallback(async () => {
     setLoading(true);
@@ -171,15 +171,15 @@ export function useEngagementMetrics() {
 }
 
 // Cost Analytics Hook
-export function useCostAnalytics(period: 'day' | 'week' | 'month' | 'year' = 'month') {
+export function useCostAnalytics(period: 'day' | 'week' | 'month' | 'year' = 'month', enabled = true) {
   const [data, setData] = useState<CostBreakdown | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { error: showError } = useToast();
 
   useEffect(() => {
-    fetchCostAnalytics();
-  }, [period]);
+    if (enabled) fetchCostAnalytics();
+  }, [period, enabled]);
 
   const fetchCostAnalytics = useCallback(async () => {
     setLoading(true);
@@ -202,15 +202,15 @@ export function useCostAnalytics(period: 'day' | 'week' | 'month' | 'year' = 'mo
 }
 
 // Billing Data Hook
-export function useBillingData() {
+export function useBillingData(enabled = true) {
   const [data, setData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { error: showError } = useToast();
 
   useEffect(() => {
-    fetchBillingData();
-  }, []);
+    if (enabled) fetchBillingData();
+  }, [enabled]);
 
   const fetchBillingData = useCallback(async () => {
     setLoading(true);
@@ -233,7 +233,7 @@ export function useBillingData() {
 }
 
 // Report Generation Hook
-export function useReportGeneration() {
+export function useReportGeneration(enabled = true) {
   const [reports, setReports] = useState<GeneratedReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -241,8 +241,8 @@ export function useReportGeneration() {
   const { error: showError, success: showSuccess } = useToast();
 
   useEffect(() => {
-    fetchReports();
-  }, []);
+    if (enabled) fetchReports();
+  }, [enabled]);
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
