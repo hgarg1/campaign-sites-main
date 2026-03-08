@@ -56,17 +56,17 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`${colorClass} rounded-lg p-6 border border-current border-opacity-20`}
+              className={`${colorClass} rounded-lg p-4 border border-current border-opacity-20`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="text-sm font-medium opacity-75">{metric.metric}</div>
-                  <div className="text-3xl font-bold mt-2">{metric.value.toFixed(1)}</div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium opacity-75 truncate">{metric.metric}</div>
+                  <div className="text-2xl font-bold mt-2">{metric.value.toFixed(1)}</div>
                   <div className={`text-xs mt-2 font-semibold ${metric.trend >= 0 ? '' : 'opacity-75'}`}>
                     {metric.trend >= 0 ? '📈' : '📉'} {metric.trend >= 0 ? '+' : ''}{metric.trend.toFixed(1)}%
                   </div>
                 </div>
-                <div className="text-3xl">{icon}</div>
+                <div className="text-2xl shrink-0">{icon}</div>
               </div>
             </motion.div>
           );
@@ -133,12 +133,12 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
           {data
             .sort((a, b) => b.value - a.value)
             .map((metric) => (
-              <div key={metric.metric} className="flex items-center justify-between pb-3 border-b border-gray-100 last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className="text-xl">{getIconByMetric(metric.metric)}</div>
-                  <div className="text-sm font-medium text-gray-700">{metric.metric}</div>
+              <div key={metric.metric} className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="text-xl shrink-0">{getIconByMetric(metric.metric)}</div>
+                  <div className="text-sm font-medium text-gray-700 truncate">{metric.metric}</div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
                     <div className="text-sm font-semibold text-gray-900">{metric.value.toFixed(1)}</div>
                     <div className={`text-xs ${metric.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>

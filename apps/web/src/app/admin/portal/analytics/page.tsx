@@ -127,16 +127,14 @@ export default function AnalyticsPage() {
 
       {/* Reports Tab */}
       {activeTab === 'reports' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 h-full">
-              <ReportGenerator
-                loading={reportGeneration.generating}
-                onGenerate={reportGeneration.generateReport}
-              />
-            </div>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-1">
+            <ReportGenerator
+              loading={reportGeneration.generating}
+              onGenerate={reportGeneration.generateReport}
+            />
           </div>
-          <div className="lg:col-span-2">
+          <div className="xl:col-span-2">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <ReportLibrary
                 reports={reportGeneration.reports}

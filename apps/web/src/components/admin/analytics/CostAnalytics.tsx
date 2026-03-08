@@ -50,7 +50,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
       className="space-y-6"
     >
       {/* Period Selection */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(['day', 'week', 'month', 'year'] as const).map((period) => (
           <button
             key={period}
@@ -109,7 +109,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
       </motion.div>
 
       {/* Breakdown Selection */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(['organization', 'user', 'website', 'provider'] as const).map((type) => (
           <button
             key={type}
@@ -144,9 +144,9 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
 
             return (
               <div key={`${selectedBreakdown}-${index}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium text-gray-700">{name}</div>
-                  <div className="text-sm font-semibold text-gray-900">{formatCurrency(cost)}</div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="text-sm font-medium text-gray-700 truncate min-w-0 flex-1">{name}</div>
+                  <div className="text-sm font-semibold text-gray-900 shrink-0">{formatCurrency(cost)}</div>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div

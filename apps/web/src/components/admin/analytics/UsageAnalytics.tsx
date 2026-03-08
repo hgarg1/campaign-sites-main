@@ -27,7 +27,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
 
   const metrics = [
     {
-      label: 'Daily Active Users',
+      label: 'Active Users',
       value: latest.dailyActiveUsers,
       icon: '👥',
       color: 'text-blue-600',
@@ -51,7 +51,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
       trend: calculateTrend(latest.buildJobs, previous.buildJobs),
     },
     {
-      label: 'Avg Build Time',
+      label: 'Avg Build',
       value: `${(latest.averageBuildTime / 60).toFixed(1)}m`,
       icon: '⏱️',
       color: 'text-orange-600',
@@ -59,7 +59,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
       trend: calculateTrend(latest.averageBuildTime, previous.averageBuildTime),
     },
     {
-      label: 'Success Rate',
+      label: 'Success',
       value: `${latest.successRate}%`,
       icon: '✅',
       color: 'text-cyan-600',
@@ -75,7 +75,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
       className="space-y-6"
     >
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
@@ -84,15 +84,15 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
             transition={{ delay: index * 0.1 }}
             className={`${metric.bgColor} rounded-lg p-4 border border-gray-200`}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-600">{metric.label}</div>
-                <div className={`${metric.color} text-2xl font-bold mt-1`}>{metric.value}</div>
+            <div className="flex items-start justify-between gap-1">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-gray-600 truncate">{metric.label}</div>
+                <div className={`${metric.color} text-xl font-bold mt-1 truncate`}>{metric.value}</div>
                 <div className={`text-xs mt-2 ${metric.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {metric.trend >= 0 ? '↑' : '↓'} {Math.abs(metric.trend).toFixed(1)}%
                 </div>
               </div>
-              <div className="text-2xl">{metric.icon}</div>
+              <div className="text-xl shrink-0">{metric.icon}</div>
             </div>
           </motion.div>
         ))}
@@ -114,12 +114,12 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
 
             return (
               <div key={metric.date} className="border-b border-gray-100 pb-4 last:border-0">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="text-sm font-medium shrink-0">
                     {new Date(metric.date).toLocaleDateString()}
                   </div>
-                  <div className="text-sm text-gray-600">
-                    {metric.dailyActiveUsers} DAU • {metric.buildJobs} jobs
+                  <div className="text-sm text-gray-600 truncate">
+                    {metric.dailyActiveUsers} DAU · {metric.buildJobs} jobs
                   </div>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">

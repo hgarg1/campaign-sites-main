@@ -19,7 +19,7 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
 
   const metrics = [
     { label: 'Users Growth', value: data.usersGrowth, color: 'bg-blue-100 text-blue-900' },
-    { label: 'Organizations Growth', value: data.organizationsGrowth, color: 'bg-purple-100 text-purple-900' },
+    { label: 'Orgs Growth', value: data.organizationsGrowth, color: 'bg-purple-100 text-purple-900' },
     { label: 'Websites Growth', value: data.websitesGrowth, color: 'bg-green-100 text-green-900' },
   ];
 
@@ -73,34 +73,34 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <div className="w-12 text-xs text-gray-600">Users</div>
-                    <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="w-10 shrink-0 text-xs text-gray-600">Users</div>
+                    <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-blue-500 h-full rounded-full transition-all duration-300"
                         style={{ width: `${userWidth}%` }}
                       />
                     </div>
-                    <div className="w-8 text-xs text-gray-600">{metric.users}</div>
+                    <div className="w-10 shrink-0 text-xs text-right text-gray-600">{metric.users}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 text-xs text-gray-600">Orgs</div>
-                    <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="w-10 shrink-0 text-xs text-gray-600">Orgs</div>
+                    <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-purple-500 h-full rounded-full transition-all duration-300"
                         style={{ width: `${orgWidth}%` }}
                       />
                     </div>
-                    <div className="w-8 text-xs text-gray-600">{metric.organizations}</div>
+                    <div className="w-10 shrink-0 text-xs text-right text-gray-600">{metric.organizations}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 text-xs text-gray-600">Sites</div>
-                    <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div className="w-10 shrink-0 text-xs text-gray-600">Sites</div>
+                    <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-green-500 h-full rounded-full transition-all duration-300"
                         style={{ width: `${websiteWidth}%` }}
                       />
                     </div>
-                    <div className="w-8 text-xs text-gray-600">{metric.websites}</div>
+                    <div className="w-10 shrink-0 text-xs text-right text-gray-600">{metric.websites}</div>
                   </div>
                 </div>
               </div>
