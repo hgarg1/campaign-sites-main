@@ -36,9 +36,6 @@ export async function verifyOrgMember(userId: string, orgId: string, requiredRol
 /**
  * Verifies access to orgId either via direct membership OR ancestor inheritance.
  * Returns the AccessResult (with role + source) on success, null on failure.
- *
- * This is the preferred guard for all tenant API routes — it transparently
- * allows ancestor admins to operate on descendant orgs.
  */
 export async function verifyOrgAccess(
   userId: string,
@@ -53,25 +50,14 @@ export async function verifyOrgAccess(
   }
 }
 
-/**
- * Verifies that userId is an ADMIN or OWNER of orgId (direct or ancestor).
- * Shorthand for write-gated routes.
- */
 export async function verifyOrgAdmin(userId: string, orgId: string): Promise<AccessResult | null> {
   return verifyOrgAccess(userId, orgId, 'ADMIN');
 }
 
-/**
- * Verifies that userId is an OWNER of orgId (direct or ancestor-owner).
- */
 export async function verifyOrgOwner(userId: string, orgId: string): Promise<AccessResult | null> {
   return verifyOrgAccess(userId, orgId, 'OWNER');
 }
 
-/**
- * Checks the effective status of an org (accounting for ancestor suspensions).
- * Returns true if the org is accessible (ACTIVE), false if suspended/deactivated.
- */
 export async function isOrgAccessible(orgId: string): Promise<boolean> {
   try {
     const status = await getEffectiveStatus(orgId);
@@ -81,26 +67,17 @@ export async function isOrgAccessible(orgId: string): Promise<boolean> {
   }
 }
 
-/**
- * Verifies that userId can access a descendant org on behalf of a parent org.
- * Used by cross-org "view-as" flows — validates that actingOrgId is an actual
- * ancestor of targetOrgId and that userId is ADMIN/OWNER in actingOrgId.
- */
 export async function verifyDescendantAccess(
   userId: string,
   actingOrgId: string,
   targetOrgId: string
 ): Promise<AccessResult | null> {
   try {
-    // User must be admin in the acting org
     const actingAccess = await verifyAncestorAccess(userId, actingOrgId, 'ADMIN');
     if (!actingAccess.hasAccess) return null;
-
-    // Acting org must be an ancestor of target org
     const { isAncestor } = await import('@/lib/ancestry');
     const ancestorCheck = await isAncestor(actingOrgId, targetOrgId);
     if (!ancestorCheck) return null;
-
     return actingAccess;
   } catch {
     return null;
@@ -110,8 +87,6 @@ export async function verifyDescendantAccess(
 /**
  * Checks the system policy AND parent org policy for a given org + resource + action.
  * Returns a 403 NextResponse if blocked by either layer, or null if allowed.
- * Usage: const denied = await enforceSystemPolicy(orgId, 'members', 'invite');
- *        if (denied) return denied;
  */
 export async function enforceSystemPolicy(
   orgId: string,
@@ -119,7 +94,6 @@ export async function enforceSystemPolicy(
   action: string
 ): Promise<NextResponse | null> {
   try {
-    // Layer 1: system admin policy
     const sysResult = await checkSystemPolicy(orgId, resource, action);
     if (!sysResult.allowed) {
       return NextResponse.json(
@@ -132,7 +106,6 @@ export async function enforceSystemPolicy(
       );
     }
 
-    // Layer 2: parent org policy
     const orgResult = await checkOrgPolicy(orgId, resource, action);
     if (!orgResult.allowed) {
       return NextResponse.json(
@@ -147,7 +120,35 @@ export async function enforceSystemPolicy(
 
     return null;
   } catch {
-    // Fail open to avoid breaking tenant operations if policy engine is unavailable
     return null;
   }
 }
+
+/**
+ * Writes an audit log entry to ServerLog.
+ * Non-fatal — never throws.
+ */
+export async function writeAuditLog(payload: {
+  orgId: string;
+  actorUserId: string;
+  action: 'member.add' | 'member.remove' | 'member.role_change' | 'invite.create' | 'invite.revoke' | 'invite.resend';
+  targetUserId?: string;
+  targetEmail?: string;
+  fromRole?: string;
+  toRole?: string;
+  extra?: Record<string, unknown>;
+}): Promise<void> {
+  try {
+    await prisma.serverLog.create({
+      data: {
+        level: 'INFO',
+        message: `[audit] ${payload.action} in org ${payload.orgId} by ${payload.actorUserId}`,
+        source: 'audit',
+        metadata: { ...payload } as any,
+      },
+    });
+  } catch {
+    // Non-fatal
+  }
+}
+

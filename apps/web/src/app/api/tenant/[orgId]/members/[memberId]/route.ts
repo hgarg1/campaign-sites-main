@@ -1,27 +1,14 @@
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
-import { parseAndVerifySessionToken } from '@/lib/session-auth';
-import { enforceSystemPolicy } from '@/app/api/tenant/auth-utils';
+import { getAuthUserId, verifyOrgMember, enforceSystemPolicy, writeAuditLog } from '@/app/api/tenant/auth-utils';
 
 export const dynamic = 'force-dynamic';
 
-async function getAuthUserId(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('campaignsites_session')?.value;
-  if (!sessionToken) return null;
-  const parsed = parseAndVerifySessionToken(sessionToken);
-  return parsed?.userId ?? null;
-}
-
-async function verifyOrgMember(userId: string, orgId: string, requiredRoles?: string[]) {
-  const member = await prisma.organizationMember.findFirst({
-    where: { userId, organizationId: orgId },
+async function countOwners(orgId: string): Promise<number> {
+  return prisma.organizationMember.count({
+    where: { organizationId: orgId, role: 'OWNER' },
   });
-  if (!member) return null;
-  if (requiredRoles && !requiredRoles.includes(member.role)) return null;
-  return member;
 }
 
 export async function PATCH(
@@ -35,20 +22,60 @@ export async function PATCH(
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const member = await verifyOrgMember(userId, params.orgId, ['OWNER', 'ADMIN']);
-  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const caller = await verifyOrgMember(userId, params.orgId, ['OWNER', 'ADMIN']);
+  if (!caller) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const denied = await enforceSystemPolicy(params.orgId, 'members', 'update');
   if (denied) return denied;
 
   try {
     const body = await req.json();
-    const { role } = body;
+    const { role } = body as { role: string };
+
+    if (!role) return NextResponse.json({ error: 'role is required' }, { status: 400 });
+
+    const target = await prisma.organizationMember.findUnique({
+      where: { id: params.memberId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+    if (!target || target.organizationId !== params.orgId) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+    }
+
+    const fromRole = target.role;
+
+    // Only OWNER can promote someone to OWNER
+    if (role === 'OWNER' && caller.role !== 'OWNER') {
+      return NextResponse.json(
+        { error: 'Only an OWNER can promote another member to OWNER.' },
+        { status: 403 }
+      );
+    }
+
+    // Prevent demoting the last OWNER
+    if (fromRole === 'OWNER' && role !== 'OWNER') {
+      const ownerCount = await countOwners(params.orgId);
+      if (ownerCount <= 1) {
+        return NextResponse.json(
+          { error: 'Cannot demote the last OWNER. Promote another member first.' },
+          { status: 409 }
+        );
+      }
+    }
 
     const updated = await prisma.organizationMember.update({
       where: { id: params.memberId },
-      data: { role },
+      data: { role: role as any },
       include: { user: { select: { id: true, name: true, email: true } } },
+    });
+
+    await writeAuditLog({
+      orgId: params.orgId,
+      actorUserId: userId,
+      action: 'member.role_change',
+      targetUserId: target.userId,
+      fromRole,
+      toRole: role,
     });
 
     return NextResponse.json({ id: updated.id, userId: updated.userId, role: updated.role, user: updated.user, joinedAt: null });
@@ -58,7 +85,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { orgId: string; memberId: string } }
 ) {
   if (!isDatabaseEnabled()) {
@@ -68,14 +95,42 @@ export async function DELETE(
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const member = await verifyOrgMember(userId, params.orgId, ['OWNER', 'ADMIN']);
-  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const caller = await verifyOrgMember(userId, params.orgId, ['OWNER', 'ADMIN']);
+  if (!caller) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const denied = await enforceSystemPolicy(params.orgId, 'members', 'remove');
   if (denied) return denied;
 
   try {
+    const target = await prisma.organizationMember.findUnique({
+      where: { id: params.memberId },
+      include: { user: { select: { id: true, email: true } } },
+    });
+    if (!target || target.organizationId !== params.orgId) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+    }
+
+    // Prevent removing the last OWNER
+    if (target.role === 'OWNER') {
+      const ownerCount = await countOwners(params.orgId);
+      if (ownerCount <= 1) {
+        return NextResponse.json(
+          { error: 'Cannot remove the last OWNER. Transfer ownership first.' },
+          { status: 409 }
+        );
+      }
+    }
+
     await prisma.organizationMember.delete({ where: { id: params.memberId } });
+
+    await writeAuditLog({
+      orgId: params.orgId,
+      actorUserId: userId,
+      action: 'member.remove',
+      targetUserId: target.userId,
+      fromRole: target.role,
+    });
+
     return new NextResponse(null, { status: 204 });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

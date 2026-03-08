@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
-import { getAuthUserId, verifyOrgAdmin } from '@/app/api/tenant/auth-utils';
+import { getAuthUserId, verifyOrgAdmin, writeAuditLog } from '@/app/api/tenant/auth-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,12 +20,21 @@ export async function DELETE(
   if (!access) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
-    await prisma.organizationInvite.update({
+    const invite = await prisma.organizationInvite.update({
       where: { id: params.inviteId },
       data: { status: 'REVOKED' },
     });
+
+    await writeAuditLog({
+      orgId: params.orgId,
+      actorUserId: userId,
+      action: 'invite.revoke',
+      targetEmail: invite.email,
+    });
+
     return new NextResponse(null, { status: 204 });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

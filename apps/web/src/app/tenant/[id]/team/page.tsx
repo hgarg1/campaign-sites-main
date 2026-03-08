@@ -30,6 +30,31 @@ interface OrgInvite {
   expiresAt: string;
 }
 
+interface AuditEntry {
+  id: string;
+  message: string;
+  metadata: {
+    action: string;
+    actorUserId: string;
+    targetUserId?: string;
+    targetEmail?: string;
+    fromRole?: string;
+    toRole?: string;
+  };
+  createdAt: string;
+}
+
+const ACTION_LABELS: Record<string, string> = {
+  'member.add': 'Added member',
+  'member.remove': 'Removed member',
+  'member.role_change': 'Changed role',
+  'invite.create': 'Sent invite',
+  'invite.revoke': 'Revoked invite',
+  'invite.resend': 'Resent invite',
+};
+
+
+
 interface RoleConfirm {
   memberId: string;
   memberName: string;
@@ -46,7 +71,7 @@ export default function TeamPage() {
   const removeBlocked = isBlocked('members', 'remove');
   const updateBlocked = isBlocked('members', 'update');
 
-  const [activeTab, setActiveTab] = useState<'members' | 'invites'>('members');
+  const [activeTab, setActiveTab] = useState<'members' | 'invites' | 'activity'>('members');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState(false);
@@ -60,6 +85,10 @@ export default function TeamPage() {
   const [invitesLoading, setInvitesLoading] = useState(false);
   const [inviteAction, setInviteAction] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [restrictionsExpanded, setRestrictionsExpanded] = useState(false);
 
   const showMsg = (text: string, isError = false) => {
     setMsg(text);
@@ -81,9 +110,24 @@ export default function TeamPage() {
     }
   }, [orgId]);
 
+  const fetchAuditLog = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      const res = await fetch(`/api/tenant/${orgId}/audit-log`);
+      if (!res.ok) throw new Error();
+      const json = await res.json() as { data: AuditEntry[] };
+      setAuditLogs(json.data ?? []);
+    } catch {
+      setAuditLogs([]);
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [orgId]);
+
   useEffect(() => {
     if (activeTab === 'invites') fetchInvites();
-  }, [activeTab, fetchInvites]);
+    if (activeTab === 'activity') fetchAuditLog();
+  }, [activeTab, fetchInvites, fetchAuditLog]);
 
   // Search filter
   const filtered = data.filter(m => {
@@ -187,6 +231,60 @@ export default function TeamPage() {
           <RestrictionBanner sources={restrictions.sources} />
         </div>
       )}
+
+      {/* Policy Restrictions panel */}
+      {restrictions.rules.some(r => !r.allow) && (
+        <div className="mb-4 border border-amber-200 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setRestrictionsExpanded(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-amber-50 text-left"
+          >
+            <span className="text-sm font-semibold text-amber-800">
+              🔒 Active Policy Restrictions
+              <span className="ml-2 font-normal text-amber-600">
+                ({restrictions.rules.filter(r => !r.allow).length} rules)
+              </span>
+            </span>
+            <span className="text-amber-600 text-xs">{restrictionsExpanded ? '▲ Hide' : '▼ Show'}</span>
+          </button>
+          {restrictionsExpanded && (
+            <div className="bg-white px-4 py-3">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-500 uppercase">
+                    <th className="text-left pb-2 pr-4">Resource</th>
+                    <th className="text-left pb-2 pr-4">Blocked Actions</th>
+                    <th className="text-left pb-2">Source</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {Object.entries(
+                    restrictions.rules.filter(r => !r.allow).reduce<Record<string, { actions: string[] }>>((acc, r) => {
+                      const key = r.resource;
+                      if (!acc[key]) acc[key] = { actions: [] };
+                      acc[key].actions.push(...(r.actions ?? ['*']));
+                      return acc;
+                    }, {})
+                  ).map(([resource, { actions }]) => (
+                    <tr key={resource}>
+                      <td className="py-2 pr-4 font-medium text-gray-700">{resource}</td>
+                      <td className="py-2 pr-4">
+                        {actions.map(a => (
+                          <span key={a} className="inline-block mr-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-xs">{a}</span>
+                        ))}
+                      </td>
+                      <td className="py-2 text-gray-500 text-xs">
+                        {restrictions.sources.join(', ') || 'Policy'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -225,6 +323,16 @@ export default function TeamPage() {
           }`}
         >
           Pending Invites ({pendingCount})
+        </button>
+        <button
+          onClick={() => setActiveTab('activity')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'activity'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Activity
         </button>
       </div>
 
@@ -431,6 +539,51 @@ export default function TeamPage() {
         </>
       )}
 
+      {/* ── Activity Tab ── */}
+      {activeTab === 'activity' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <p className="text-sm font-semibold text-gray-700">Recent Team Activity</p>
+            <p className="text-xs text-gray-500 mt-0.5">Last 50 events for this organization</p>
+          </div>
+          {auditLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+            </div>
+          ) : auditLogs.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">No activity recorded yet.</div>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {auditLogs.map(entry => {
+                const meta = entry.metadata;
+                const label = ACTION_LABELS[meta.action] ?? meta.action;
+                const target = meta.targetEmail ?? meta.targetUserId?.slice(0, 8) ?? '';
+                const roleChange = meta.fromRole && meta.toRole ? ` (${meta.fromRole} → ${meta.toRole})` : (meta.toRole ? ` as ${meta.toRole}` : '');
+                return (
+                  <li key={entry.id} className="px-6 py-3 flex items-start gap-3">
+                    <span className="mt-0.5 w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      {label.charAt(0)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-800">
+                        <span className="font-medium">{label}</span>
+                        {target ? <span className="text-gray-600"> — {target}</span> : null}
+                        {roleChange ? <span className="text-gray-500 text-xs">{roleChange}</span> : null}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Actor: {meta.actorUserId?.slice(0, 8)}…
+                        {' · '}
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* ── Role change confirmation modal ── */}
       {roleConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -440,6 +593,12 @@ export default function TeamPage() {
               Change <strong>{roleConfirm.memberName}</strong>&apos;s role to{' '}
               <strong>{roleConfirm.newRole}</strong>?
             </p>
+            {roleConfirm.newRole === 'OWNER' && (
+              <div className="mb-6 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                <span>⚠️</span>
+                <span>This grants <strong>full organization control</strong>. OWNER can manage all members, settings, and billing. Only proceed if you fully trust this person.</span>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={handleRoleConfirm}

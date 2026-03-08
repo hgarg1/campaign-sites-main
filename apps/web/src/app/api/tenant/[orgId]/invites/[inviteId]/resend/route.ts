@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
-import { getAuthUserId, verifyOrgAdmin } from '@/app/api/tenant/auth-utils';
+import { getAuthUserId, verifyOrgAdmin, writeAuditLog } from '@/app/api/tenant/auth-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,8 +25,17 @@ export async function POST(
       where: { id: params.inviteId },
       data: { createdAt: new Date(), expiresAt, status: 'PENDING' },
     });
+
+    await writeAuditLog({
+      orgId: params.orgId,
+      actorUserId: userId,
+      action: 'invite.resend',
+      targetEmail: updated.email,
+    });
+
     return NextResponse.json(updated);
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
