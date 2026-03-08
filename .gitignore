@@ -60,3 +60,6 @@ generated/
 
 # Runtime uploads
 apps/web/public/uploads/
+
+# Master tenant credentials (contains live passwords)
+master-tenant-credentials.json
