@@ -8,13 +8,20 @@ import { prisma } from '@/lib/database';
 import { cacheGet, cacheSet, cacheDel } from '@/lib/redis';
 import { createSessionToken } from '@/lib/session-auth';
 
-const RP_ID = process.env.NEXT_PUBLIC_DOMAIN ?? 'localhost';
-const ORIGIN = process.env.NEXT_PUBLIC_ORIGIN ?? `https://${RP_ID}`;
 const CHALLENGE_TTL = 300;
 
 // Challenges are keyed by a random nonce stored in a short-lived cookie so
 // we can support multiple concurrent passkey attempts without collisions.
 const NONCE_COOKIE = 'passkey_nonce';
+
+/** Derive rpID and origin from the inbound request — works on localhost, Vercel, and production. */
+function getRpConfig(request: NextRequest) {
+  const host = request.headers.get('host') ?? 'localhost';
+  const proto = request.headers.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  const rpID = host.split(':')[0];
+  const origin = process.env.NEXT_PUBLIC_ORIGIN ?? `${proto}://${host}`;
+  return { rpID, origin };
+}
 
 function challengeKey(nonce: string) {
   return `passkey:auth-challenge:${nonce}`;
@@ -22,8 +29,10 @@ function challengeKey(nonce: string) {
 
 // GET — generate an authentication challenge (no userId required — discoverable creds)
 export async function GET(request: NextRequest) {
+  const { rpID } = getRpConfig(request);
+
   const options = await generateAuthenticationOptions({
-    rpID: RP_ID,
+    rpID,
     userVerification: 'preferred',
     allowCredentials: [], // discoverable — browser shows all matching credentials
   });
@@ -43,6 +52,7 @@ export async function GET(request: NextRequest) {
 
 // POST — verify assertion and issue session
 export async function POST(request: NextRequest) {
+  const { rpID, origin } = getRpConfig(request);
   const nonce = request.cookies.get(NONCE_COOKIE)?.value;
   if (!nonce) return NextResponse.json({ error: 'Missing challenge nonce' }, { status: 400 });
 
@@ -69,8 +79,8 @@ export async function POST(request: NextRequest) {
     verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
       credential: {
         id: Buffer.from(stored.credentialId).toString('base64url'),
         publicKey: new Uint8Array(stored.publicKey),

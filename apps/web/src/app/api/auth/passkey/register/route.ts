@@ -9,9 +9,16 @@ import { verifySession } from '@/lib/session-auth';
 import { cacheGet, cacheSet, cacheDel } from '@/lib/redis';
 
 const RP_NAME = 'CampaignSites Admin';
-const RP_ID = process.env.NEXT_PUBLIC_DOMAIN ?? 'localhost';
-const ORIGIN = process.env.NEXT_PUBLIC_ORIGIN ?? `https://${RP_ID}`;
 const CHALLENGE_TTL = 300; // 5 minutes
+
+/** Derive rpID and origin from the inbound request — works on localhost, Vercel, and production. */
+function getRpConfig(request: NextRequest) {
+  const host = request.headers.get('host') ?? 'localhost';
+  const proto = request.headers.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  const rpID = host.split(':')[0]; // strip port number
+  const origin = process.env.NEXT_PUBLIC_ORIGIN ?? `${proto}://${host}`;
+  return { rpID, origin };
+}
 
 function challengeKey(userId: string) {
   return `passkey:reg-challenge:${userId}`;
@@ -21,6 +28,8 @@ function challengeKey(userId: string) {
 export async function GET(request: NextRequest) {
   const session = await verifySession(request);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { rpID, origin: _origin } = getRpConfig(request);
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
@@ -35,7 +44,7 @@ export async function GET(request: NextRequest) {
 
   const options = await generateRegistrationOptions({
     rpName: RP_NAME,
-    rpID: RP_ID,
+    rpID,
     userID: Buffer.from(user.id),
     userName: user.email,
     userDisplayName: user.name ?? user.email,
@@ -58,6 +67,8 @@ export async function POST(request: NextRequest) {
   const session = await verifySession(request);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const { rpID, origin } = getRpConfig(request);
+
   const body = (await request.json().catch(() => null)) as {
     response: RegistrationResponseJSON;
     deviceName?: string;
@@ -74,8 +85,8 @@ export async function POST(request: NextRequest) {
     verification = await verifyRegistrationResponse({
       response: body.response,
       expectedChallenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
       requireUserVerification: false,
     });
   } catch (err) {
