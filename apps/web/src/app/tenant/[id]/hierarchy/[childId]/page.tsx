@@ -1,9 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
+
+interface PolicyRule {
+  resource: string;
+  actions: string[];
+  allow: boolean;
+}
+
+const RESOURCES = ['settings', 'branding', 'members', 'integrations', 'websites', 'governance', 'hierarchy'];
+const ACTIONS: Record<string, string[]> = {
+  settings: ['update'],
+  branding: ['update'],
+  members: ['invite', 'update', 'remove'],
+  integrations: ['create', 'update', 'delete'],
+  websites: ['create', 'publish', 'delete'],
+  governance: ['create', 'vote'],
+  hierarchy: ['add-child', 'remove-parent'],
+};
 
 interface ChildOrg {
   id: string;
@@ -129,6 +146,73 @@ export default function ChildOrgPage() {
   };
 
   const title = childOrg ? `Managing: ${childOrg.name}` : 'Managing Child Org';
+
+  // ── Policy management ──────────────────────────────────────────────────────
+  const [policy, setPolicy] = useState<{ id: string; rules: PolicyRule[]; note: string | null } | null>(null);
+  const [policyLoading, setPolicyLoading] = useState(true);
+  const [policyEdit, setPolicyEdit] = useState(false);
+  const [editRules, setEditRules] = useState<PolicyRule[]>([]);
+  const [editNote, setEditNote] = useState('');
+  const [policySaving, setPolicySaving] = useState(false);
+  const [policyMsg, setPolicyMsg] = useState<string | null>(null);
+
+  const fetchPolicy = useCallback(async () => {
+    if (!accessOk) return;
+    setPolicyLoading(true);
+    try {
+      const res = await globalThis.fetch(`/api/tenant/${orgId}/children/${childId}/policy`);
+      if (res.ok) {
+        const d = await res.json();
+        setPolicy(d.policy);
+        if (d.policy) {
+          setEditRules(d.policy.rules ?? []);
+          setEditNote(d.policy.note ?? '');
+        }
+      }
+    } finally { setPolicyLoading(false); }
+  }, [orgId, childId, accessOk]);
+
+  useEffect(() => { if (accessOk) fetchPolicy(); }, [accessOk, fetchPolicy]);
+
+  const savePolicy = async () => {
+    setPolicySaving(true);
+    setPolicyMsg(null);
+    try {
+      const res = await globalThis.fetch(`/api/tenant/${orgId}/children/${childId}/policy`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rules: editRules, note: editNote }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setPolicyMsg(d.error ?? 'Failed to save');
+      } else {
+        const d = await res.json();
+        setPolicy(d.policy);
+        setPolicyEdit(false);
+        setPolicyMsg('Policy saved.');
+        setTimeout(() => setPolicyMsg(null), 3000);
+      }
+    } finally { setPolicySaving(false); }
+  };
+
+  const removePolicy = async () => {
+    setPolicySaving(true);
+    try {
+      await globalThis.fetch(`/api/tenant/${orgId}/children/${childId}/policy`, { method: 'DELETE' });
+      setPolicy(null);
+      setEditRules([]);
+      setEditNote('');
+      setPolicyEdit(false);
+      setPolicyMsg('Restrictions removed.');
+      setTimeout(() => setPolicyMsg(null), 3000);
+    } finally { setPolicySaving(false); }
+  };
+
+  const addRule = () => setEditRules(r => [...r, { resource: 'settings', actions: ['update'], allow: false }]);
+  const removeRule = (i: number) => setEditRules(r => r.filter((_, idx) => idx !== i));
+  const updateRule = (i: number, field: keyof PolicyRule, value: unknown) =>
+    setEditRules(r => r.map((rule, idx) => idx === i ? { ...rule, [field]: value } : rule));
 
   if (loading) {
     return (
@@ -264,6 +348,145 @@ export default function ChildOrgPage() {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Policy Restrictions */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Policy Restrictions</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Restrict what this child organization can do in their portal.
+            </p>
+          </div>
+          {!policyEdit && (
+            <button
+              onClick={() => { setPolicyEdit(true); if (!policy) { setEditRules([]); setEditNote(''); } }}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              {policy ? 'Edit Restrictions' : '+ Add Restrictions'}
+            </button>
+          )}
+        </div>
+
+        {policyMsg && (
+          <div className={`mb-4 px-3 py-2 rounded text-sm ${policyMsg.startsWith('Failed') || policyMsg.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+            {policyMsg}
+          </div>
+        )}
+
+        {policyLoading ? (
+          <div className="text-sm text-gray-400">Loading…</div>
+        ) : policyEdit ? (
+          <div className="space-y-4">
+            {editRules.length === 0 && (
+              <p className="text-sm text-gray-400">No rules yet — add a restriction below.</p>
+            )}
+            {editRules.map((rule, i) => (
+              <div key={i} className="flex items-center gap-2 flex-wrap bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <select
+                  value={rule.resource}
+                  onChange={e => updateRule(i, 'resource', e.target.value)}
+                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {RESOURCES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+                <select
+                  multiple
+                  value={rule.actions}
+                  onChange={e => updateRule(i, 'actions', Array.from(e.target.selectedOptions, o => o.value))}
+                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  size={3}
+                >
+                  {(ACTIONS[rule.resource] ?? ['*']).map(a => <option key={a} value={a}>{a}</option>)}
+                  <option value="*">* (all)</option>
+                </select>
+                <select
+                  value={rule.allow ? 'allow' : 'deny'}
+                  onChange={e => updateRule(i, 'allow', e.target.value === 'allow')}
+                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="deny">Deny</option>
+                  <option value="allow">Allow</option>
+                </select>
+                <button onClick={() => removeRule(i)} className="text-red-500 hover:text-red-700 text-lg font-bold leading-none px-1">×</button>
+              </div>
+            ))}
+
+            <button
+              onClick={addRule}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium border border-dashed border-blue-300 rounded-lg px-4 py-2 w-full"
+            >
+              + Add Rule
+            </button>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Note (optional — shown to child org admins)</label>
+              <input
+                type="text"
+                value={editNote}
+                onChange={e => setEditNote(e.target.value)}
+                placeholder="e.g. Branding locked during campaign season"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={savePolicy}
+                disabled={policySaving}
+                className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              >
+                {policySaving ? 'Saving…' : 'Save Restrictions'}
+              </button>
+              <button
+                onClick={() => { setPolicyEdit(false); if (policy) { setEditRules(policy.rules); setEditNote(policy.note ?? ''); } }}
+                className="text-sm text-gray-600 hover:text-gray-700 font-medium"
+              >
+                Cancel
+              </button>
+              {policy && (
+                <button
+                  onClick={removePolicy}
+                  disabled={policySaving}
+                  className="ml-auto text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+                >
+                  Remove All Restrictions
+                </button>
+              )}
+            </div>
+          </div>
+        ) : policy && policy.rules.length > 0 ? (
+          <div className="space-y-2">
+            {policy.note && (
+              <p className="text-sm text-gray-600 italic mb-3">&quot;{policy.note}&quot;</p>
+            )}
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Resource</th>
+                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Actions</th>
+                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Decision</th>
+                </tr>
+              </thead>
+              <tbody>
+                {policy.rules.map((rule, i) => (
+                  <tr key={i} className="border-b border-gray-100">
+                    <td className="py-2 px-3 font-mono text-gray-900">{rule.resource}</td>
+                    <td className="py-2 px-3 font-mono text-gray-600">{rule.actions.join(', ')}</td>
+                    <td className="py-2 px-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${rule.allow ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {rule.allow ? 'Allow' : 'Deny'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No restrictions set — child org has full autonomy.</p>
         )}
       </div>
 

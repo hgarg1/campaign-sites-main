@@ -498,6 +498,36 @@ export async function executeAction(proposal: GovernanceProposal): Promise<void>
       break;
     }
 
+    case 'SET_CHILD_POLICY': {
+      if (!payload.childOrgId) throw new Error('SET_CHILD_POLICY requires payload.childOrgId');
+      const { invalidateOrgPolicyCache } = await import('@/lib/org-policy');
+      const policyRules = (payload as ActionPayload & { rules?: unknown[] }).rules ?? [];
+      const policyNote = (payload as ActionPayload & { note?: string }).note ?? null;
+      await prisma.orgInheritedPolicy.upsert({
+        where: { parentOrgId_targetOrgId: { parentOrgId: proposal.initiatorOrgId, targetOrgId: payload.childOrgId } },
+        create: {
+          parentOrgId: proposal.initiatorOrgId,
+          targetOrgId: payload.childOrgId,
+          rules: policyRules as never,
+          note: policyNote,
+          createdByUserId: proposal.initiatorUserId,
+        },
+        update: { rules: policyRules as never, note: policyNote },
+      });
+      await invalidateOrgPolicyCache(payload.childOrgId);
+      break;
+    }
+
+    case 'REMOVE_CHILD_POLICY': {
+      if (!payload.childOrgId) throw new Error('REMOVE_CHILD_POLICY requires payload.childOrgId');
+      const { invalidateOrgPolicyCache } = await import('@/lib/org-policy');
+      await prisma.orgInheritedPolicy.deleteMany({
+        where: { parentOrgId: proposal.initiatorOrgId, targetOrgId: payload.childOrgId },
+      });
+      await invalidateOrgPolicyCache(payload.childOrgId);
+      break;
+    }
+
     default:
       throw new Error(`Unhandled actionType: ${proposal.actionType}`);
   }

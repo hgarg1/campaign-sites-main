@@ -714,6 +714,16 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     return NextResponse.json(result);
   }
 
+  // ─── List parent-imposed inherited policies on an org ────────────────────────
+  if (first === 'organizations' && second && third === 'inherited-policies') {
+    const inherited = await prisma.orgInheritedPolicy.findMany({
+      where: { targetOrgId: second },
+      include: { parentOrg: { select: { id: true, name: true, slug: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+    return NextResponse.json({ data: inherited });
+  }
+
   // ─── List policies assigned to an org ────────────────────────────────────────
   if (first === 'organizations' && second && third === 'policies' && !path[3]) {
     const assignments = await prisma.orgPolicyAssignment.findMany({

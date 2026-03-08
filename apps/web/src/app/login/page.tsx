@@ -5,6 +5,64 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MarketingLayout } from '../../components/marketing-layout';
 
+function PasskeyLoginButton({ onError }: { onError: (msg: string) => void }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  async function handlePasskeyLogin() {
+    setLoading(true);
+    try {
+      // Dynamic import — @simplewebauthn/browser only works in browser context
+      const { startAuthentication } = await import('@simplewebauthn/browser');
+
+      // Get assertion challenge
+      const optRes = await fetch('/api/auth/passkey/authenticate');
+      if (!optRes.ok) {
+        onError('Failed to start passkey authentication');
+        return;
+      }
+      const options = await optRes.json();
+
+      // Start WebAuthn assertion
+      const credential = await startAuthentication(options);
+
+      // Verify with server
+      const verifyRes = await fetch('/api/auth/passkey/authenticate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credential),
+      });
+      const result = await verifyRes.json();
+
+      if (!verifyRes.ok) {
+        onError(result.error ?? 'Passkey authentication failed');
+        return;
+      }
+
+      router.push('/welcome');
+    } catch (err: unknown) {
+      // User cancelled or WebAuthn not supported
+      if (err instanceof Error && err.name !== 'NotAllowedError') {
+        onError('Passkey authentication failed. Try your password instead.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handlePasskeyLogin}
+      disabled={loading}
+      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-semibold hover:border-blue-400 hover:text-blue-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      <span className="text-lg">🔑</span>
+      {loading ? 'Authenticating…' : 'Sign in with Passkey'}
+    </button>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -86,6 +144,14 @@ export default function LoginPage() {
               {submitting ? 'Logging in...' : 'Log In'}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 border-t border-gray-200" />
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">or</span>
+            <div className="flex-1 border-t border-gray-200" />
+          </div>
+
+          <PasskeyLoginButton onError={setError} />
 
           <p className="text-sm text-gray-600 mt-5">
             Need a new account? <Link href="/get-started" className="text-blue-600 font-semibold hover:text-blue-700">Create one in the intake wizard</Link>

@@ -83,6 +83,11 @@ model Organization {
   // System permission policies assigned by system admins
   policyAssignments   OrgPolicyAssignment[]
 
+  // Parent-org inherited policies (this org sets policies on children)
+  policiesSet         OrgInheritedPolicy[]  @relation("PolicySetBy")
+  // Policies set on this org by parent orgs
+  policiesReceived    OrgInheritedPolicy[]  @relation("PolicyTarget")
+
   @@map("organizations")
 }
 
@@ -553,6 +558,8 @@ enum GovernanceActionType {
   ADD_PARENT
   REMOVE_PARENT
   ADD_CHILD
+  SET_CHILD_POLICY
+  REMOVE_CHILD_POLICY
 }
 
 enum VotingMode {
@@ -683,4 +690,27 @@ model OrgPolicyAssignment {
   @@id([orgId, policyId])
   @@index([policyId])
   @@map("org_policy_assignments")
+}
+
+// ─── Parent Tenant Policy Engine (Parent Org → Child Org restrictions) ────────
+
+// A parent org can impose restrictions on a specific child org.
+// rules Json shape: [{resource: string, actions: string[], allow: boolean}]
+// Resources match those in SystemPermissionPolicy — layered on top of system policies.
+model OrgInheritedPolicy {
+  id              String    @id @default(cuid())
+  parentOrgId     String
+  targetOrgId     String
+  rules           Json      // PolicyRule[]
+  note            String?   // human-readable reason
+  createdByUserId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  parentOrg       Organization @relation("PolicySetBy", fields: [parentOrgId], references: [id], onDelete: Cascade)
+  targetOrg       Organization @relation("PolicyTarget", fields: [targetOrgId], references: [id], onDelete: Cascade)
+
+  @@unique([parentOrgId, targetOrgId])
+  @@index([targetOrgId])
+  @@map("org_inherited_policies")
 }

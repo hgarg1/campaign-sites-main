@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantSettings } from '@/hooks/useTenant';
+import { useEffectiveRestrictions, RestrictionBanner } from '@/hooks/useRestrictions';
 
 type Tab = 'general' | 'branding' | 'billing' | 'notifications';
 
@@ -21,6 +22,9 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('general');
 
   const { data, loading, updateSettings } = useTenantSettings(orgId);
+  const { isBlocked, blockedReason, restrictions } = useEffectiveRestrictions(orgId);
+  const settingsBlocked = isBlocked('settings', 'update');
+  const brandingBlocked = isBlocked('branding', 'update');
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState('');
@@ -92,6 +96,11 @@ export default function SettingsPage() {
 
   return (
     <TenantLayout title="Settings" subtitle="Manage your organization settings" orgId={orgId}>
+      {restrictions.sources.length > 0 && (
+        <div className="mb-4">
+          <RestrictionBanner sources={restrictions.sources} />
+        </div>
+      )}
       <div className="flex gap-6">
         <div className="w-48 flex-shrink-0">
           <nav className="space-y-1">
@@ -219,10 +228,25 @@ export default function SettingsPage() {
             )}
 
             {activeTab !== 'billing' && (
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+              <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-3">
+                <button
+                  onClick={handleSave}
+                  disabled={saving || (activeTab === 'general' && settingsBlocked) || (activeTab === 'branding' && brandingBlocked)}
+                  title={
+                    (activeTab === 'general' && settingsBlocked) ? blockedReason('settings', 'update') :
+                    (activeTab === 'branding' && brandingBlocked) ? blockedReason('branding', 'update') :
+                    undefined
+                  }
+                  className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {saving ? 'Saving...' : 'Save Settings'}
                 </button>
+                {activeTab === 'general' && settingsBlocked && (
+                  <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">🔒 Restricted by policy</span>
+                )}
+                {activeTab === 'branding' && brandingBlocked && (
+                  <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">🔒 Restricted by policy</span>
+                )}
               </div>
             )}
           </div>

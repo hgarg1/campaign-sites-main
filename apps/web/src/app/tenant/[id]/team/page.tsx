@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantMembers, TenantMember } from '@/hooks/useTenant';
+import { useEffectiveRestrictions, RestrictionBanner } from '@/hooks/useRestrictions';
 
 const ROLE_COLORS: Record<string, string> = {
   OWNER: 'bg-purple-100 text-purple-700',
@@ -40,6 +41,10 @@ export default function TeamPage() {
   const orgId = params.id as string;
 
   const { data, loading, error, updateMemberRole, removeMember, refetch } = useTenantMembers(orgId);
+  const { isBlocked, restrictions } = useEffectiveRestrictions(orgId);
+  const inviteBlocked = isBlocked('members', 'invite');
+  const removeBlocked = isBlocked('members', 'remove');
+  const updateBlocked = isBlocked('members', 'update');
 
   const [activeTab, setActiveTab] = useState<'members' | 'invites'>('members');
   const [search, setSearch] = useState('');
@@ -177,6 +182,11 @@ export default function TeamPage() {
 
   return (
     <TenantLayout title="Team" subtitle="Manage your organization members" orgId={orgId}>
+      {restrictions.sources.length > 0 && (
+        <div className="mb-4">
+          <RestrictionBanner sources={restrictions.sources} />
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -186,9 +196,11 @@ export default function TeamPage() {
         </div>
         <Link
           href={`/tenant/${orgId}/team/invite`}
-          className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium"
+          className={`bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium ${inviteBlocked ? 'opacity-50 pointer-events-none' : ''}`}
+          aria-disabled={inviteBlocked}
+          title={inviteBlocked ? 'Inviting members is restricted by policy' : undefined}
         >
-          + Invite Member
+          {inviteBlocked ? '🔒 + Invite Member' : '+ Invite Member'}
         </Link>
       </div>
 

@@ -6,6 +6,7 @@ import { parseAndVerifySessionToken } from '@/lib/session-auth';
 import { verifyAncestorAccess, AccessResult } from '@/lib/cross-org-auth';
 import { getEffectiveStatus } from '@/lib/ancestry';
 import { checkSystemPolicy } from '@/lib/system-policy';
+import { checkOrgPolicy } from '@/lib/org-policy';
 
 export async function getAuthUserId(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -107,8 +108,8 @@ export async function verifyDescendantAccess(
 }
 
 /**
- * Checks the system policy for a given org + resource + action.
- * Returns a 403 NextResponse if blocked, or null if the action is allowed.
+ * Checks the system policy AND parent org policy for a given org + resource + action.
+ * Returns a 403 NextResponse if blocked by either layer, or null if allowed.
  * Usage: const denied = await enforceSystemPolicy(orgId, 'members', 'invite');
  *        if (denied) return denied;
  */
@@ -118,20 +119,35 @@ export async function enforceSystemPolicy(
   action: string
 ): Promise<NextResponse | null> {
   try {
-    const result = await checkSystemPolicy(orgId, resource, action);
-    if (!result.allowed) {
+    // Layer 1: system admin policy
+    const sysResult = await checkSystemPolicy(orgId, resource, action);
+    if (!sysResult.allowed) {
       return NextResponse.json(
         {
           error: 'Action blocked by system policy',
-          policyId: result.policyId,
-          reason: result.reason ?? `${resource}.${action} is restricted by system administrator`,
+          policyId: sysResult.policyId,
+          reason: sysResult.reason ?? `${resource}.${action} is restricted by system administrator`,
         },
         { status: 403 }
       );
     }
+
+    // Layer 2: parent org policy
+    const orgResult = await checkOrgPolicy(orgId, resource, action);
+    if (!orgResult.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Action blocked by parent organization policy',
+          source: orgResult.source,
+          reason: orgResult.reason ?? `${resource}.${action} is restricted by your parent organization`,
+        },
+        { status: 403 }
+      );
+    }
+
     return null;
   } catch {
-    // On error, fail open to avoid breaking tenant operations if policy engine is unavailable
+    // Fail open to avoid breaking tenant operations if policy engine is unavailable
     return null;
   }
 }
