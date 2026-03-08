@@ -65,9 +65,10 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
         </Link>
         <Link
           href="/tenant-chooser"
-          className="mt-3 block text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          className="mt-4 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-700/50 hover:bg-slate-600 hover:border-slate-500 text-slate-200 hover:text-white text-sm font-medium transition-all duration-200"
         >
-          ↩ Switch Org
+          <span>⇄</span>
+          Switch Organization
         </Link>
       </motion.div>
 

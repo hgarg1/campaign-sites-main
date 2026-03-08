@@ -289,6 +289,15 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                 >
                   🔔 Notifications
                 </Link>
+                {(sessionUser?.role === 'GLOBAL_ADMIN' || sessionUser?.role === 'ADMIN') && (
+                  <Link
+                    href="/admin/portal"
+                    className="w-full block text-left px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors border-t border-gray-100"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    ⚙️ System Admin Portal
+                  </Link>
+                )}
                 <div className="border-t border-gray-100">
                   <button
                     type="button"
