@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
 import { getAuthUserId, verifyOrgMember, enforceSystemPolicy, writeAuditLog } from '@/app/api/tenant/auth-utils';
+import { notifyOrgMembers } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +99,13 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
       targetUserId: invitedUser.id,
       toRole: role,
     });
+
+    notifyOrgMembers(params.orgId, {
+      type: 'ORG_MEMBER_ADDED',
+      title: 'New member added',
+      body: `${invitedUser.name ?? invitedUser.email} joined the organization as ${role}.`,
+      actorId: userId,
+    }).catch(() => {});
 
     return NextResponse.json({ id: newMember.id, userId: newMember.userId, role: newMember.role, user: newMember.user, joinedAt: null }, { status: 201 });
   } catch {

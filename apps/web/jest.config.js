@@ -21,12 +21,19 @@ module.exports = {
   },
 
   // Setup files
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFilesAfterEach: [],
+  setupFilesAfterFramework: [],
 
-  // Transform files
+  // Transform files — include .js setup file so ESM imports work
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: {
+        jsx: 'react-jsx',
+      },
+    }],
+    '^.+\\.jsx?$': ['ts-jest', {
+      tsconfig: {
+        allowJs: true,
         jsx: 'react-jsx',
       },
     }],

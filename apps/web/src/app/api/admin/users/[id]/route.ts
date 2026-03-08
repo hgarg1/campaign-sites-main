@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { getSessionUserFromToken } from '@/lib/session-auth';
+import { notifyAdmins } from '@/lib/notifications';
 
 interface RouteParams {
   params: {
@@ -64,19 +65,47 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PATCH /api/admin/users/[id] - Update user
+// PATCH /api/admin/users/[id] - Update user (role change, etc.)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const userId = params.id;
-    const body = await request.json();
+    const sessionToken = request.cookies.get('campaignsites_session')?.value;
+    const sessionUser = await getSessionUserFromToken(sessionToken);
 
-    // TODO: Implement user update logic
-    // - Validate updated fields
-    // - Update user in database
-    // - Log admin action
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (sessionUser.role !== 'GLOBAL_ADMIN' && sessionUser.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const userId = params.id;
+    const body = await request.json() as { role?: string; name?: string };
+
+    const existing = await prisma.user.findUnique({ where: { id: userId } });
+    if (!existing) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.role !== undefined && { role: body.role as any }),
+      },
+    });
+
+    if (body.role && body.role !== existing.role) {
+      notifyAdmins({
+        type: 'USER_ROLE_CHANGED',
+        title: 'User role changed',
+        body: `${existing.name ?? existing.email}'s role changed from ${existing.role} to ${body.role}.`,
+        actorId: sessionUser.id,
+      }).catch(() => {});
+    }
 
     return NextResponse.json(
-      { message: 'User updated successfully', data: { id: userId, ...body } },
+      { message: 'User updated successfully', data: { id: updated.id, email: updated.email, name: updated.name, role: updated.role } },
       { status: 200 }
     );
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
 import { getAuthUserId, verifyOrgMember, enforceSystemPolicy, writeAuditLog } from '@/app/api/tenant/auth-utils';
+import { notifyOrgMembers } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +79,13 @@ export async function PATCH(
       toRole: role,
     });
 
+    notifyOrgMembers(params.orgId, {
+      type: 'ORG_ROLE_CHANGED',
+      title: 'Member role updated',
+      body: `${target.user?.name ?? target.user?.email ?? 'A member'}'s role changed from ${fromRole} to ${role}.`,
+      actorId: userId,
+    }).catch(() => {});
+
     return NextResponse.json({ id: updated.id, userId: updated.userId, role: updated.role, user: updated.user, joinedAt: null });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -130,6 +138,13 @@ export async function DELETE(
       targetUserId: target.userId,
       fromRole: target.role,
     });
+
+    notifyOrgMembers(params.orgId, {
+      type: 'ORG_MEMBER_REMOVED',
+      title: 'Member removed',
+      body: `${target.user?.email ?? 'A member'} was removed from the organization.`,
+      actorId: userId,
+    }).catch(() => {});
 
     return new NextResponse(null, { status: 204 });
   } catch {

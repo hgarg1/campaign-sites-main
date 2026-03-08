@@ -13,6 +13,7 @@ import { executeAction } from '@/lib/governance';
 import { invalidatePolicyCache, invalidateAllPolicyCaches, getOrgEffectivePolicy } from '@/lib/system-policy';
 import type { PartyAffiliation } from '@prisma/client';
 import { NotificationType } from '@prisma/client';
+import { notifyAdmins, notifyOrgMembers } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -817,6 +818,21 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
       update: { appliedAt: new Date() },
     });
     await invalidatePolicyCache(second);
+
+    notifyAdmins({
+      type: 'POLICY_ASSIGNED',
+      title: 'Policy assigned to organization',
+      body: `Policy ${body.policyId} was assigned to organization ${second}.`,
+      orgId: second,
+    }).catch(() => {});
+
+    notifyOrgMembers(second, {
+      type: 'ORG_POLICY_ASSIGNED',
+      title: 'New policy applied to your organization',
+      body: 'A system permission policy has been applied to your organization.',
+      orgId: second,
+    }).catch(() => {});
+
     return NextResponse.json(assignment, { status: 201 });
   }
   if (first === 'organizations' && second && third === 'parent') {

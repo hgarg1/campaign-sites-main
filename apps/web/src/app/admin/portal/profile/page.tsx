@@ -27,7 +27,184 @@ function formatDate(s: string | null) {
   return new Date(s).toLocaleDateString(undefined, { dateStyle: 'medium' });
 }
 
-// ─── Passkey Section ──────────────────────────────────────────────────────────
+// ─── Notification Preferences Section ────────────────────────────────────────
+
+const NOTIFICATION_CATEGORIES = [
+  {
+    label: 'System Events',
+    types: [
+      { key: 'USER_CREATED', label: 'User Created' },
+      { key: 'USER_ROLE_CHANGED', label: 'User Role Changed' },
+      { key: 'USER_DEACTIVATED', label: 'User Deactivated' },
+      { key: 'POLICY_ASSIGNED', label: 'Policy Assigned' },
+      { key: 'POLICY_REVOKED', label: 'Policy Revoked' },
+      { key: 'SECURITY_ALERT', label: 'Security Alert' },
+      { key: 'SYSTEM_ANNOUNCEMENT', label: 'System Announcement' },
+    ],
+  },
+  {
+    label: 'Org Events',
+    types: [
+      { key: 'ORG_MEMBER_ADDED', label: 'Member Added' },
+      { key: 'ORG_MEMBER_REMOVED', label: 'Member Removed' },
+      { key: 'ORG_ROLE_CHANGED', label: 'Role Changed' },
+      { key: 'ORG_POLICY_ASSIGNED', label: 'Policy Assigned' },
+    ],
+  },
+  {
+    label: 'Governance',
+    types: [
+      { key: 'GOVERNANCE_VOTE_REQUESTED', label: 'Vote Requested' },
+      { key: 'GOVERNANCE_VOTE_CAST', label: 'Vote Cast' },
+      { key: 'GOVERNANCE_PROPOSAL_APPROVED', label: 'Proposal Approved' },
+      { key: 'GOVERNANCE_PROPOSAL_REJECTED', label: 'Proposal Rejected' },
+      { key: 'GOVERNANCE_PROPOSAL_EXPIRED', label: 'Proposal Expired' },
+    ],
+  },
+  {
+    label: 'Campaign',
+    types: [
+      { key: 'WEBSITE_PUBLISHED', label: 'Website Published' },
+      { key: 'WEBSITE_BUILD_FAILED', label: 'Website Build Failed' },
+    ],
+  },
+] as const;
+
+function NotificationPreferencesSection() {
+  const [inApp, setInApp] = useState(true);
+  const [disabledTypes, setDisabledTypes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/notifications/settings', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => {
+        setInApp(d.inApp ?? true);
+        setDisabledTypes(d.disabledTypes ?? []);
+      })
+      .catch(() => setError('Failed to load notification settings'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const save = useCallback(
+    async (newInApp: boolean, newDisabled: string[]) => {
+      setSaving(true);
+      setSuccess(null);
+      setError(null);
+      try {
+        const res = await fetch('/api/notifications/settings', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inApp: newInApp, disabledTypes: newDisabled }),
+        });
+        if (!res.ok) throw new Error('Failed to save');
+        setSuccess('Preferences saved.');
+        setTimeout(() => setSuccess(null), 3000);
+      } catch {
+        setError('Failed to save notification preferences.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    []
+  );
+
+  const handleInAppToggle = (checked: boolean) => {
+    setInApp(checked);
+    save(checked, disabledTypes);
+  };
+
+  const handleTypeToggle = (type: string, enabled: boolean) => {
+    const newDisabled = enabled
+      ? disabledTypes.filter((t) => t !== type)
+      : [...disabledTypes, type];
+    setDisabledTypes(newDisabled);
+    save(inApp, newDisabled);
+  };
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Notification Preferences</h2>
+          <p className="text-sm text-gray-500">Control which in-app notifications you receive.</p>
+        </div>
+        {saving && <span className="text-xs text-gray-400">Saving…</span>}
+      </div>
+
+      {success && (
+        <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => <div key={i} className="animate-pulse bg-gray-100 h-10 rounded-lg" />)}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Master in-app toggle */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">In-App Notifications</p>
+              <p className="text-xs text-gray-500 mt-0.5">Show notifications inside the admin portal.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={inApp}
+                onChange={(e) => handleInAppToggle(e.target.checked)}
+                className="sr-only peer"
+                disabled={saving}
+              />
+              <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+            </label>
+          </div>
+
+          {/* Per-type toggles by category */}
+          {NOTIFICATION_CATEGORIES.map((cat) => (
+            <div key={cat.label} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700">{cat.label}</h3>
+              </div>
+              <ul className="divide-y divide-gray-100">
+                {cat.types.map(({ key, label }) => {
+                  const enabled = !disabledTypes.includes(key);
+                  return (
+                    <li key={key} className="flex items-center justify-between px-5 py-3">
+                      <span className="text-sm text-gray-700">{label}</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={enabled}
+                          onChange={(e) => handleTypeToggle(key, e.target.checked)}
+                          className="sr-only peer"
+                          disabled={saving || !inApp}
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function PasskeySection({ requirePasskey }: { requirePasskey: boolean }) {
   const [credentials, setCredentials] = useState<PasskeyCredential[]>([]);
@@ -380,6 +557,44 @@ export default function ProfilePage() {
 
         {/* Passkeys section — always visible for admin users */}
         <PasskeySection requirePasskey={user?.requirePasskey ?? false} />
+
+        {/* Notification preferences */}
+        <NotificationPreferencesSection />
+      </div>
+    </AdminLayout>
+  );
+}
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Displayed in the admin top bar and audit activity.</p>
+                </div>
+                {message && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{message}</p>}
+                {error && <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                  >
+                    {saving ? 'Saving…' : 'Save Profile'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setName(user?.name ?? ''); setMessage(null); setError(null); }}
+                    className="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Passkeys section — always visible for admin users */}
+        <PasskeySection requirePasskey={user?.requirePasskey ?? false} />
+
+        {/* Notification preferences */}
+        <NotificationPreferencesSection />
       </div>
     </AdminLayout>
   );
