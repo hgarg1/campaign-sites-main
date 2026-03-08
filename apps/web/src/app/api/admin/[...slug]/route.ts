@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import type { AdminSnapshot } from '@/lib/admin-live';
 import { prisma } from '@/lib/database';
 import {
@@ -710,28 +710,44 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
   // ─── Org effective policy (for admin org detail view) ────────────────────────
   if (first === 'organizations' && second && third === 'effective-policy') {
-    const result = await getOrgEffectivePolicy(second);
-    return NextResponse.json(result);
+    try {
+      const result = await getOrgEffectivePolicy(second);
+      const source = result.policies.length > 0
+        ? result.policies.map((p) => p.name).join(', ')
+        : 'No policies assigned — all actions permitted';
+      return NextResponse.json({ source, rules: result.merged ?? [] });
+    } catch {
+      return NextResponse.json({ source: 'Error loading policy', rules: [] });
+    }
   }
 
   // ─── List parent-imposed inherited policies on an org ────────────────────────
   if (first === 'organizations' && second && third === 'inherited-policies') {
-    const inherited = await prisma.orgInheritedPolicy.findMany({
-      where: { targetOrgId: second },
-      include: { parentOrg: { select: { id: true, name: true, slug: true } } },
-      orderBy: { createdAt: 'asc' },
-    });
-    return NextResponse.json({ data: inherited });
+    try {
+      const inherited = await prisma.orgInheritedPolicy.findMany({
+        where: { targetOrgId: second },
+        include: { parentOrg: { select: { id: true, name: true, slug: true } } },
+        orderBy: { createdAt: 'asc' },
+      });
+      const data = inherited.map((ip) => ({ ...ip, rules: Array.isArray(ip.rules) ? ip.rules : [] }));
+      return NextResponse.json({ data });
+    } catch {
+      return NextResponse.json({ data: [] });
+    }
   }
 
   // ─── List policies assigned to an org ────────────────────────────────────────
   if (first === 'organizations' && second && third === 'policies' && !path[3]) {
-    const assignments = await prisma.orgPolicyAssignment.findMany({
-      where: { orgId: second },
-      include: { policy: { select: { id: true, name: true, description: true, isDefault: true, _count: { select: { assignments: true } } } } },
-      orderBy: { appliedAt: 'asc' },
-    });
-    return NextResponse.json({ assignments: assignments.map((a) => ({ ...a.policy, _count: { orgAssignments: a.policy._count.assignments } })) });
+    try {
+      const assignments = await prisma.orgPolicyAssignment.findMany({
+        where: { orgId: second },
+        include: { policy: { select: { id: true, name: true, description: true, isDefault: true, _count: { select: { assignments: true } } } } },
+        orderBy: { appliedAt: 'asc' },
+      });
+      return NextResponse.json({ assignments: assignments.map((a) => ({ ...a.policy, _count: { orgAssignments: a.policy._count.assignments } })) });
+    } catch {
+      return NextResponse.json({ assignments: [] });
+    }
   }
 
   return NextResponse.json({

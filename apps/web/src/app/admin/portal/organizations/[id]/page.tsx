@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -408,7 +408,7 @@ function PoliciesTab({ orgId }: { orgId: string }) {
       const [assignData, allData, effectiveData, inheritedData] = await Promise.all([
         assignRes.json(),
         allRes.json(),
-        effectiveRes.json(),
+        effectiveRes.ok ? effectiveRes.json() : { source: 'No policy data', rules: [] },
         inheritedRes.ok ? inheritedRes.json() : { data: [] },
       ]);
       setAssignments(assignData.assignments ?? []);
