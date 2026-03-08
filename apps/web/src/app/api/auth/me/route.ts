@@ -77,6 +77,7 @@ export async function GET() {
         email: user.email,
         name: user.name,
         role: user.role,
+        requirePasskey: user.requirePasskey,
         organizations: user.organizations.map((om: any) => ({
           id: om.organization.id,
           name: om.organization.name,

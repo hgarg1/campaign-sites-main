@@ -8,9 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface TopBarProps {
   title: string;
   subtitle?: string;
+  onMenuClick?: () => void;
 }
 
-export function TopBar({ title, subtitle }: TopBarProps) {
+export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -86,28 +87,40 @@ export function TopBar({ title, subtitle }: TopBarProps) {
 
   return (
     <nav className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-40">
-      <div className="px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 -ml-1 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0"
+          aria-label="Open menu"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        {/* Title */}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
             {title}
           </h1>
-          {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+          {subtitle && <p className="text-xs sm:text-sm text-gray-600 truncate">{subtitle}</p>}
         </div>
 
         {/* User Menu */}
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold flex-shrink-0">
               {avatarLetter}
             </div>
-            <div className="text-left">
+            <div className="text-left hidden sm:block">
               <p className="text-sm font-medium text-gray-900">{displayName}</p>
               <p className="text-xs text-gray-600">{displayRole}</p>
             </div>
-            <span className={`text-gray-600 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}>
+            <span className={`text-gray-600 transition-transform hidden sm:block ${showUserMenu ? 'rotate-180' : ''}`}>
               ▼
             </span>
           </button>

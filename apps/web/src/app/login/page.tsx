@@ -39,7 +39,7 @@ function PasskeyLoginButton({ onError }: { onError: (msg: string) => void }) {
         return;
       }
 
-      router.push('/welcome');
+      router.push(result.redirectTo ?? '/admin/portal');
     } catch (err: unknown) {
       // User cancelled or WebAuthn not supported
       if (err instanceof Error && err.name !== 'NotAllowedError') {
