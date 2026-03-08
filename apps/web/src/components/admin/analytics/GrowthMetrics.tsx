@@ -60,6 +60,7 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
         <div className="space-y-4">
           {data.metrics.slice(-7).map((metric, index) => {
             const maxValue = Math.max(
+              1,
               ...data.metrics.map(m => Math.max(m.users, m.organizations, m.websites))
             );
             const userWidth = (metric.users / maxValue) * 100;

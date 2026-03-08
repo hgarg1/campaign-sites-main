@@ -29,16 +29,16 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
     }).format(value);
   };
 
-  const topByOrg = [...data.byOrganization].sort((a, b) => b.cost - a.cost).slice(0, 5);
-  const topByProvider = [...data.byProvider].sort((a, b) => b.cost - a.cost);
+  const topByOrg = [...(data.byOrganization ?? [])].sort((a, b) => b.cost - a.cost).slice(0, 5);
+  const topByProvider = [...(data.byProvider ?? [])].sort((a, b) => b.cost - a.cost);
 
   const selectedData =
     selectedBreakdown === 'organization'
       ? topByOrg
       : selectedBreakdown === 'user'
-        ? data.byUser.slice(0, 5)
+        ? (data.byUser ?? []).slice(0, 5)
         : selectedBreakdown === 'website'
-          ? data.byWebsite.slice(0, 5)
+          ? (data.byWebsite ?? []).slice(0, 5)
           : topByProvider;
 
   const maxCost = Math.max(...selectedData.map((item) => ('cost' in item ? item.cost : 0)));

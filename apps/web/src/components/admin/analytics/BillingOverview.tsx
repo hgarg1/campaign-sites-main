@@ -139,7 +139,7 @@ export function BillingOverview({ data, loading }: BillingOverviewProps) {
               >
                 <div>
                   <div className="text-sm font-medium text-gray-900">
-                    {payment.method.toUpperCase()}
+                    {(payment.method ?? 'unknown').toUpperCase()}
                   </div>
                   <div className="text-xs text-gray-600">{formatDate(payment.date)}</div>
                 </div>

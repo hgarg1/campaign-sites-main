@@ -237,12 +237,27 @@ export async function getAdminSnapshot(forceRefresh = false): Promise<AdminSnaps
       const snapshot = await buildSnapshotFromDatabase();
       await cacheSet(SNAPSHOT_CACHE_KEY, snapshot, SNAPSHOT_TTL_SECONDS);
       return snapshot;
+    } catch (err) {
+      console.error('[admin-live] snapshot build failed, returning empty snapshot:', err);
+      // Return empty snapshot so the route can still serve list/detail pages
+      // (they'll show empty state rather than hard 503)
+      return emptySnapshot();
     } finally {
       inflightSnapshot = null;
     }
   })();
 
   return inflightSnapshot;
+}
+
+function emptySnapshot(): AdminSnapshot {
+  return {
+    users: [],
+    organizations: [],
+    websites: [],
+    jobs: [],
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 export function getPaginatedUsers(snapshot: AdminSnapshot, page: number, pageSize: number, filters?: {

@@ -13,7 +13,7 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
     return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
   }
 
-  if (!data || data.length === 0) {
+  if (!data || !Array.isArray(data) || data.length === 0) {
     return <div className="text-center py-8 text-gray-600">No engagement data available</div>;
   }
 
@@ -47,7 +47,7 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
       {/* Engagement Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {data.map((metric, index) => {
-          const colorClass = getColorByTrend(metric.trend);
+          const colorClass = getColorByTrend(metric.trend ?? 0);
           const icon = getIconByMetric(metric.metric);
 
           return (
@@ -61,9 +61,9 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium opacity-75 truncate">{metric.metric}</div>
-                  <div className="text-2xl font-bold mt-2">{metric.value.toFixed(1)}</div>
-                  <div className={`text-xs mt-2 font-semibold ${metric.trend >= 0 ? '' : 'opacity-75'}`}>
-                    {metric.trend >= 0 ? '📈' : '📉'} {metric.trend >= 0 ? '+' : ''}{metric.trend.toFixed(1)}%
+                  <div className="text-2xl font-bold mt-2">{(metric.value ?? 0).toFixed(1)}</div>
+                  <div className={`text-xs mt-2 font-semibold ${(metric.trend ?? 0) >= 0 ? '' : 'opacity-75'}`}>
+                    {(metric.trend ?? 0) >= 0 ? '📈' : '📉'} {(metric.trend ?? 0) >= 0 ? '+' : ''}{(metric.trend ?? 0).toFixed(1)}%
                   </div>
                 </div>
                 <div className="text-2xl shrink-0">{icon}</div>
@@ -84,9 +84,10 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
         
         {/* Calculate average engagement */}
         {(() => {
-          const avgValue = data.reduce((sum, m) => sum + m.value, 0) / data.length;
-          const avgTrend = data.reduce((sum, m) => sum + m.trend, 0) / data.length;
-          const scorePercentage = Math.min(100, Math.round(avgValue));
+          const n = data.length || 1;
+          const avgValue = data.reduce((sum, m) => sum + (m.value ?? 0), 0) / n;
+          const avgTrend = data.reduce((sum, m) => sum + (m.trend ?? 0), 0) / n;
+          const scorePercentage = Math.min(100, Math.round(isFinite(avgValue) ? avgValue : 0));
 
           return (
             <div>
@@ -140,9 +141,9 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-900">{metric.value.toFixed(1)}</div>
-                    <div className={`text-xs ${metric.trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {metric.trend >= 0 ? '+' : ''}{metric.trend.toFixed(1)}%
+                    <div className="text-sm font-semibold text-gray-900">{(metric.value ?? 0).toFixed(1)}</div>
+                    <div className={`text-xs ${(metric.trend ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {(metric.trend ?? 0) >= 0 ? '+' : ''}{(metric.trend ?? 0).toFixed(1)}%
                     </div>
                   </div>
                 </div>

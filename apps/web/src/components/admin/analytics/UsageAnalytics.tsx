@@ -20,15 +20,18 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
   const latest = data[data.length - 1];
   const previous = data[data.length - 2] || latest;
 
-  const calculateTrend = (current: number, previous: number) => {
-    const change = ((current - previous) / previous) * 100;
-    return change;
+  const calculateTrend = (current: number | null, previous: number | null): number => {
+    const c = current ?? 0;
+    const p = previous ?? 0;
+    if (p === 0) return c > 0 ? 100 : 0;
+    const change = ((c - p) / p) * 100;
+    return isFinite(change) ? Math.round(change * 10) / 10 : 0;
   };
 
   const metrics = [
     {
       label: 'Active Users',
-      value: latest.dailyActiveUsers,
+      value: latest.dailyActiveUsers ?? 0,
       icon: '👥',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -36,7 +39,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
     },
     {
       label: 'API Calls',
-      value: latest.apiCalls.toLocaleString(),
+      value: (latest.apiCalls ?? 0).toLocaleString(),
       icon: '📡',
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -44,7 +47,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
     },
     {
       label: 'Build Jobs',
-      value: latest.buildJobs,
+      value: latest.buildJobs ?? 0,
       icon: '🔨',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
@@ -52,7 +55,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
     },
     {
       label: 'Avg Build',
-      value: `${(latest.averageBuildTime / 60).toFixed(1)}m`,
+      value: `${((latest.averageBuildTime ?? 0) / 60).toFixed(1)}m`,
       icon: '⏱️',
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
@@ -60,7 +63,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
     },
     {
       label: 'Success',
-      value: `${latest.successRate}%`,
+      value: `${latest.successRate ?? 0}%`,
       icon: '✅',
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50',
@@ -109,8 +112,9 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
         
         <div className="space-y-4">
           {data.slice(-7).map((metric, index) => {
-            const maxApiCalls = Math.max(...data.map(m => m.apiCalls));
-            const apiCallsWidth = (metric.apiCalls / maxApiCalls) * 100;
+            const apiValues = data.map(m => m.apiCalls ?? 0);
+            const maxApiCalls = Math.max(1, ...apiValues);
+            const apiCallsWidth = ((metric.apiCalls ?? 0) / maxApiCalls) * 100;
 
             return (
               <div key={metric.date} className="border-b border-gray-100 pb-4 last:border-0">
@@ -119,7 +123,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
                     {new Date(metric.date).toLocaleDateString()}
                   </div>
                   <div className="text-sm text-gray-600 truncate">
-                    {metric.dailyActiveUsers} DAU · {metric.buildJobs} jobs
+                    {metric.dailyActiveUsers ?? 0} DAU · {metric.buildJobs ?? 0} jobs
                   </div>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -129,7 +133,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
                   />
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {metric.apiCalls.toLocaleString()} API calls • {metric.successRate}% success
+                  {(metric.apiCalls ?? 0).toLocaleString()} API calls • {metric.successRate ?? 0}% success
                 </div>
               </div>
             );

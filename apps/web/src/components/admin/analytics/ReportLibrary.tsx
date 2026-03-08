@@ -85,7 +85,7 @@ export function ReportLibrary({ reports, loading, onDownload }: ReportLibraryPro
                       {report.type}
                     </span>
                     <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-900 whitespace-nowrap">
-                      {report.format.toUpperCase()}
+                      {(report.format ?? 'pdf').toUpperCase()}
                     </span>
                   </div>
                   <div className="text-sm text-gray-600">
