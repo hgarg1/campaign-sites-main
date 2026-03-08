@@ -36,6 +36,8 @@ export interface TenantMember {
   role: 'OWNER' | 'ADMIN' | 'MEMBER';
   user: { id: string; name: string | null; email: string };
   joinedAt: string;
+  customRoleId?: string | null;
+  customRole?: { id: string; name: string; color: string } | null;
 }
 
 export interface TenantUsage {

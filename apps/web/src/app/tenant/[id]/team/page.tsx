@@ -53,7 +53,27 @@ const ACTION_LABELS: Record<string, string> = {
   'invite.resend': 'Resent invite',
 };
 
+interface CustomRoleSummary {
+  id: string;
+  name: string;
+  color: string;
+  description?: string;
+}
 
+interface PermEntry {
+  resource: string;
+  action: string;
+  status: 'allowed' | 'blocked' | 'not_in_role';
+}
+
+const PERM_RESOURCES = ['websites', 'members', 'settings', 'branding', 'integrations', 'billing'];
+const PERM_ACTIONS = ['read', 'create', 'update', 'delete', 'publish'];
+
+const PERM_STATUS_ICON: Record<string, string> = {
+  allowed: '🟢',
+  blocked: '🔴',
+  not_in_role: '⚪',
+};
 
 interface RoleConfirm {
   memberId: string;
@@ -89,6 +109,21 @@ export default function TeamPage() {
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [restrictionsExpanded, setRestrictionsExpanded] = useState(false);
+
+  const [customRoles, setCustomRoles] = useState<CustomRoleSummary[]>([]);
+  const [assignModal, setAssignModal] = useState<{
+    memberId: string;
+    memberName: string;
+    currentCustomRoleId: string | null;
+  } | null>(null);
+  const [assignRoleId, setAssignRoleId] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const [permDrawer, setPermDrawer] = useState<{
+    member: TenantMember;
+    customRole: { id: string; name: string; color: string } | null;
+  } | null>(null);
+  const [permData, setPermData] = useState<PermEntry[]>([]);
+  const [permLoading, setPermLoading] = useState(false);
 
   const showMsg = (text: string, isError = false) => {
     setMsg(text);
@@ -128,6 +163,63 @@ export default function TeamPage() {
     if (activeTab === 'invites') fetchInvites();
     if (activeTab === 'activity') fetchAuditLog();
   }, [activeTab, fetchInvites, fetchAuditLog]);
+
+  useEffect(() => {
+    fetch(`/api/tenant/${orgId}/roles`)
+      .then(r => r.json())
+      .then((json: { data: CustomRoleSummary[] } | CustomRoleSummary[]) => {
+        setCustomRoles(Array.isArray(json) ? json : (json.data ?? []));
+      })
+      .catch(() => setCustomRoles([]));
+  }, [orgId]);
+
+  const getCustomRole = (member: TenantMember): { id: string; name: string; color: string } | null => {
+    if (member.customRole) return member.customRole;
+    if (member.customRoleId) {
+      const found = customRoles.find(r => r.id === member.customRoleId);
+      return found ? { id: found.id, name: found.name, color: found.color } : null;
+    }
+    return null;
+  };
+
+  const handleAssignRole = async () => {
+    if (!assignModal) return;
+    setAssigning(true);
+    try {
+      const res = await fetch(`/api/tenant/${orgId}/members/${assignModal.memberId}/custom-role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customRoleId: assignRoleId }),
+      });
+      if (res.status === 403) throw new Error('You do not have permission.');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      showMsg('Custom role updated.');
+      setAssignModal(null);
+      refetch();
+    } catch (e) {
+      showMsg(e instanceof Error ? e.message : 'Failed to assign role', true);
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const openPermDrawer = async (member: TenantMember) => {
+    const customRole = getCustomRole(member);
+    setPermDrawer({ member, customRole });
+    setPermData([]);
+    setPermLoading(true);
+    try {
+      const res = await fetch(`/api/tenant/${orgId}/members/${member.id}/permissions`);
+      if (res.ok) {
+        const json = (await res.json()) as PermEntry[] | { data: PermEntry[] };
+        setPermData(Array.isArray(json) ? json : (json.data ?? []));
+      }
+    } catch {
+      // ignore — drawer still shows member info
+    } finally {
+      setPermLoading(false);
+    }
+  };
 
   // Search filter
   const filtered = data.filter(m => {
@@ -303,37 +395,45 @@ export default function TeamPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex border-b border-gray-200 mb-6">
-        <button
-          onClick={() => setActiveTab('members')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'members'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
+      <div className="flex items-center justify-between border-b border-gray-200 mb-6">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab('members')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'members'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Members ({data.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('invites')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'invites'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Pending Invites ({pendingCount})
+          </button>
+          <button
+            onClick={() => setActiveTab('activity')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'activity'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Activity
+          </button>
+        </div>
+        <Link
+          href={`/tenant/${orgId}/team/roles`}
+          className="pb-2 text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
         >
-          Members ({data.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('invites')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'invites'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Pending Invites ({pendingCount})
-        </button>
-        <button
-          onClick={() => setActiveTab('activity')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'activity'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Activity
-        </button>
+          🎭 Custom Roles
+        </Link>
       </div>
 
       {/* ── Members Tab ── */}
@@ -397,7 +497,9 @@ export default function TeamPage() {
                       {search ? 'No members match your search.' : 'No team members found.'}
                     </div>
                   ) : (
-                    filtered.map(member => (
+                    filtered.map(member => {
+                      const customRole = getCustomRole(member);
+                      return (
                       <div key={member.id} className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center gap-4">
                           <input
@@ -406,18 +508,41 @@ export default function TeamPage() {
                             onChange={() => toggleSelect(member.id)}
                             className="h-4 w-4 rounded border-gray-300 text-blue-600"
                           />
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                          <button
+                            type="button"
+                            onClick={() => openPermDrawer(member)}
+                            title="View permissions"
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold hover:opacity-80 transition-opacity"
+                          >
                             {(member.user.name || member.user.email).charAt(0).toUpperCase()}
-                          </div>
+                          </button>
                           <div>
-                            <p className="font-medium text-gray-900">{member.user.name || '(No name)'}</p>
+                            <button
+                              type="button"
+                              onClick={() => openPermDrawer(member)}
+                              className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-left"
+                            >
+                              {member.user.name || '(No name)'}
+                            </button>
                             <p className="text-sm text-gray-500">{member.user.email}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[member.role] ?? 'bg-gray-100 text-gray-700'}`}>
                             {member.role}
                           </span>
+                          {customRole && (
+                            <span
+                              className="px-2 py-0.5 rounded-full text-xs font-medium"
+                              style={{
+                                backgroundColor: `${customRole.color}22`,
+                                color: customRole.color,
+                                border: `1px solid ${customRole.color}55`,
+                              }}
+                            >
+                              {customRole.name}
+                            </span>
+                          )}
                           <select
                             value={member.role}
                             onChange={e => setRoleConfirm({
@@ -432,6 +557,21 @@ export default function TeamPage() {
                             <option value="OWNER">OWNER</option>
                           </select>
                           <button
+                            type="button"
+                            onClick={() => {
+                              setAssignModal({
+                                memberId: member.id,
+                                memberName: member.user.name || member.user.email,
+                                currentCustomRoleId: member.customRoleId ?? null,
+                              });
+                              setAssignRoleId(member.customRoleId ?? null);
+                            }}
+                            className="text-xs text-purple-600 hover:text-purple-700 px-2 py-1 rounded border border-purple-200 hover:bg-purple-50"
+                            title="Assign custom role"
+                          >
+                            🎭
+                          </button>
+                          <button
                             onClick={() => {
                               setSelected(new Set([member.id]));
                               setBulkConfirm(true);
@@ -442,7 +582,8 @@ export default function TeamPage() {
                           </button>
                         </div>
                       </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -653,6 +794,172 @@ export default function TeamPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Assign Custom Role modal ── */}
+      {assignModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Assign Custom Role</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              for <strong>{assignModal.memberName}</strong>
+            </p>
+            <select
+              value={assignRoleId ?? ''}
+              onChange={e => setAssignRoleId(e.target.value || null)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-5"
+            >
+              <option value="">None (use base role only)</option>
+              {customRoles.map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAssignRole}
+                disabled={assigning}
+                className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+              >
+                {assigning ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                onClick={() => setAssignModal(null)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Permissions Drawer ── */}
+      {permDrawer && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setPermDrawer(null)}
+          />
+          {/* Drawer panel */}
+          <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">Member Permissions</h3>
+              <button
+                onClick={() => setPermDrawer(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {/* Member info */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                  {(permDrawer.member.user.name || permDrawer.member.user.email)
+                    .charAt(0)
+                    .toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {permDrawer.member.user.name || '(No name)'}
+                  </p>
+                  <p className="text-sm text-gray-500">{permDrawer.member.user.email}</p>
+                </div>
+              </div>
+
+              {/* Roles */}
+              <div className="flex items-center gap-2 mb-6">
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[permDrawer.member.role] ?? 'bg-gray-100 text-gray-700'}`}
+                >
+                  {permDrawer.member.role}
+                </span>
+                {permDrawer.customRole && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-xs font-medium"
+                    style={{
+                      backgroundColor: `${permDrawer.customRole.color}22`,
+                      color: permDrawer.customRole.color,
+                      border: `1px solid ${permDrawer.customRole.color}55`,
+                    }}
+                  >
+                    {permDrawer.customRole.name}
+                  </span>
+                )}
+              </div>
+
+              {/* Permission grid */}
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Effective Permissions</h4>
+              {permLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                </div>
+              ) : permData.length === 0 ? (
+                <div className="text-sm text-gray-400 italic py-4">
+                  No permission data available for this member.
+                </div>
+              ) : (
+                <div className="rounded-lg border border-gray-200 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium text-gray-600">Resource</th>
+                        {PERM_ACTIONS.map(a => (
+                          <th key={a} className="px-2 py-2 font-medium text-gray-600 text-center capitalize text-xs">
+                            {a}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {PERM_RESOURCES.map(resource => (
+                        <tr key={resource}>
+                          <td className="px-3 py-2 font-medium text-gray-700 capitalize text-xs">
+                            {resource}
+                          </td>
+                          {PERM_ACTIONS.map(action => {
+                            const isPublishNonWebsite =
+                              action === 'publish' && resource !== 'websites';
+                            if (isPublishNonWebsite) {
+                              return (
+                                <td key={action} className="px-2 py-2 text-center text-gray-300 text-xs">
+                                  —
+                                </td>
+                              );
+                            }
+                            const entry = permData.find(
+                              p => p.resource === resource && p.action === action
+                            );
+                            const status = entry?.status ?? 'not_in_role';
+                            return (
+                              <td key={action} className="px-2 py-2 text-center" title={status.replace('_', ' ')}>
+                                {PERM_STATUS_ICON[status] ?? '⚪'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Legend */}
+              {permData.length > 0 && (
+                <div className="mt-4 flex gap-4 text-xs text-gray-500">
+                  <span>🟢 Allowed</span>
+                  <span>🔴 Blocked by policy</span>
+                  <span>⚪ Not in role</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </TenantLayout>
   );

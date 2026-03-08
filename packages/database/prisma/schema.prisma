@@ -88,6 +88,9 @@ model Organization {
   // Policies set on this org by parent orgs
   policiesReceived    OrgInheritedPolicy[]  @relation("PolicyTarget")
 
+  // Custom roles defined by this org's OWNER
+  customRoles         OrgCustomRole[]
+
   @@map("organizations")
 }
 
@@ -135,16 +138,36 @@ enum OrganizationStatus {
 }
 
 model OrganizationMember {
-  id             String       @id @default(cuid())
+  id             String          @id @default(cuid())
   organizationId String
   userId         String
-  role           MemberRole   @default(MEMBER)
-  
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  role           MemberRole      @default(MEMBER)
+  customRoleId   String?         // Only valid when role is MEMBER or ADMIN
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customRole     OrgCustomRole?  @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+
   @@unique([organizationId, userId])
   @@map("organization_members")
+}
+
+/// A custom role defined by a tenant OWNER, always a strict subset of the org's effective policy.
+model OrgCustomRole {
+  id             String               @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  color          String               @default("#6366f1") // tailwind indigo-500 default
+  permissions    Json                 // Array of { resource: string, actions: string[] }
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        OrganizationMember[]
+
+  @@unique([organizationId, name])
+  @@map("org_custom_roles")
 }
 
 enum MemberRole {
