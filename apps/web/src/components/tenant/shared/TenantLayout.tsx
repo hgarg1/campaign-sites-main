@@ -12,28 +12,45 @@ interface TenantLayoutProps {
   orgId: string;
 }
 
+function setupKey(orgId: string) {
+  return `setup_done_${orgId}`;
+}
+
 export function TenantLayout({ children, title, subtitle, orgId }: TenantLayoutProps) {
-  const [setupDone, setSetupDone] = useState<boolean | null>(null);
+  // Start as true if we already know setup is done (sessionStorage fast-path)
+  const [setupDone, setSetupDone] = useState<boolean | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem(setupKey(orgId)) === '1' ? true : null;
+    }
+    return null;
+  });
 
   useEffect(() => {
+    // Already confirmed done via sessionStorage — skip fetch
+    if (setupDone === true) return;
+
     let active = true;
     globalThis.fetch(`/api/tenant/${orgId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (active && data) {
-          setSetupDone(data.setupCompletedAt !== null && data.setupCompletedAt !== undefined);
-        } else if (active) {
-          setSetupDone(true); // fail open
-        }
+        if (!active) return;
+        const done = !!(data?.setupCompletedAt);
+        setSetupDone(done);
+        if (done) sessionStorage.setItem(setupKey(orgId), '1');
       })
-      .catch(() => { if (active) setSetupDone(true); });
+      .catch(() => { if (active) setSetupDone(true); }); // fail open
     return () => { active = false; };
-  }, [orgId]);
+  }, [orgId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleSetupComplete() {
+    sessionStorage.setItem(setupKey(orgId), '1');
+    setSetupDone(true);
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
       {setupDone === false && (
-        <SetupModal orgId={orgId} onComplete={() => setSetupDone(true)} />
+        <SetupModal orgId={orgId} onComplete={handleSetupComplete} />
       )}
       <TenantNavigation orgId={orgId} />
       <div className="flex-1 flex flex-col overflow-hidden">

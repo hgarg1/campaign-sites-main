@@ -117,11 +117,22 @@ async function main() {
           ownStatus: 'ACTIVE',
           canCreateChildren: true,
           whiteLabel: false,
+          // Master tenants are pre-configured — no setup modal needed
+          setupCompletedAt: new Date(),
         },
       });
       console.log(`   ✓ Created org: ${org.name} (${org.id})`);
     } else {
-      console.log(`   · Org already exists: ${org.name} (${org.id})`);
+      // Ensure existing master tenant orgs are marked as setup-complete
+      if (!org.setupCompletedAt) {
+        org = await prisma.organization.update({
+          where: { id: org.id },
+          data: { setupCompletedAt: new Date() },
+        });
+        console.log(`   ✓ Marked setup complete: ${org.name}`);
+      } else {
+        console.log(`   · Org already exists: ${org.name} (${org.id})`);
+      }
     }
 
     // 2. Upsert MasterTenantMapping

@@ -9,7 +9,7 @@ interface SetupModalProps {
 
 const PARTY_OPTIONS = [
   { value: 'REPUBLICAN', label: 'Republican', emoji: '🐘', bg: 'bg-red-50', border: 'border-red-400', text: 'text-red-700' },
-  { value: 'DEMOCRAT', label: 'Democrat', emoji: '🫏', bg: 'bg-blue-50', border: 'border-blue-400', text: 'text-blue-700' },
+  { value: 'DEMOCRAT', label: 'Democrat', emoji: '🔵', bg: 'bg-blue-50', border: 'border-blue-400', text: 'text-blue-700' },
   { value: 'LIBERTARIAN', label: 'Libertarian', emoji: '🗽', bg: 'bg-yellow-50', border: 'border-yellow-400', text: 'text-yellow-700' },
   { value: 'GREEN', label: 'Green', emoji: '🌿', bg: 'bg-green-50', border: 'border-green-400', text: 'text-green-700' },
   { value: 'INDEPENDENT', label: 'Independent', emoji: '⚖️', bg: 'bg-gray-50', border: 'border-gray-400', text: 'text-gray-700' },
@@ -23,7 +23,7 @@ export function SetupModal({ orgId, onComplete }: SetupModalProps) {
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!selected) return;
+    if (!selected || saving) return;
     setSaving(true);
     setError(null);
     try {
@@ -32,8 +32,13 @@ export function SetupModal({ orgId, onComplete }: SetupModalProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ partyAffiliation: selected }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      onComplete();
+      // 409 = already completed — treat as success so modal dismisses cleanly
+      if (res.ok || res.status === 409) {
+        onComplete();
+        return;
+      }
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      throw new Error(body.error ?? `HTTP ${res.status}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save');
     } finally {
