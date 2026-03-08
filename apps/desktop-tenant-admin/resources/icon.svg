@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="200" fill="#3730a3"/>
+  <rect x="220" y="280" width="584" height="560" rx="20" fill="#6366f1"/>
+  <rect x="300" y="360" width="120" height="120" rx="10" fill="white" opacity="0.9"/>
+  <rect x="460" y="360" width="120" height="120" rx="10" fill="white" opacity="0.9"/>
+  <rect x="620" y="360" width="120" height="120" rx="10" fill="white" opacity="0.9"/>
+  <rect x="300" y="520" width="120" height="120" rx="10" fill="white" opacity="0.9"/>
+  <rect x="460" y="520" width="120" height="120" rx="10" fill="white" opacity="0.9"/>
+  <rect x="620" y="520" width="120" height="120" rx="10" fill="white" opacity="0.9"/>
+  <rect x="420" y="680" width="184" height="160" rx="10" fill="white" opacity="0.95"/>
+  <!-- Star badge -->
+  <circle cx="780" cy="280" r="100" fill="#fbbf24"/>
+  <polygon points="780,200 800,260 865,260 812,298 832,358 780,320 728,358 748,298 695,260 760,260" fill="white"/>
+</svg>

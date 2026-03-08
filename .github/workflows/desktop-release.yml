@@ -1,0 +1,166 @@
+name: Desktop App Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'          # stable: v1.0.0
+      - 'v*.*.*-canary.*' # canary: v1.0.0-canary.1
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+            artifact_ext: 'dmg'
+          - os: windows-latest
+            platform: win
+            artifact_ext: 'exe'
+          - os: ubuntu-latest
+            platform: linux
+            artifact_ext: 'AppImage'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build both Electron apps
+      - name: Build desktop-system-admin
+        working-directory: apps/desktop-system-admin
+        run: pnpm build
+
+      - name: Build desktop-tenant-admin
+        working-directory: apps/desktop-tenant-admin
+        run: pnpm build
+
+      # Package system-admin app
+      - name: Package system-admin (${{ matrix.platform }})
+        working-directory: apps/desktop-system-admin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # skip code signing in CI (add certs later)
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm package:${{ matrix.platform }}
+
+      # Package tenant-admin app
+      - name: Package tenant-admin (${{ matrix.platform }})
+        working-directory: apps/desktop-tenant-admin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm package:${{ matrix.platform }}
+
+      # Upload system-admin artifacts
+      - name: Upload system-admin artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-admin-${{ matrix.platform }}
+          path: |
+            apps/desktop-system-admin/dist/*.dmg
+            apps/desktop-system-admin/dist/*.exe
+            apps/desktop-system-admin/dist/*.AppImage
+            apps/desktop-system-admin/dist/*.deb
+          if-no-files-found: warn
+
+      # Upload tenant-admin artifacts
+      - name: Upload tenant-admin artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tenant-admin-${{ matrix.platform }}
+          path: |
+            apps/desktop-tenant-admin/dist/*.dmg
+            apps/desktop-tenant-admin/dist/*.exe
+            apps/desktop-tenant-admin/dist/*.AppImage
+            apps/desktop-tenant-admin/dist/*.deb
+          if-no-files-found: warn
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Determine release type
+        id: release_type
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ "$TAG" == *"-canary"* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "name=Canary $TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "name=Release $TAG" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "${{ github.ref_name }}" | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log --oneline "$PREV_TAG".."${{ github.ref_name }}" --no-merges | head -40)
+          else
+            NOTES=$(git log --oneline -20 --no-merges)
+          fi
+          echo "notes<<EOF" >> "$GITHUB_OUTPUT"
+          echo "## What's Changed" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "$NOTES" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "### Downloads" >> "$GITHUB_OUTPUT"
+          echo "| App | Platform | Download |" >> "$GITHUB_OUTPUT"
+          echo "|-----|----------|----------|" >> "$GITHUB_OUTPUT"
+          echo "| System Admin | macOS | \`.dmg\` below |" >> "$GITHUB_OUTPUT"
+          echo "| System Admin | Windows | \`.exe\` (NSIS installer) below |" >> "$GITHUB_OUTPUT"
+          echo "| System Admin | Linux | \`.AppImage\` / \`.deb\` below |" >> "$GITHUB_OUTPUT"
+          echo "| Tenant Admin | macOS | \`.dmg\` below |" >> "$GITHUB_OUTPUT"
+          echo "| Tenant Admin | Windows | \`.exe\` (NSIS installer) below |" >> "$GITHUB_OUTPUT"
+          echo "| Tenant Admin | Linux | \`.AppImage\` / \`.deb\` below |" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.release_type.outputs.name }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          prerelease: ${{ steps.release_type.outputs.prerelease }}
+          files: release-artifacts/**/*
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -45,6 +45,7 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
     { label: 'Analytics', href: `/tenant/${orgId}/analytics`, icon: '📈' },
     { label: 'Usage', href: `/tenant/${orgId}/usage`, icon: '💾' },
     { label: 'Settings', href: `/tenant/${orgId}/settings`, icon: '⚙️' },
+    { label: 'Desktop App', href: `/tenant/${orgId}/download`, icon: '📥' },
   ];
 
   return (

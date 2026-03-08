@@ -43,6 +43,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
     { label: 'Security', href: '/admin/portal/security', icon: '🔐' },
     { label: 'Settings', href: '/admin/portal/settings', icon: '⚙️' },
     { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉' },
+    { label: 'Desktop App', href: '/admin/portal/download', icon: '📥' },
   ];
 
   return (
