@@ -12,22 +12,16 @@ function cacheKey(userId: string) {
 }
 
 export async function setChallenge(userId: string, challenge: string): Promise<void> {
-  // Try Redis first
-  try {
-    await cacheSet(cacheKey(userId), challenge, CHALLENGE_TTL);
-    const stored = await cacheGet<string>(cacheKey(userId));
-    if (stored === challenge) return; // Redis worked
-  } catch {
-    // Redis unavailable — fall through to DB
-  }
-
-  // DB fallback
+  // Always write to DB — source of truth (works without Redis)
   const expiresAt = new Date(Date.now() + CHALLENGE_TTL * 1000);
   await prisma.webauthnChallenge.upsert({
     where: { userId },
     create: { userId, challenge, expiresAt },
     update: { challenge, expiresAt },
   });
+
+  // Also cache in Redis if available (speed optimisation only)
+  cacheSet(cacheKey(userId), challenge, CHALLENGE_TTL).catch(() => {});
 }
 
 export async function getChallenge(userId: string): Promise<string | null> {

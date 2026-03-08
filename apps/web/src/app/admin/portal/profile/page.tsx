@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -458,7 +458,7 @@ export default function ProfilePage() {
 
   return (
     <AdminLayout title="Profile Settings" subtitle="Manage your account profile and passkeys">
-      <div className="max-w-4xl space-y-0">
+      <div className="max-w-4xl w-full space-y-6">
         {/* Profile row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Avatar card */}
@@ -564,39 +564,3 @@ export default function ProfilePage() {
     </AdminLayout>
   );
 }
-                  />
-                  <p className="mt-1 text-xs text-gray-400">Displayed in the admin top bar and audit activity.</p>
-                </div>
-                {message && <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">{message}</p>}
-                {error && <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
-                <div className="flex items-center gap-3 pt-1">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
-                  >
-                    {saving ? 'Saving…' : 'Save Profile'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setName(user?.name ?? ''); setMessage(null); setError(null); }}
-                    className="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Reset
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-
-        {/* Passkeys section — always visible for admin users */}
-        <PasskeySection requirePasskey={user?.requirePasskey ?? false} />
-
-        {/* Notification preferences */}
-        <NotificationPreferencesSection />
-      </div>
-    </AdminLayout>
-  );
-}
-
