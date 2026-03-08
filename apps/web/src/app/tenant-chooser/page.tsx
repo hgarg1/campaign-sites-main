@@ -14,8 +14,11 @@ type Organization = {
 export default function TenantChooserPage() {
   const router = useRouter();
   const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [userRole, setUserRole] = useState<string>('USER');
   const [loading, setLoading] = useState(true);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+
+  const isSystemAdmin = userRole === 'GLOBAL_ADMIN' || userRole === 'ADMIN';
 
   useEffect(() => {
     async function fetchOrgs() {
@@ -30,7 +33,8 @@ export default function TenantChooserPage() {
         }
 
         const data = await response.json();
-        setOrgs(data.organizations);
+        setOrgs(data.organizations ?? []);
+        setUserRole(data.role ?? 'USER');
       } catch (error) {
         console.error('Failed to fetch organizations:', error);
         router.push('/login');
@@ -90,14 +94,59 @@ export default function TenantChooserPage() {
           </p>
         </motion.div>
 
-        {/* Org Grid */}
+        {/* Card Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* System Admin Portal card — shown first for admins */}
+          {isSystemAdmin && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="relative group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-700 to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-300 -z-10" />
+              <Link href="/admin/portal" className="block h-full">
+                <div className="relative bg-gradient-to-br from-slate-800 to-gray-900 rounded-2xl p-8 border border-slate-600 group-hover:border-slate-400 transition-all duration-300 h-full">
+                  {/* Icon */}
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-slate-500 to-gray-600 flex items-center justify-center mb-4">
+                    <span className="text-white text-xl">⚙️</span>
+                  </div>
+
+                  {/* Badge */}
+                  <div className="mb-3">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                      {userRole === 'GLOBAL_ADMIN' ? '★ Global Admin' : '★ System Admin'}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    System Admin Portal
+                  </h2>
+
+                  <p className="text-sm text-slate-400 mb-4">
+                    Manage tenants, users, policies &amp; platform settings
+                  </p>
+
+                  <motion.div
+                    whileHover={{ x: 4 }}
+                    className="text-sm font-semibold text-amber-400 group-hover:text-amber-300 flex items-center gap-2"
+                  >
+                    Enter portal
+                    <span>→</span>
+                  </motion.div>
+                </div>
+              </Link>
+            </motion.div>
+          )}
+
+          {/* Tenant org cards */}
           {orgs.map((org, index) => (
             <motion.button
               key={org.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.5, delay: (index + (isSystemAdmin ? 1 : 0)) * 0.1 }}
               onClick={() => handleSelectOrgAndRedirect(org.id)}
               disabled={selectedOrgId !== null}
               className="relative group text-left"
@@ -143,6 +192,18 @@ export default function TenantChooserPage() {
               </div>
             </motion.button>
           ))}
+
+          {/* Empty state for non-admin with no orgs */}
+          {!isSystemAdmin && orgs.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="md:col-span-2 lg:col-span-3 text-center py-16"
+            >
+              <p className="text-gray-500 text-lg mb-4">You don't belong to any organizations yet.</p>
+              <Link href="/contact" className="text-blue-600 hover:underline font-medium">Contact support to get access →</Link>
+            </motion.div>
+          )}
         </div>
 
         {/* Footer */}
