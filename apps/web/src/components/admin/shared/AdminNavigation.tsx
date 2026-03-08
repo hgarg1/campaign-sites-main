@@ -28,6 +28,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
     { label: 'Monitoring', href: '/admin/portal/monitoring', icon: '📈' },
     { label: 'Logs & Audit', href: '/admin/portal/logs', icon: '📝' },
     { label: 'Hierarchy', href: '/admin/portal/hierarchy', icon: '🌳' },
+    { label: 'Master Tenants', href: '/admin/portal/master-tenants', icon: '🏛️' },
     { label: 'Governance', href: '/admin/portal/governance', icon: '⚖️' },
     { label: 'Policies', href: '/admin/portal/policies', icon: '📋' },
     { label: 'Security', href: '/admin/portal/security', icon: '🔐' },
