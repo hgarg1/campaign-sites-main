@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { TenantNavigation } from './TenantNavigation';
 import { TenantTopBar } from './TenantTopBar';
+import { TenantThemeProvider } from './TenantThemeProvider';
 import { SetupModal } from '@/components/tenant/SetupModal';
 
 interface TenantLayoutProps {
@@ -52,6 +53,7 @@ export function TenantLayout({ children, title, subtitle, orgId }: TenantLayoutP
       {setupDone === false && (
         <SetupModal orgId={orgId} onComplete={handleSetupComplete} />
       )}
+      <TenantThemeProvider orgId={orgId} />
       <TenantNavigation orgId={orgId} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TenantTopBar title={title} subtitle={subtitle} orgId={orgId} />

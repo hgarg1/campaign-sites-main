@@ -144,13 +144,13 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
   };
 
   return (
-    <nav className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-40">
+    <nav className="sticky top-0 border-b border-gray-200 shadow-sm z-40" style={{ backgroundColor: 'var(--t-topbar-bg)' }}>
       <div className="px-6 py-4 flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 font-medium">{orgName}</span>
             <span className="text-gray-300">·</span>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--t-primary)] to-[var(--t-secondary)] bg-clip-text text-transparent">
               {title}
             </h1>
           </div>

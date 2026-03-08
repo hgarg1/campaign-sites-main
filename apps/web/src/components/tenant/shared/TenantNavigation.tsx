@@ -48,7 +48,10 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
   ];
 
   return (
-    <aside className="sticky top-0 h-screen w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white border-r border-slate-700 flex flex-col overflow-hidden">
+    <aside
+      className="sticky top-0 h-screen w-64 text-white border-r border-slate-700 flex flex-col overflow-hidden"
+      style={{ background: 'linear-gradient(to bottom, var(--t-sidebar-from), var(--t-sidebar-to))' }}
+    >
       {/* Logo Section */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -65,7 +68,7 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
         </Link>
         <Link
           href="/tenant-chooser"
-          className="mt-4 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-700/50 hover:bg-slate-600 hover:border-slate-500 text-slate-200 hover:text-white text-sm font-medium transition-all duration-200"
+          className="mt-4 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 hover:border-white/30 text-slate-200 hover:text-white text-sm font-medium transition-all duration-200"
         >
           <span>⇄</span>
           Switch Organization
@@ -91,9 +94,10 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    ? 'text-white shadow-lg'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
                 }`}
+                style={isActive ? { backgroundColor: 'var(--t-primary)' } : undefined}
               >
                 <span className="text-lg">{item.icon}</span>
                 <span className="font-medium">{item.label}</span>

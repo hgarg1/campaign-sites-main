@@ -29,6 +29,16 @@ function generatePassword(prefix: string): string {
   return `${prefix}@CS2025!${suffix}`;
 }
 
+const INLINE_PARTY_THEMES: Record<string, object> = {
+  REPUBLICAN:  { primaryColor: '#dc2626', secondaryColor: '#ef4444', accentColor: '#fca5a5', sidebarFrom: '#7f1d1d', sidebarTo: '#991b1b' },
+  DEMOCRAT:    { primaryColor: '#1d4ed8', secondaryColor: '#2563eb', accentColor: '#93c5fd', sidebarFrom: '#1e3a8a', sidebarTo: '#1d4ed8' },
+  LIBERTARIAN: { primaryColor: '#b45309', secondaryColor: '#d97706', accentColor: '#fcd34d', sidebarFrom: '#78350f', sidebarTo: '#92400e' },
+  GREEN:       { primaryColor: '#15803d', secondaryColor: '#16a34a', accentColor: '#86efac', sidebarFrom: '#14532d', sidebarTo: '#166534' },
+  INDEPENDENT: { primaryColor: '#475569', secondaryColor: '#64748b', accentColor: '#cbd5e1', sidebarFrom: '#1e293b', sidebarTo: '#334155' },
+  NONPARTISAN: { primaryColor: '#1e40af', secondaryColor: '#3b82f6', accentColor: '#bfdbfe', sidebarFrom: '#0f172a', sidebarTo: '#1e3a8a' },
+  OTHER:       { primaryColor: '#7c3aed', secondaryColor: '#8b5cf6', accentColor: '#ddd6fe', sidebarFrom: '#4c1d95', sidebarTo: '#5b21b6' },
+};
+
 const PARTY_TENANTS = [
   {
     party: 'REPUBLICAN' as const,
@@ -109,6 +119,7 @@ async function main() {
     // 1. Upsert organization
     let org = await prisma.organization.findUnique({ where: { slug: tenant.slug } });
     if (!org) {
+      const partyBranding = INLINE_PARTY_THEMES[tenant.party] ?? {};
       org = await prisma.organization.create({
         data: {
           name: tenant.orgName,
@@ -119,17 +130,25 @@ async function main() {
           whiteLabel: false,
           // Master tenants are pre-configured — no setup modal needed
           setupCompletedAt: new Date(),
+          branding: { ...partyBranding, logoUrl: null, faviconUrl: null },
         },
       });
       console.log(`   ✓ Created org: ${org.name} (${org.id})`);
     } else {
       // Ensure existing master tenant orgs are marked as setup-complete
-      if (!org.setupCompletedAt) {
+      // and have party branding applied (merge to preserve any existing logoUrl etc)
+      const currentBranding = (org.branding as any) ?? {};
+      const partyBranding = INLINE_PARTY_THEMES[tenant.party] ?? {};
+      const needsBrandingUpdate = !currentBranding.primaryColor || !currentBranding.secondaryColor;
+      const updateData: any = {};
+      if (!org.setupCompletedAt) updateData.setupCompletedAt = new Date();
+      if (needsBrandingUpdate) updateData.branding = { ...partyBranding, logoUrl: currentBranding.logoUrl ?? null, faviconUrl: currentBranding.faviconUrl ?? null, ...currentBranding };
+      if (Object.keys(updateData).length > 0) {
         org = await prisma.organization.update({
           where: { id: org.id },
-          data: { setupCompletedAt: new Date() },
+          data: updateData,
         });
-        console.log(`   ✓ Marked setup complete: ${org.name}`);
+        console.log(`   ✓ Updated org branding/setup: ${org.name}`);
       } else {
         console.log(`   · Org already exists: ${org.name} (${org.id})`);
       }
