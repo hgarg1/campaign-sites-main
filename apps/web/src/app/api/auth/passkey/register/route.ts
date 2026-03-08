@@ -6,10 +6,9 @@ import {
 import type { RegistrationResponseJSON } from '@simplewebauthn/types';
 import { prisma } from '@/lib/database';
 import { verifySession } from '@/lib/session-auth';
-import { cacheGet, cacheSet, cacheDel } from '@/lib/redis';
+import { setChallenge, getChallenge, deleteChallenge } from '@/lib/webauthn-challenge';
 
 const RP_NAME = 'CampaignSites Admin';
-const CHALLENGE_TTL = 300; // 5 minutes
 
 /** Derive rpID and origin from the inbound request — works on localhost, Vercel, and production. */
 function getRpConfig(request: NextRequest) {
@@ -20,46 +19,48 @@ function getRpConfig(request: NextRequest) {
   return { rpID, origin };
 }
 
-function challengeKey(userId: string) {
-  return `passkey:reg-challenge:${userId}`;
-}
-
 // GET — generate a registration challenge for the current user
 export async function GET(request: NextRequest) {
   const session = await verifySession(request);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { rpID, origin: _origin } = getRpConfig(request);
+  const { rpID } = getRpConfig(request);
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { id: true, email: true, name: true, passkeyCredentials: { select: { credentialId: true } } },
-  });
-  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { id: true, email: true, name: true, passkeyCredentials: { select: { credentialId: true } } },
+    });
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  const excludeCredentials = user.passkeyCredentials.map((c) => ({
-    id: Buffer.from(c.credentialId).toString('base64url'),
-    type: 'public-key' as const,
-  }));
+    const excludeCredentials = user.passkeyCredentials.map((c) => ({
+      id: Buffer.from(c.credentialId).toString('base64url'),
+      type: 'public-key' as const,
+    }));
 
-  const options = await generateRegistrationOptions({
-    rpName: RP_NAME,
-    rpID,
-    userID: Buffer.from(user.id),
-    userName: user.email,
-    userDisplayName: user.name ?? user.email,
-    excludeCredentials,
-    authenticatorSelection: {
-      residentKey: 'preferred',
-      userVerification: 'preferred',
-    },
-    attestationType: 'none',
-  });
+    const options = await generateRegistrationOptions({
+      rpName: RP_NAME,
+      rpID,
+      userID: new Uint8Array(Buffer.from(user.id)),
+      userName: user.email,
+      userDisplayName: user.name ?? user.email,
+      excludeCredentials,
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'preferred',
+      },
+      attestationType: 'none',
+    });
 
-  // Persist challenge for verification step
-  await cacheSet(challengeKey(user.id), options.challenge, CHALLENGE_TTL);
+    // Persist challenge (Redis with DB fallback)
+    await setChallenge(user.id, options.challenge);
 
-  return NextResponse.json(options);
+    return NextResponse.json(options);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to generate registration options';
+    console.error('Passkey GET error:', err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 // POST — verify attestation and save credential
@@ -75,44 +76,51 @@ export async function POST(request: NextRequest) {
   } | null;
   if (!body?.response) return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
 
-  const expectedChallenge = await cacheGet<string>(challengeKey(session.userId));
-  if (!expectedChallenge) {
-    return NextResponse.json({ error: 'Challenge expired — please try again' }, { status: 400 });
-  }
-
-  let verification;
   try {
-    verification = await verifyRegistrationResponse({
-      response: body.response,
-      expectedChallenge,
-      expectedOrigin: origin,
-      expectedRPID: rpID,
-      requireUserVerification: false,
+    const expectedChallenge = await getChallenge(session.userId);
+    if (!expectedChallenge) {
+      return NextResponse.json({ error: 'Challenge expired — please try again' }, { status: 400 });
+    }
+
+    let verification;
+    try {
+      verification = await verifyRegistrationResponse({
+        response: body.response,
+        expectedChallenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+        requireUserVerification: false,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Verification failed';
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    if (!verification.verified || !verification.registrationInfo) {
+      return NextResponse.json({ error: 'Verification failed' }, { status: 400 });
+    }
+
+    await deleteChallenge(session.userId);
+
+    const { credential } = verification.registrationInfo;
+
+    const saved = await prisma.passkeyCredential.create({
+      data: {
+        userId: session.userId,
+        credentialId: Buffer.from(credential.id, 'base64url'),
+        publicKey: Buffer.from(credential.publicKey),
+        counter: credential.counter,
+        deviceName: body.deviceName ?? null,
+        transports: (body.response.response.transports as string[] | undefined) ?? [],
+      },
+      select: { id: true, deviceName: true, createdAt: true },
     });
+
+    return NextResponse.json({ success: true, credential: saved });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Verification failed';
-    return NextResponse.json({ error: msg }, { status: 400 });
+    const msg = err instanceof Error ? err.message : 'Registration failed';
+    console.error('Passkey POST error:', err);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  if (!verification.verified || !verification.registrationInfo) {
-    return NextResponse.json({ error: 'Verification failed' }, { status: 400 });
-  }
-
-  await cacheDel(challengeKey(session.userId));
-
-  const { credential } = verification.registrationInfo;
-
-  const saved = await prisma.passkeyCredential.create({
-    data: {
-      userId: session.userId,
-      credentialId: Buffer.from(credential.id, 'base64url'),
-      publicKey: Buffer.from(credential.publicKey),
-      counter: credential.counter,
-      deviceName: body.deviceName ?? null,
-      transports: (body.response.response.transports as string[] | undefined) ?? [],
-    },
-    select: { id: true, deviceName: true, createdAt: true },
-  });
-
-  return NextResponse.json({ success: true, credential: saved });
 }
+

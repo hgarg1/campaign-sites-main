@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -64,7 +64,7 @@ export default function CareersPage() {
       />
 
       {/* Company Culture */}
-      <section className="px-6 py-20 bg-white">
+      <section id="content-section" className="px-6 py-20 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Why Join CampaignSites</h2>
@@ -330,7 +330,7 @@ export default function CareersPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="px-6 py-20 bg-white">
+      <section id="content-section" className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center rounded-3xl border border-green-100 bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 p-12 md:p-16 shadow-xl">
           <h2 className="text-4xl md:text-5xl font-bold mb-5 bg-gradient-to-r from-green-700 to-emerald-700 bg-clip-text text-transparent">
             Don't see your fit?

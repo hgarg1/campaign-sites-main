@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -18,6 +19,14 @@ interface AdminNavigationProps {
 
 export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigationProps) {
   const pathname = usePathname();
+  const [userOrgs, setUserOrgs] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.organizations?.length) setUserOrgs(d.organizations); })
+      .catch(() => {});
+  }, []);
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/admin/portal', icon: '📊' },
@@ -121,6 +130,41 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           })}
         </nav>
 
+        {/* Tenant Switcher — shown when system admin also has tenant org memberships */}
+        {userOrgs.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="flex-shrink-0 p-3 border-t border-slate-700"
+          >
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider px-2 mb-2">My Organizations</p>
+            <div className="space-y-1">
+              {userOrgs.slice(0, 3).map((org) => (
+                <Link
+                  key={org.id}
+                  href={`/tenant/${org.id}`}
+                  onClick={onClose}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-all text-sm"
+                >
+                  <span className="text-xs">🏢</span>
+                  <span className="truncate">{org.name}</span>
+                </Link>
+              ))}
+              {userOrgs.length > 3 && (
+                <Link
+                  href="/tenant-chooser"
+                  onClick={onClose}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition-all text-xs"
+                >
+                  <span>⇄</span>
+                  <span>View all ({userOrgs.length}) →</span>
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -128,10 +172,20 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex-shrink-0 p-4 border-t border-slate-700 bg-slate-900"
         >
-          <p className="text-xs text-slate-500 text-center">Admin Portal v1.0</p>
+          {userOrgs.length > 0 ? (
+            <Link
+              href="/tenant-chooser"
+              onClick={onClose}
+              className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-700/50 hover:bg-slate-600 text-slate-200 text-sm font-medium transition-all"
+            >
+              <span>⇄</span>
+              Switch to Tenant Portal
+            </Link>
+          ) : (
+            <p className="text-xs text-slate-500 text-center">Admin Portal v1.0</p>
+          )}
         </motion.div>
       </aside>
     </>
   );
 }
-

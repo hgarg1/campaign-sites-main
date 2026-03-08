@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -157,8 +157,9 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
           {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
         </div>
 
+        <div className="flex items-center gap-2">
         {/* Notification Bell */}
-        <div className="relative mr-3">
+        <div className="relative">
           <button
             onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) fetchNotifs(); }}
             className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -311,6 +312,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
         </div>
       </div>
     </nav>
