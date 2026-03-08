@@ -25,6 +25,8 @@ export function TenantLayout({ children, title, subtitle, orgId }: TenantLayoutP
     }
     return null;
   });
+  // Only OWNERs see the setup modal — non-owners can't submit it anyway
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     // Already confirmed done via sessionStorage — skip fetch
@@ -37,6 +39,7 @@ export function TenantLayout({ children, title, subtitle, orgId }: TenantLayoutP
         if (!active) return;
         const done = !!(data?.setupCompletedAt);
         setSetupDone(done);
+        setIsOwner(data?.userRole === 'OWNER');
         if (done) sessionStorage.setItem(setupKey(orgId), '1');
       })
       .catch(() => { if (active) setSetupDone(true); }); // fail open
@@ -50,7 +53,7 @@ export function TenantLayout({ children, title, subtitle, orgId }: TenantLayoutP
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {setupDone === false && (
+      {setupDone === false && isOwner && (
         <SetupModal orgId={orgId} onComplete={handleSetupComplete} />
       )}
       <TenantThemeProvider orgId={orgId} />

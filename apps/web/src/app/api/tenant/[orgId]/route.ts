@@ -57,6 +57,7 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
         include: {
           _count: { select: { members: true, websites: true } },
         },
+        // setupCompletedAt is included automatically via findUnique
       }),
       prisma.website.count({
         where: { organizationId: params.orgId, createdAt: { gte: thisMonthStart } },
@@ -76,6 +77,18 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
         ? Math.round(((newWebsitesThisMonth - newWebsitesLastMonth) / newWebsitesLastMonth) * 1000) / 10
         : null;
 
+    // Include the current user's org role so the client can gate the setup modal
+    const membership = isSystemAdmin(authUser.role)
+      ? null
+      : await prisma.organizationMember.findFirst({
+          where: { userId: authUser.id, organizationId: params.orgId },
+          select: { role: true },
+        }).catch(() => null);
+
+    const userRole: string = isSystemAdmin(authUser.role)
+      ? 'OWNER'
+      : (membership?.role ?? 'MEMBER');
+
     return NextResponse.json({
       id: org.id,
       name: org.name,
@@ -94,6 +107,8 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
           }
         : null,
       createdAt: org.createdAt,
+      setupCompletedAt: org.setupCompletedAt ?? null,
+      userRole,
       newWebsitesThisMonth,
       newWebsitesLastMonth,
       websiteGrowth,
