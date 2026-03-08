@@ -35,14 +35,34 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
-    const org = await prisma.organization.findUnique({
-      where: { id: params.orgId },
-      include: {
-        _count: { select: { members: true, websites: true } },
-      },
-    });
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const [org, newWebsitesThisMonth, newWebsitesLastMonth] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: params.orgId },
+        include: {
+          _count: { select: { members: true, websites: true } },
+        },
+      }),
+      prisma.website.count({
+        where: { organizationId: params.orgId, createdAt: { gte: thisMonthStart } },
+      }),
+      prisma.website.count({
+        where: {
+          organizationId: params.orgId,
+          createdAt: { gte: lastMonthStart, lt: thisMonthStart },
+        },
+      }),
+    ]);
 
     if (!org) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    const websiteGrowth =
+      newWebsitesLastMonth > 0
+        ? Math.round(((newWebsitesThisMonth - newWebsitesLastMonth) / newWebsitesLastMonth) * 1000) / 10
+        : null;
 
     return NextResponse.json({
       id: org.id,
@@ -62,6 +82,10 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
           }
         : null,
       createdAt: org.createdAt,
+      newWebsitesThisMonth,
+      newWebsitesLastMonth,
+      websiteGrowth,
+      memberGrowth: null,
     });
   } catch {
     return NextResponse.json({
@@ -76,6 +100,10 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
       status: 'active',
       branding: null,
       createdAt: new Date().toISOString(),
+      newWebsitesThisMonth: 0,
+      newWebsitesLastMonth: 0,
+      websiteGrowth: null,
+      memberGrowth: null,
     });
   }
 }

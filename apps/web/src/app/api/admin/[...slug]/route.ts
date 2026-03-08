@@ -84,47 +84,141 @@ function getMonitoringPerformance(snapshot: AdminSnapshot) {
   };
 }
 
-function getAnalyticsGrowth(snapshot: AdminSnapshot) {
-  const now = Date.now();
+async function getAnalyticsGrowth() {
+  const now = new Date();
+  const last30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const prior30 = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  const last14 = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  function pct(current: number, prior: number) {
+    if (prior === 0) return current > 0 ? 100.0 : 0.0;
+    return Math.max(-100, Math.round(((current - prior) / prior) * 1000) / 10);
+  }
+
+  const [
+    usersLast30, usersPrior30,
+    orgsLast30, orgsPrior30,
+    websitesLast30, websitesPrior30,
+    dailyUserCounts, dailyOrgCounts, dailyWebsiteCounts,
+  ] = await Promise.all([
+    prisma.user.count({ where: { createdAt: { gte: last30 } } }),
+    prisma.user.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
+    prisma.organization.count({ where: { createdAt: { gte: last30 } } }),
+    prisma.organization.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
+    prisma.website.count({ where: { createdAt: { gte: last30 } } }),
+    prisma.website.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
+    prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
+      SELECT DATE(created_at) AS date, COUNT(*)::int AS count
+      FROM users WHERE created_at >= ${last14}
+      GROUP BY DATE(created_at)`,
+    prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
+      SELECT DATE(created_at) AS date, COUNT(*)::int AS count
+      FROM organizations WHERE created_at >= ${last14}
+      GROUP BY DATE(created_at)`,
+    prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
+      SELECT DATE(created_at) AS date, COUNT(*)::int AS count
+      FROM websites WHERE created_at >= ${last14}
+      GROUP BY DATE(created_at)`,
+  ]);
+
+  const toMap = (rows: Array<{ date: Date; count: bigint }>) =>
+    new Map(rows.map((r) => [new Date(r.date).toISOString().split('T')[0], Number(r.count)]));
+
+  const userMap = toMap(dailyUserCounts);
+  const orgMap = toMap(dailyOrgCounts);
+  const websiteMap = toMap(dailyWebsiteCounts);
+
   const metrics = Array.from({ length: 14 }).map((_, index) => {
-    const date = new Date(now - (13 - index) * 24 * 60 * 60 * 1000)
+    const date = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000)
       .toISOString()
       .split('T')[0];
     return {
       date,
-      users: Math.max(snapshot.users.length - (13 - index), 0),
-      organizations: Math.max(snapshot.organizations.length - Math.floor((13 - index) / 2), 0),
-      websites: Math.max(snapshot.websites.length - Math.floor((13 - index) / 3), 0),
+      users: userMap.get(date) ?? 0,
+      organizations: orgMap.get(date) ?? 0,
+      websites: websiteMap.get(date) ?? 0,
     };
   });
 
   return {
-    usersGrowth: 4.8,
-    organizationsGrowth: 2.1,
-    websitesGrowth: 6.3,
+    usersGrowth: pct(usersLast30, usersPrior30),
+    organizationsGrowth: pct(orgsLast30, orgsPrior30),
+    websitesGrowth: pct(websitesLast30, websitesPrior30),
     metrics,
   };
 }
 
-function getAnalyticsUsage(snapshot: AdminSnapshot) {
-  const now = Date.now();
-  return Array.from({ length: 14 }).map((_, index) => ({
-    date: new Date(now - (13 - index) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dailyActiveUsers: Math.max(snapshot.users.length - (index % 3), 1),
-    apiCalls: 1200 + index * 37,
-    buildJobs: snapshot.jobs.length + (index % 4),
-    averageBuildTime: 420 + (index % 5) * 15,
-    successRate: 95 - (index % 3),
-  }));
+async function getAnalyticsUsage() {
+  const now = new Date();
+  const last14 = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  const dailyBuilds = await prisma.$queryRaw<
+    Array<{ date: Date; count: bigint; completed: bigint; avg_ms: number | null }>
+  >`
+    SELECT
+      DATE(created_at) AS date,
+      COUNT(*)::int AS count,
+      COUNT(*) FILTER (WHERE status = 'COMPLETED')::int AS completed,
+      AVG(
+        EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
+      ) FILTER (
+        WHERE status = 'COMPLETED'
+          AND completed_at IS NOT NULL
+          AND started_at IS NOT NULL
+      ) AS avg_ms
+    FROM build_jobs
+    WHERE created_at >= ${last14}
+    GROUP BY DATE(created_at)`;
+
+  type BuildEntry = { count: number; completed: number; avg_ms: number | null };
+  const buildMap = new Map<string, BuildEntry>(
+    dailyBuilds.map((r) => [
+      new Date(r.date).toISOString().split('T')[0],
+      { count: Number(r.count), completed: Number(r.completed), avg_ms: r.avg_ms },
+    ])
+  );
+
+  return Array.from({ length: 14 }).map((_, index) => {
+    const date = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0];
+    const row = buildMap.get(date);
+    const total = row?.count ?? 0;
+    const completed = row?.completed ?? 0;
+    return {
+      date,
+      dailyActiveUsers: null,
+      apiCalls: null,
+      buildJobs: total,
+      averageBuildTime: row?.avg_ms != null ? Math.round(row.avg_ms) : 0,
+      successRate: total > 0 ? Math.round((completed / total) * 1000) / 10 : 0,
+    };
+  });
 }
 
-function getAnalyticsEngagement() {
-  return [
-    { metric: 'Session Duration', value: 7.8, trend: 4.2 },
-    { metric: 'Bounce Rate', value: 31.5, trend: -2.1 },
-    { metric: 'Conversion Rate', value: 12.4, trend: 1.8 },
-    { metric: 'Feature Adoption', value: 68.2, trend: 5.6 },
-  ];
+async function getAnalyticsEngagement() {
+  const [totalWebsites, activeIntegrations, completedBuilds, totalMembers, orgCount] =
+    await Promise.all([
+      prisma.website.count(),
+      prisma.integration.count({ where: { isActive: true } }),
+      prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
+      prisma.organizationMember.count(),
+      prisma.organization.count(),
+    ]);
+
+  const teamInvited = Math.max(0, totalMembers - orgCount);
+
+  return {
+    sessionDuration: null,
+    bounceRate: null,
+    conversionRate: null,
+    featureAdoption: [
+      { feature: 'websites.created', value: totalWebsites, change: null },
+      { feature: 'integrations.connected', value: activeIntegrations, change: null },
+      { feature: 'builds.completed', value: completedBuilds, change: null },
+      { feature: 'team.invited', value: teamInvited, change: null },
+    ],
+  };
 }
 
 function getSettingsDefaults() {
@@ -544,15 +638,35 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 
   if (first === 'analytics') {
     if (second === 'growth') {
-      return NextResponse.json(getAnalyticsGrowth(snapshot));
+      return NextResponse.json(await getAnalyticsGrowth());
     }
 
     if (second === 'usage') {
-      return NextResponse.json(getAnalyticsUsage(snapshot));
+      return NextResponse.json(await getAnalyticsUsage());
     }
 
     if (second === 'engagement') {
-      return NextResponse.json(getAnalyticsEngagement());
+      return NextResponse.json(await getAnalyticsEngagement());
+    }
+
+    if (second === 'quick-stats') {
+      const [allJobs, completedJobs, pendingJobs, avgResult] = await Promise.all([
+        prisma.buildJob.count(),
+        prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
+        prisma.buildJob.count({ where: { status: { in: ['PENDING', 'IN_PROGRESS'] } } }),
+        prisma.$queryRaw<Array<{ avg_ms: number | null }>>`
+          SELECT AVG(
+            EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
+          ) AS avg_ms
+          FROM build_jobs
+          WHERE status = 'COMPLETED'
+            AND completed_at IS NOT NULL
+            AND started_at IS NOT NULL`,
+      ]);
+      const successRate = allJobs > 0 ? Math.round((completedJobs / allJobs) * 1000) / 10 : 0;
+      const avgMs = avgResult[0]?.avg_ms;
+      const avgBuildTimeSec = avgMs != null ? Math.round(avgMs / 100) / 10 : null;
+      return NextResponse.json({ successRate, pendingJobs, avgBuildTimeSec });
     }
 
     if (second === 'costs') {

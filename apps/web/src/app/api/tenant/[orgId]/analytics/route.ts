@@ -40,11 +40,37 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
       select: { id: true, name: true },
     });
 
+    const websiteIds = websites.map((w) => w.id);
+
+    const [totalBuilds, completedBuilds, recentBuilds] = await Promise.all([
+      prisma.buildJob.count({ where: { websiteId: { in: websiteIds } } }),
+      prisma.buildJob.count({ where: { websiteId: { in: websiteIds }, status: 'COMPLETED' } }),
+      prisma.buildJob.findMany({
+        where: { websiteId: { in: websiteIds } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { website: { select: { name: true } } },
+      }),
+    ]);
+
+    const successRate =
+      totalBuilds > 0 ? Math.round((completedBuilds / totalBuilds) * 1000) / 10 : 0;
+
     return NextResponse.json({
       totalVisitors: 0,
       totalDonations: 0,
       donationAmount: 0,
       conversionRate: 0,
+      totalBuilds,
+      completedBuilds,
+      successRate,
+      recentBuilds: recentBuilds.map((b) => ({
+        id: b.id,
+        status: b.status,
+        websiteId: b.websiteId,
+        websiteName: b.website.name,
+        createdAt: b.createdAt,
+      })),
       websiteStats: websites.map((w) => ({
         websiteId: w.id,
         websiteName: w.name,
@@ -54,10 +80,14 @@ export async function GET(req: NextRequest, { params }: { params: { orgId: strin
     });
   } catch {
     return NextResponse.json({
-      totalVisitors: 1250,
-      totalDonations: 87,
-      donationAmount: 4320.5,
-      conversionRate: 6.96,
+      totalVisitors: 0,
+      totalDonations: 0,
+      donationAmount: 0,
+      conversionRate: 0,
+      totalBuilds: 0,
+      completedBuilds: 0,
+      successRate: 0,
+      recentBuilds: [],
       websiteStats: [],
     });
   }

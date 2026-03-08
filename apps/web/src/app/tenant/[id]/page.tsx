@@ -114,7 +114,20 @@ export default function TenantDashboardPage() {
       )}
 
       <div className="grid md:grid-cols-4 gap-6 mb-10">
-        <MetricCard label="Total Websites" value={org?.websiteCount ?? 0} icon="🌐" variant="default" />
+        <MetricCard
+          label="Total Websites"
+          value={org?.websiteCount ?? 0}
+          icon="🌐"
+          variant="default"
+          trend={
+            org?.websiteGrowth != null
+              ? {
+                  direction: org.websiteGrowth >= 0 ? 'up' : 'down',
+                  percentage: Math.abs(org.websiteGrowth),
+                }
+              : undefined
+          }
+        />
         <MetricCard label="Team Members" value={org?.memberCount ?? 0} icon="👥" variant="success" />
         <MetricCard label="Storage Used" value={storageGb} icon="💾" variant="default" />
         <MetricCard

@@ -27,12 +27,31 @@ interface Activity {
   type?: 'info' | 'success' | 'warning' | 'error';
 }
 
+interface QuickStats {
+  successRate: number;
+  pendingJobs: number;
+  avgBuildTimeSec: number | null;
+}
+
+function useAdminQuickStats() {
+  const [data, setData] = useState<QuickStats | null>(null);
+  useEffect(() => {
+    globalThis
+      .fetch('/api/admin/analytics/quick-stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => { if (json) setData(json); })
+      .catch(() => {});
+  }, []);
+  return data;
+}
+
 export default function AdminPortalPage() {
   const { data: growthData } = useGrowthMetrics();
   const { data: healthServices } = useSystemHealth();
   const { data: users } = useUsers({ pageSize: 1 });
   const { data: organizations } = useOrganizations({ pageSize: 1 });
   const { data: websites } = useWebsites({ pageSize: 1 });
+  const quickStats = useAdminQuickStats();
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
@@ -122,11 +141,15 @@ export default function AdminPortalPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Avg Build Time</span>
-              <span className="font-bold text-gray-900">2.3s</span>
+              <span className="font-bold text-gray-900">
+                {quickStats?.avgBuildTimeSec != null ? `${quickStats.avgBuildTimeSec}s` : '—'}
+              </span>
             </div>
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">Success Rate</span>
-              <span className="font-bold text-green-600">98.5%</span>
+              <span className={`font-bold ${quickStats && quickStats.successRate >= 90 ? 'text-green-600' : quickStats ? 'text-yellow-600' : 'text-gray-900'}`}>
+                {quickStats ? `${quickStats.successRate}%` : '—'}
+              </span>
             </div>
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <span className="text-sm text-gray-600">API Uptime</span>
@@ -134,7 +157,9 @@ export default function AdminPortalPage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Queue Length</span>
-              <span className="font-bold text-gray-900">12 jobs</span>
+              <span className="font-bold text-gray-900">
+                {quickStats != null ? `${quickStats.pendingJobs} jobs` : '—'}
+              </span>
             </div>
           </div>
         </div>

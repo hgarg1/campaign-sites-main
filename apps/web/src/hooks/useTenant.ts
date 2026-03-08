@@ -28,6 +28,10 @@ export interface TenantOrg {
     faviconUrl?: string;
   } | null;
   createdAt: string;
+  newWebsitesThisMonth?: number;
+  newWebsitesLastMonth?: number;
+  websiteGrowth?: number | null;
+  memberGrowth?: number | null;
 }
 
 export interface TenantMember {
