@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
 import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { enforceSystemPolicy } from '@/app/api/tenant/auth-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,9 @@ export async function PATCH(
   const member = await verifyOrgMember(userId, params.orgId, ['OWNER', 'ADMIN']);
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+  const denied = await enforceSystemPolicy(params.orgId, 'members', 'update');
+  if (denied) return denied;
+
   try {
     const body = await req.json();
     const { role } = body;
@@ -66,6 +70,9 @@ export async function DELETE(
 
   const member = await verifyOrgMember(userId, params.orgId, ['OWNER', 'ADMIN']);
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const denied = await enforceSystemPolicy(params.orgId, 'members', 'remove');
+  if (denied) return denied;
 
   try {
     await prisma.organizationMember.delete({ where: { id: params.memberId } });

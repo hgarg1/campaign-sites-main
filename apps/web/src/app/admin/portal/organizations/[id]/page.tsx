@@ -367,9 +367,203 @@ function HierarchyTab({ orgId }: { orgId: string }) {
   );
 }
 
+// ─── Policies Tab Component ──────────────────────────────────────────────────
+
+interface Policy {
+  id: string;
+  name: string;
+  description: string | null;
+  isDefault: boolean;
+  _count: { orgAssignments: number };
+}
+
+function PoliciesTab({ orgId }: { orgId: string }) {
+  const [assignments, setAssignments] = useState<Policy[]>([]);
+  const [availablePolicies, setAvailablePolicies] = useState<Policy[]>([]);
+  const [effectivePolicy, setEffectivePolicy] = useState<{ source: string; rules: { resource: string; actions: string[]; allow: boolean }[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedPolicyId, setSelectedPolicyId] = useState('');
+  const [assigning, setAssigning] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [assignRes, allRes, effectiveRes] = await Promise.all([
+        globalThis.fetch(`/api/admin/organizations/${orgId}/policies`),
+        globalThis.fetch('/api/admin/policies'),
+        globalThis.fetch(`/api/admin/organizations/${orgId}/effective-policy`),
+      ]);
+      const [assignData, allData, effectiveData] = await Promise.all([
+        assignRes.json(),
+        allRes.json(),
+        effectiveRes.json(),
+      ]);
+      setAssignments(assignData.assignments ?? []);
+      setAvailablePolicies(allData.data ?? []);
+      setEffectivePolicy(effectiveData ?? null);
+    } catch {
+      setError('Failed to load policy data');
+    } finally {
+      setLoading(false);
+    }
+  }, [orgId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const assignedIds = new Set(assignments.map((p) => p.id));
+  const unassignedPolicies = availablePolicies.filter((p) => !assignedIds.has(p.id) && !p.isDefault);
+
+  async function assign() {
+    if (!selectedPolicyId) return;
+    setAssigning(true);
+    setError(null);
+    try {
+      const res = await globalThis.fetch(`/api/admin/organizations/${orgId}/policies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policyId: selectedPolicyId }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setError(d.error ?? 'Failed to assign policy');
+      } else {
+        setSelectedPolicyId('');
+        load();
+      }
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function unassign(policyId: string) {
+    setRemoving(policyId);
+    try {
+      await globalThis.fetch(`/api/admin/organizations/${orgId}/policies/${policyId}`, { method: 'DELETE' });
+      load();
+    } finally {
+      setRemoving(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{error}</div>
+      )}
+
+      {/* Assigned Policies */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Applied Policies</h3>
+            <p className="text-sm text-gray-500 mt-1">Policies directly assigned to this organization.</p>
+          </div>
+        </div>
+        {assignments.length === 0 ? (
+          <p className="text-sm text-gray-500">No policies explicitly assigned. Org inherits any default policy.</p>
+        ) : (
+          <div className="space-y-2">
+            {assignments.map((p) => (
+              <div key={p.id} className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+                <div>
+                  <span className="font-medium text-gray-900 text-sm">{p.name}</span>
+                  {p.description && <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>}
+                </div>
+                <button
+                  onClick={() => unassign(p.id)}
+                  disabled={removing === p.id}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+                >
+                  {removing === p.id ? 'Removing...' : 'Remove'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Assign new */}
+        {unassignedPolicies.length > 0 && (
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200">
+            <select
+              value={selectedPolicyId}
+              onChange={(e) => setSelectedPolicyId(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select policy to assign…</option>
+              {unassignedPolicies.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={assign}
+              disabled={!selectedPolicyId || assigning}
+              className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {assigning ? 'Assigning…' : 'Assign'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Effective policy view */}
+      {effectivePolicy && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Effective Policy Rules</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Source: <span className="font-medium text-gray-700">{effectivePolicy.source}</span>
+          </p>
+          {effectivePolicy.rules.length === 0 ? (
+            <p className="text-sm text-gray-400">No rules — all actions permitted.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Resource</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Actions</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Decision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {effectivePolicy.rules.map((rule, i) => (
+                    <tr key={i} className="border-b border-gray-100">
+                      <td className="py-2 px-3 font-mono text-gray-900">{rule.resource}</td>
+                      <td className="py-2 px-3 font-mono text-gray-600">{rule.actions.join(', ')}</td>
+                      <td className="py-2 px-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${rule.allow ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {rule.allow ? 'Allow' : 'Deny'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <a href="/admin/portal/policies" className="text-sm text-blue-600 hover:underline font-medium">
+              Manage system policies →
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'hierarchy';
+type Tab = 'overview' | 'hierarchy' | 'policies';
 
 export default function OrganizationDetailPage() {
   const params = useParams();
@@ -411,6 +605,7 @@ export default function OrganizationDetailPage() {
   const TABS: Array<{ id: Tab; label: string }> = [
     { id: 'overview', label: 'Overview' },
     { id: 'hierarchy', label: 'Hierarchy' },
+    { id: 'policies', label: 'Policies' },
   ];
 
   return (
@@ -485,6 +680,10 @@ export default function OrganizationDetailPage() {
 
       {activeTab === 'hierarchy' && (
         <HierarchyTab orgId={organizationId} />
+      )}
+
+      {activeTab === 'policies' && (
+        <PoliciesTab orgId={organizationId} />
       )}
     </AdminLayout>
   );

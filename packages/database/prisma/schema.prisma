@@ -12,17 +12,19 @@ datasource db {
 
 // User Management
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String
-  name          String?
-  role          UserRole  @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  name            String?
+  role            UserRole  @default(USER)
+  requirePasskey  Boolean   @default(false) // GLOBAL_ADMIN can enforce passkey-only auth for ADMINs
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   
-  organizations OrganizationMember[]
-  websites      Website[]
-  intakes       GetStartedIntake[]
+  organizations   OrganizationMember[]
+  websites        Website[]
+  intakes         GetStartedIntake[]
+  passkeyCredentials PasskeyCredential[]
   
   @@map("users")
 }
@@ -77,6 +79,9 @@ model Organization {
   childProposals      GovernanceProposal[]   @relation("ProposalChild")
   governanceVotes     GovernanceVote[]       @relation("VoteVoter")
   governanceNotifs    GovernanceNotification[] @relation("NotifRecipient")
+
+  // System permission policies assigned by system admins
+  policyAssignments   OrgPolicyAssignment[]
 
   @@map("organizations")
 }
@@ -620,4 +625,62 @@ enum LogLevel {
   INFO
   WARN
   ERROR
+}
+
+// ─── Passkeys (WebAuthn / FIDO2) ──────────────────────────────────────────────
+
+// WebAuthn credential per user device. Multiple credentials allowed per user.
+model PasskeyCredential {
+  id              String    @id @default(cuid())
+  userId          String
+  credentialId    Bytes     @unique            // raw credential ID from WebAuthn
+  publicKey       Bytes                        // COSE-encoded public key
+  counter         Int       @default(0)        // signature counter (replay protection)
+  deviceName      String?                      // user-provided label ("MacBook Touch ID")
+  transports      String[]  @default([])       // ["internal","hybrid",…] from WebAuthn response
+  createdAt       DateTime  @default(now())
+  lastUsedAt      DateTime?
+  revokedAt       DateTime?
+  revokedByUserId String?                      // who revoked (null = self, else GLOBAL_ADMIN userId)
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("passkey_credentials")
+}
+
+// ─── System Permission Policies (System Admin → Tenant RBAC) ─────────────────
+
+// Named set of resource/action rules that system admins apply to tenant orgs.
+// rules Json shape: [{resource: string, actions: string[], allow: boolean}]
+// Resources: members | branding | integrations | websites | settings | governance | hierarchy
+// Actions: "invite" | "remove" | "update" | "publish" | "create" | "delete" | "*"
+model SystemPermissionPolicy {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  rules           Json      // PolicyRule[]
+  isDefault       Boolean   @default(false)   // auto-applied to every new org when true
+  createdByUserId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  assignments     OrgPolicyAssignment[]
+
+  @@map("system_permission_policies")
+}
+
+// Which system policies are assigned to which orgs.
+model OrgPolicyAssignment {
+  orgId           String
+  policyId        String
+  appliedByUserId String?
+  appliedAt       DateTime  @default(now())
+
+  organization    Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  policy          SystemPermissionPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@id([orgId, policyId])
+  @@index([policyId])
+  @@map("org_policy_assignments")
 }

@@ -4,6 +4,9 @@ import type { NextRequest } from 'next/server';
 const ADMIN_PATHS = ['/admin/portal'];
 const TENANT_PATHS = ['/tenant'];
 
+// Passkey setup page — must be reachable even when passkey is required but not yet set up
+const PASSKEY_SETUP_PATH = '/admin/portal/security/passkeys';
+
 // These tenant paths are accessible without org membership / status checks
 const TENANT_EXEMPT_PATHS = [
   '/tenant/suspended',
@@ -18,6 +21,16 @@ export function middleware(request: NextRequest) {
 
     if (userRole !== 'GLOBAL_ADMIN') {
       return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    // Passkey enforcement: if the server has flagged this session as needing passkey setup,
+    // redirect to the setup page (except when already heading there).
+    // The flag is set by the login API when requirePasskey=true but no passkeyVerified cookie exists.
+    const needsPasskeySetup = request.cookies.get('passkey_required')?.value === '1';
+    if (needsPasskeySetup && !path.startsWith(PASSKEY_SETUP_PATH)) {
+      return NextResponse.redirect(
+        new URL(`${PASSKEY_SETUP_PATH}?setup=required`, request.url)
+      );
     }
   }
 
@@ -37,7 +50,6 @@ export function middleware(request: NextRequest) {
 
     // Cross-org view-as sessions: /tenant/[id]/view-as/[targetOrgId]
     // Allow through — ancestry access is validated in the page/API layer
-    // No additional middleware check needed here; the page will enforce it.
   }
 
   return NextResponse.next();

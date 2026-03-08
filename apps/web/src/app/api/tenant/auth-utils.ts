@@ -1,9 +1,11 @@
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { MemberRole } from '@prisma/client';
 import { prisma } from '@/lib/database';
 import { parseAndVerifySessionToken } from '@/lib/session-auth';
 import { verifyAncestorAccess, AccessResult } from '@/lib/cross-org-auth';
 import { getEffectiveStatus } from '@/lib/ancestry';
+import { checkSystemPolicy } from '@/lib/system-policy';
 
 export async function getAuthUserId(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -100,6 +102,36 @@ export async function verifyDescendantAccess(
 
     return actingAccess;
   } catch {
+    return null;
+  }
+}
+
+/**
+ * Checks the system policy for a given org + resource + action.
+ * Returns a 403 NextResponse if blocked, or null if the action is allowed.
+ * Usage: const denied = await enforceSystemPolicy(orgId, 'members', 'invite');
+ *        if (denied) return denied;
+ */
+export async function enforceSystemPolicy(
+  orgId: string,
+  resource: string,
+  action: string
+): Promise<NextResponse | null> {
+  try {
+    const result = await checkSystemPolicy(orgId, resource, action);
+    if (!result.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Action blocked by system policy',
+          policyId: result.policyId,
+          reason: result.reason ?? `${resource}.${action} is restricted by system administrator`,
+        },
+        { status: 403 }
+      );
+    }
+    return null;
+  } catch {
+    // On error, fail open to avoid breaking tenant operations if policy engine is unavailable
     return null;
   }
 }

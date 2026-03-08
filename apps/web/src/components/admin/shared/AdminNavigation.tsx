@@ -24,6 +24,8 @@ export function AdminNavigation() {
     { label: 'Logs & Audit', href: '/admin/portal/logs', icon: '📝' },
     { label: 'Hierarchy', href: '/admin/portal/hierarchy', icon: '🌳' },
     { label: 'Governance', href: '/admin/portal/governance', icon: '⚖️' },
+    { label: 'Policies', href: '/admin/portal/policies', icon: '📋' },
+    { label: 'Security', href: '/admin/portal/security', icon: '🔐' },
     { label: 'Settings', href: '/admin/portal/settings', icon: '⚙️' },
     { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉' },
   ];

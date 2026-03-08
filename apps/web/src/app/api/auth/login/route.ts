@@ -1,23 +1,13 @@
-import { createHmac, randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { verifyPassword } from '../../../../lib/password-hash';
 import { logger } from '../../../../lib/logger';
 import { isDatabaseEnabled } from '../../../../lib/runtime-config';
+import { createSessionToken } from '../../../../lib/session-auth';
 
 export const dynamic = 'force-dynamic';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function createSessionToken(userId: string) {
-  const secret = process.env.AUTH_SESSION_SECRET ?? 'dev-session-secret';
-  const issuedAt = Date.now();
-  const nonce = randomBytes(8).toString('hex');
-  const payload = `${userId}:${issuedAt}:${nonce}`;
-  const signature = createHmac('sha256', secret).update(payload).digest('hex');
-  const token = Buffer.from(`${payload}:${signature}`).toString('base64url');
-  return token;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +44,7 @@ export async function POST(request: NextRequest) {
         email: true,
         role: true,
         passwordHash: true,
+        requirePasskey: true,
       },
     });
 
@@ -108,6 +99,20 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     });
+
+    // If this admin requires a passkey but logged in with password, flag setup required
+    const needsPasskey = (user as typeof user & { requirePasskey?: boolean }).requirePasskey;
+    if (needsPasskey) {
+      response.cookies.set('passkey_required', '1', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    } else {
+      response.cookies.delete('passkey_required');
+    }
 
     return response;
   } catch (error) {

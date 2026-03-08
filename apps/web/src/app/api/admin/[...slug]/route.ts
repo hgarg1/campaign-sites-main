@@ -10,6 +10,7 @@ import {
   wouldCreateCycle,
 } from '@/lib/ancestry';
 import { executeAction } from '@/lib/governance';
+import { invalidatePolicyCache, invalidateAllPolicyCaches, getOrgEffectivePolicy } from '@/lib/system-policy';
 import type { PartyAffiliation } from '@prisma/client';
 import { NotificationType } from '@prisma/client';
 
@@ -683,6 +684,46 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     return NextResponse.json({ data: mappings });
   }
 
+  // ─── System Permission Policies ─────────────────────────────────────────────
+  if (first === 'policies') {
+    if (!second) {
+      // List all policies with assignment counts
+      const policies = await prisma.systemPermissionPolicy.findMany({
+        orderBy: { createdAt: 'asc' },
+        include: { _count: { select: { assignments: true } } },
+      });
+      return NextResponse.json({ data: policies });
+    }
+    if (second && !third) {
+      const policy = await prisma.systemPermissionPolicy.findUnique({
+        where: { id: second },
+        include: {
+          assignments: {
+            include: { organization: { select: { id: true, name: true, slug: true } } },
+          },
+        },
+      });
+      if (!policy) return NextResponse.json({ error: 'Policy not found' }, { status: 404 });
+      return NextResponse.json(policy);
+    }
+  }
+
+  // ─── Org effective policy (for admin org detail view) ────────────────────────
+  if (first === 'organizations' && second && third === 'effective-policy') {
+    const result = await getOrgEffectivePolicy(second);
+    return NextResponse.json(result);
+  }
+
+  // ─── List policies assigned to an org ────────────────────────────────────────
+  if (first === 'organizations' && second && third === 'policies' && !path[3]) {
+    const assignments = await prisma.orgPolicyAssignment.findMany({
+      where: { orgId: second },
+      include: { policy: { select: { id: true, name: true, description: true, isDefault: true, _count: { select: { assignments: true } } } } },
+      orderBy: { appliedAt: 'asc' },
+    });
+    return NextResponse.json({ assignments: assignments.map((a) => ({ ...a.policy, _count: { orgAssignments: a.policy._count.assignments } })) });
+  }
+
   return NextResponse.json({
     error: `Unsupported admin endpoint: /api/admin/${path.join('/')}`,
   }, { status: 404 });
@@ -719,7 +760,39 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
     );
   }
 
-  // ─── Assign parent org ───────────────────────────────────────────────────────
+  // ─── System Permission Policies ─────────────────────────────────────────────
+  if (first === 'policies' && !second) {
+    const body = (await request.json().catch(() => ({}))) as {
+      name?: string;
+      description?: string;
+      rules?: unknown[];
+      isDefault?: boolean;
+    };
+    if (!body.name) return NextResponse.json({ error: 'name required' }, { status: 400 });
+    const policy = await prisma.systemPermissionPolicy.create({
+      data: {
+        name: body.name,
+        description: body.description ?? null,
+        rules: (body.rules ?? []) as never,
+        isDefault: body.isDefault ?? false,
+      },
+    });
+    if (body.isDefault) await invalidateAllPolicyCaches();
+    return NextResponse.json(policy, { status: 201 });
+  }
+
+  // ─── Assign policy to org ─────────────────────────────────────────────────────
+  if (first === 'organizations' && second && third === 'policies') {
+    const body = (await request.json().catch(() => ({}))) as { policyId?: string };
+    if (!body.policyId) return NextResponse.json({ error: 'policyId required' }, { status: 400 });
+    const assignment = await prisma.orgPolicyAssignment.upsert({
+      where: { orgId_policyId: { orgId: second, policyId: body.policyId } },
+      create: { orgId: second, policyId: body.policyId },
+      update: { appliedAt: new Date() },
+    });
+    await invalidatePolicyCache(second);
+    return NextResponse.json(assignment, { status: 201 });
+  }
   if (first === 'organizations' && second && third === 'parent') {
     const body = (await request.json().catch(() => ({}))) as { parentId?: string };
     if (!body.parentId) return NextResponse.json({ error: 'parentId required' }, { status: 400 });
@@ -914,6 +987,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { slug: 
     return NextResponse.json(updated);
   }
 
+  // ─── System Permission Policy PATCH ──────────────────────────────────────────
+  if (first === 'policies' && second) {
+    const body = (await request.json().catch(() => ({}))) as {
+      name?: string;
+      description?: string;
+      rules?: unknown[];
+      isDefault?: boolean;
+    };
+    const policy = await prisma.systemPermissionPolicy.findUnique({ where: { id: second } });
+    if (!policy) return NextResponse.json({ error: 'Policy not found' }, { status: 404 });
+    const updated = await prisma.systemPermissionPolicy.update({
+      where: { id: second },
+      data: {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.rules !== undefined && { rules: body.rules as never }),
+        ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
+      },
+    });
+    await invalidateAllPolicyCaches();
+    return NextResponse.json(updated);
+  }
+
   // ─── Governance PATCH ────────────────────────────────────────────────────────
   if (first === 'governance') {
     if (second === 'config') {
@@ -1016,6 +1112,29 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
     await prisma.masterTenantMapping.delete({
       where: { partyAffiliation: second as PartyAffiliation },
     });
+    return new NextResponse(null, { status: 204 });
+  }
+
+  // ─── Delete system permission policy ─────────────────────────────────────────
+  if (first === 'policies' && second && !third) {
+    const assignmentCount = await prisma.orgPolicyAssignment.count({ where: { policyId: second } });
+    if (assignmentCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete policy: still assigned to ${assignmentCount} org(s)` },
+        { status: 409 }
+      );
+    }
+    await prisma.systemPermissionPolicy.delete({ where: { id: second } });
+    await invalidateAllPolicyCaches();
+    return new NextResponse(null, { status: 204 });
+  }
+
+  // ─── Unassign policy from org ─────────────────────────────────────────────────
+  if (first === 'organizations' && second && third === 'policies' && path[3]) {
+    await prisma.orgPolicyAssignment.deleteMany({
+      where: { orgId: second, policyId: path[3] },
+    });
+    await invalidatePolicyCache(second);
     return new NextResponse(null, { status: 204 });
   }
 
