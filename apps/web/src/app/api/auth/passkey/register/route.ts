@@ -4,11 +4,17 @@ import {
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
 import type { RegistrationResponseJSON } from '@simplewebauthn/types';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { prisma } from '@/lib/database';
 import { verifySession } from '@/lib/session-auth';
-import { setChallenge, getChallenge, deleteChallenge } from '@/lib/webauthn-challenge';
 
 const RP_NAME = 'CampaignSites Admin';
+const CHALLENGE_TTL = 300; // seconds
+const CHALLENGE_COOKIE = 'passkey_reg_challenge_token';
+
+function getSecret() {
+  return process.env.AUTH_SESSION_SECRET ?? 'dev-session-secret';
+}
 
 /** Derive rpID and origin from the inbound request — works on localhost, Vercel, and production. */
 function getRpConfig(request: NextRequest) {
@@ -17,6 +23,34 @@ function getRpConfig(request: NextRequest) {
   const rpID = host.split(':')[0]; // strip port number
   const origin = process.env.NEXT_PUBLIC_ORIGIN ?? `${proto}://${host}`;
   return { rpID, origin };
+}
+
+/** Encode challenge into a signed, time-stamped cookie token (no external storage needed). */
+function encodeChallengeToken(challenge: string): string {
+  const ts = Math.floor(Date.now() / 1000);
+  const payload = `${challenge}:${ts}`;
+  const sig = createHmac('sha256', getSecret()).update(payload).digest('base64url');
+  return Buffer.from(`${payload}:${sig}`).toString('base64url');
+}
+
+/** Decode and verify a challenge token. Returns the challenge string or null if invalid/expired. */
+function decodeChallengeToken(token: string): string | null {
+  try {
+    const raw = Buffer.from(token, 'base64url').toString('utf8');
+    const lastColon = raw.lastIndexOf(':');
+    const secondLastColon = raw.lastIndexOf(':', lastColon - 1);
+    if (lastColon < 0 || secondLastColon < 0) return null;
+    const payload = raw.substring(0, lastColon);
+    const sig = raw.substring(lastColon + 1);
+    const ts = parseInt(raw.substring(secondLastColon + 1, lastColon), 10);
+    if (isNaN(ts) || Math.floor(Date.now() / 1000) - ts > CHALLENGE_TTL) return null;
+    const expectedSig = createHmac('sha256', getSecret()).update(payload).digest('base64url');
+    const a = Buffer.from(sig), b = Buffer.from(expectedSig);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+    return payload.substring(0, secondLastColon);
+  } catch {
+    return null;
+  }
 }
 
 // GET — generate a registration challenge for the current user
@@ -52,13 +86,20 @@ export async function GET(request: NextRequest) {
       attestationType: 'none',
     });
 
-    // Persist challenge (Redis with DB fallback)
-    await setChallenge(user.id, options.challenge);
-
-    return NextResponse.json(options);
+    // Store challenge in HMAC-signed cookie — no DB/Redis required
+    const token = encodeChallengeToken(options.challenge);
+    const response = NextResponse.json(options);
+    response.cookies.set(CHALLENGE_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: CHALLENGE_TTL,
+      path: '/',
+    });
+    return response;
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to generate registration options';
-    console.error('Passkey GET error:', err);
+    console.error('Passkey register GET error:', err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
@@ -77,7 +118,9 @@ export async function POST(request: NextRequest) {
   if (!body?.response) return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
 
   try {
-    const expectedChallenge = await getChallenge(session.userId);
+    // Read challenge from HMAC-signed cookie (stateless — no DB/Redis needed)
+    const token = request.cookies.get(CHALLENGE_COOKIE)?.value;
+    const expectedChallenge = token ? decodeChallengeToken(token) : null;
     if (!expectedChallenge) {
       return NextResponse.json({ error: 'Challenge expired — please try again' }, { status: 400 });
     }
@@ -100,8 +143,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Verification failed' }, { status: 400 });
     }
 
-    await deleteChallenge(session.userId);
-
     const { credential } = verification.registrationInfo;
 
     const saved = await prisma.passkeyCredential.create({
@@ -116,10 +157,13 @@ export async function POST(request: NextRequest) {
       select: { id: true, deviceName: true, createdAt: true },
     });
 
-    return NextResponse.json({ success: true, credential: saved });
+    // Clear the challenge cookie
+    const response = NextResponse.json({ success: true, credential: saved });
+    response.cookies.set(CHALLENGE_COOKIE, '', { maxAge: 0, path: '/' });
+    return response;
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Registration failed';
-    console.error('Passkey POST error:', err);
+    console.error('Passkey register POST error:', err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
