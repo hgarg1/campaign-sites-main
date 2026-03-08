@@ -60,46 +60,62 @@ function RuleRow({
   }
 
   return (
-    <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-      <div className="flex-1 space-y-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <select
-            value={rule.resource}
-            onChange={(e) => onChange({ ...rule, resource: e.target.value, actions: ['*'] })}
-            className="border border-gray-300 rounded px-2 py-1 text-xs"
-          >
-            {RESOURCES.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-          <span className="text-xs text-gray-400">·</span>
-          <select
-            value={rule.allow ? 'allow' : 'deny'}
-            onChange={(e) => onChange({ ...rule, allow: e.target.value === 'allow' })}
-            className={`border rounded px-2 py-1 text-xs font-semibold ${
-              rule.allow ? 'border-green-300 text-green-700 bg-green-50' : 'border-red-300 text-red-700 bg-red-50'
-            }`}
-          >
-            <option value="allow">Allow</option>
-            <option value="deny">Deny</option>
-          </select>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {availableActions.map((action) => (
-            <button
-              key={action}
-              type="button"
-              onClick={() => toggleAction(action)}
-              className={`px-2 py-0.5 rounded text-xs border transition-colors ${
-                rule.actions.includes(action)
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+    <div className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+      <div className="flex-1 space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Resource</span>
+            <select
+              value={rule.resource}
+              onChange={(e) => onChange({ ...rule, resource: e.target.value, actions: ['*'] })}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {RESOURCES.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Effect</span>
+            <select
+              value={rule.allow ? 'allow' : 'deny'}
+              onChange={(e) => onChange({ ...rule, allow: e.target.value === 'allow' })}
+              className={`border rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                rule.allow
+                  ? 'border-green-300 text-green-700 bg-green-50'
+                  : 'border-red-300 text-red-700 bg-red-50'
               }`}
             >
-              {action}
-            </button>
-          ))}
+              <option value="allow">✓ Allow</option>
+              <option value="deny">✗ Deny</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide block mb-1.5">Actions</span>
+          <div className="flex flex-wrap gap-1.5">
+            {availableActions.map((action) => (
+              <button
+                key={action}
+                type="button"
+                onClick={() => toggleAction(action)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                  rule.actions.includes(action)
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                }`}
+              >
+                {action}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <button onClick={onRemove} className="text-gray-400 hover:text-red-500 text-lg leading-none mt-1">×</button>
+      <button
+        onClick={onRemove}
+        className="mt-1 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors text-base"
+        title="Remove rule"
+      >
+        ×
+      </button>
     </div>
   );
 }
@@ -123,7 +139,7 @@ function PolicyModal({
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
-    if (!name.trim()) { setError('Name required'); return; }
+    if (!name.trim()) { setError('Policy name is required'); return; }
     setSaving(true);
     setError(null);
     try {
@@ -145,55 +161,89 @@ function PolicyModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-900">{initial ? 'Edit Policy' : 'New Policy'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-          {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="px-7 py-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Policy Name *</label>
+            <h2 className="text-lg font-bold text-gray-900">{initial ? 'Edit Policy' : 'New Permission Policy'}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {initial ? 'Update policy name, description, and rules.' : 'Define what tenant admins can and cannot do.'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xl"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-7 py-5 space-y-5">
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <span className="text-base">⚠️</span> {error}
+            </div>
+          )}
+
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Policy Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="e.g. Restricted Branding"
+              autoFocus
             />
           </div>
+
+          {/* Description */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16"
-              placeholder="What does this policy do?"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              placeholder="What does this policy restrict or permit?"
+              rows={2}
             />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer">
+
+          {/* Default toggle */}
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
             <input
               type="checkbox"
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
-              className="rounded"
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm text-gray-700">Apply to all orgs by default</span>
+            <div>
+              <p className="text-sm font-medium text-gray-800">Apply to all orgs by default</p>
+              <p className="text-xs text-gray-500">This policy will be enforced for all organizations unless overridden.</p>
+            </div>
           </label>
 
+          {/* Rules */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-gray-700">Rules ({rules.length})</label>
+            <div className="flex items-center justify-between mb-2.5">
+              <div>
+                <span className="text-sm font-semibold text-gray-700">Rules</span>
+                <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full">{rules.length}</span>
+              </div>
               <button
                 type="button"
                 onClick={() => setRules((r) => [...r, emptyRule()])}
-                className="text-xs text-blue-600 hover:underline"
+                className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
               >
                 + Add Rule
               </button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {rules.map((rule, i) => (
                 <RuleRow
                   key={i}
@@ -203,20 +253,33 @@ function PolicyModal({
                 />
               ))}
               {rules.length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-3">No rules — add one above.</p>
+                <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl">
+                  <p className="text-sm text-gray-400">No rules yet.</p>
+                  <p className="text-xs text-gray-400 mt-1">Add a rule to restrict or explicitly allow actions.</p>
+                </div>
               )}
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : (initial ? 'Save Changes' : 'Create Policy')}
-          </button>
+
+        {/* Footer */}
+        <div className="px-7 py-4 border-t border-gray-100 flex items-center justify-between flex-shrink-0 bg-gray-50 rounded-b-2xl">
+          <p className="text-xs text-gray-400">Rules are evaluated top-to-bottom. First match wins.</p>
+          <div className="flex gap-2.5">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Saving…' : (initial ? 'Save Changes' : 'Create Policy')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
