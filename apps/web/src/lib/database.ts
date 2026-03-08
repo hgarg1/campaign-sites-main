@@ -1,7 +1,24 @@
 import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
-  return new PrismaClient();
+  const baseUrl = process.env.DATABASE_URL ?? '';
+
+  // Vercel serverless functions each run in their own V8 isolate. Without
+  // connection_limit=1 each isolate spawns a full connection pool, quickly
+  // exhausting the Prisma Postgres connection limit and causing
+  // PrismaClientInitializationError. connection_limit=1 is Prisma's explicit
+  // recommendation for serverless deployments.
+  const url =
+    baseUrl && !baseUrl.includes('connection_limit')
+      ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}connection_limit=1&pool_timeout=10&connect_timeout=15`
+      : baseUrl;
+
+  return new PrismaClient({
+    datasourceUrl: url || undefined,
+    log: process.env.NODE_ENV === 'development'
+      ? [{ emit: 'stdout', level: 'error' }, { emit: 'stdout', level: 'warn' }]
+      : [{ emit: 'stdout', level: 'error' }],
+  });
 };
 
 declare global {

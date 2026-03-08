@@ -96,11 +96,13 @@ async function getAnalyticsGrowth() {
     return Math.max(-100, Math.round(((current - prior) / prior) * 1000) / 10);
   }
 
-  // Use Prisma count queries (no raw SQL) to avoid DB dialect differences
+  // 9 queries instead of the previous 42 (14 days × 3 models in Promise.all).
+  // Fetch all records created in the window once, then bucket in JS.
   const [
     usersLast30, usersPrior30,
     orgsLast30, orgsPrior30,
     websitesLast30, websitesPrior30,
+    usersLast14, orgsLast14, websitesLast14,
   ] = await Promise.all([
     prisma.user.count({ where: { createdAt: { gte: last30 } } }),
     prisma.user.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
@@ -108,22 +110,24 @@ async function getAnalyticsGrowth() {
     prisma.organization.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
     prisma.website.count({ where: { createdAt: { gte: last30 } } }),
     prisma.website.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
+    // Fetch only the createdAt timestamps — tiny payload, no extra queries per day
+    prisma.user.findMany({ where: { createdAt: { gte: last14 } }, select: { createdAt: true } }),
+    prisma.organization.findMany({ where: { createdAt: { gte: last14 } }, select: { createdAt: true } }),
+    prisma.website.findMany({ where: { createdAt: { gte: last14 } }, select: { createdAt: true } }),
   ]);
 
-  // Build daily buckets from Prisma-level queries (avoids raw SQL dialect issues)
-  const dailyMetrics = await Promise.all(
-    Array.from({ length: 14 }).map(async (_, index) => {
-      const dayStart = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      const [users, organizations, websites] = await Promise.all([
-        prisma.user.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
-        prisma.organization.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
-        prisma.website.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
-      ]);
-      return { date: dayStart.toISOString().split('T')[0], users, organizations, websites };
-    })
-  );
+  // Build daily buckets from in-memory arrays — zero additional DB queries
+  const dailyMetrics = Array.from({ length: 14 }).map((_, index) => {
+    const dayStart = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    return {
+      date: dayStart.toISOString().split('T')[0],
+      users: usersLast14.filter(u => u.createdAt >= dayStart && u.createdAt < dayEnd).length,
+      organizations: orgsLast14.filter(o => o.createdAt >= dayStart && o.createdAt < dayEnd).length,
+      websites: websitesLast14.filter(w => w.createdAt >= dayStart && w.createdAt < dayEnd).length,
+    };
+  });
 
   return {
     usersGrowth: pct(usersLast30, usersPrior30),
@@ -135,27 +139,31 @@ async function getAnalyticsGrowth() {
 
 async function getAnalyticsUsage() {
   const now = new Date();
+  const last14 = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  return Promise.all(
-    Array.from({ length: 14 }).map(async (_, index) => {
-      const dayStart = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000);
-      dayStart.setHours(0, 0, 0, 0);
-      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      const [total, completed] = await Promise.all([
-        prisma.buildJob.count({ where: { createdAt: { gte: dayStart, lt: dayEnd } } }),
-        prisma.buildJob.count({ where: { createdAt: { gte: dayStart, lt: dayEnd }, status: 'COMPLETED' } }),
-      ]);
-      return {
-        date: dayStart.toISOString().split('T')[0],
-        // Use 0 instead of null — components call .toLocaleString() on these fields
-        dailyActiveUsers: 0,
-        apiCalls: total * 4, // approximate: each build triggers ~4 API calls
-        buildJobs: total,
-        averageBuildTime: 0,
-        successRate: total > 0 ? Math.round((completed / total) * 1000) / 10 : 0,
-      };
-    })
-  );
+  // 1 query instead of the previous 28 (14 days × 2 counts in Promise.all).
+  // Fetch all jobs in the window once, then bucket by day in JS.
+  const jobs = await prisma.buildJob.findMany({
+    where: { createdAt: { gte: last14 } },
+    select: { createdAt: true, status: true },
+  });
+
+  return Array.from({ length: 14 }).map((_, index) => {
+    const dayStart = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    const dayJobs = jobs.filter(j => j.createdAt >= dayStart && j.createdAt < dayEnd);
+    const total = dayJobs.length;
+    const completed = dayJobs.filter(j => j.status === 'COMPLETED').length;
+    return {
+      date: dayStart.toISOString().split('T')[0],
+      dailyActiveUsers: 0,
+      apiCalls: total * 4,
+      buildJobs: total,
+      averageBuildTime: 0,
+      successRate: total > 0 ? Math.round((completed / total) * 1000) / 10 : 0,
+    };
+  });
 }
 
 async function getAnalyticsEngagement() {
