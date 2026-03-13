@@ -87,34 +87,69 @@ export async function resolveSystemAdminPermissions(
       throw new Error(`User ${systemAdminId} is not an admin`);
     }
 
-    // Create SystemAdmin record
-    admin = await prisma.systemAdmin.create({
-      data: {
-        userId: systemAdminId,
-        email: user.email,
-        name: user.name || 'System Admin',
-      },
-      include: {
-        roleAssignments: {
-          include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true,
+    try {
+      // Try to create SystemAdmin record
+      admin = await prisma.systemAdmin.create({
+        data: {
+          userId: systemAdminId,
+          email: user.email,
+          name: user.name || 'System Admin',
+        },
+        include: {
+          roleAssignments: {
+            include: {
+              role: {
+                include: {
+                  permissions: {
+                    include: {
+                      permission: true,
+                    },
                   },
                 },
               },
             },
           },
-        },
-        permissionOverrides: {
-          include: {
-            permission: true,
+          permissionOverrides: {
+            include: {
+              permission: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (createError: any) {
+      // If creation fails due to unique constraint (race condition), try to fetch again
+      if (createError?.code === 'P2002') {
+        admin = await prisma.systemAdmin.findUnique({
+          where: { userId: systemAdminId },
+          include: {
+            roleAssignments: {
+              include: {
+                role: {
+                  include: {
+                    permissions: {
+                      include: {
+                        permission: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            permissionOverrides: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        });
+        
+        if (!admin) {
+          throw new Error(`Failed to create or retrieve SystemAdmin for user: ${systemAdminId}`);
+        }
+      } else {
+        throw createError;
+      }
+    }
   }
 
   let allowedClaims: Set<string> = new Set();
