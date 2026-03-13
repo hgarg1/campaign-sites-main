@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useUser } from '@/hooks/useUsers';
 import { useToast } from '../shared/ToastContext';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 
 interface UserActionsPanelProps {
   userId: string;
@@ -18,11 +19,14 @@ export function UserActionsPanel({
 }: UserActionsPanelProps) {
   const { suspendUser, unsuspendUser, resetPassword, deleteUser, impersonateUser } = useUser(userId);
   const { success, error } = useToast();
+  const { hasPermission } = useSystemAdminPermissions();
   
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspendReason, setSuspendReason] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
+  const canDelete = hasPermission('system_admin_portal:users:delete');
 
   return (
     <motion.div
@@ -115,8 +119,9 @@ export function UserActionsPanel({
 
         {/* Delete */}
         <button
-          disabled={loadingAction === 'delete'}
+          disabled={loadingAction === 'delete' || !canDelete}
           onClick={() => setShowDeleteConfirm(true)}
+          title={!canDelete ? 'No permission to delete users' : ''}
           className="w-full px-4 py-3 text-left font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span>🗑️</span>

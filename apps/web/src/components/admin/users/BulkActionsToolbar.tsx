@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useToast } from '../shared/ToastContext';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 
 interface BulkActionsToolbarProps {
   selectedCount: number;
@@ -24,8 +25,11 @@ export function BulkActionsToolbar({
   onClearSelection,
 }: BulkActionsToolbarProps) {
   const { success, error } = useToast();
+  const { hasPermission } = useSystemAdminPermissions();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const canDelete = hasPermission('system_admin_portal:users:delete');
 
   if (selectedCount === 0) return null;
 
@@ -128,8 +132,9 @@ export function BulkActionsToolbar({
 
           {/* Delete */}
           <button
-            disabled={loadingAction !== null}
+            disabled={loadingAction !== null || !canDelete}
             onClick={() => setShowDeleteConfirm(true)}
+            title={!canDelete ? 'No permission to delete users' : ''}
             className="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors border border-red-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>🗑️</span>
