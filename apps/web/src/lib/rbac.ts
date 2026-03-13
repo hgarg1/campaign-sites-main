@@ -47,9 +47,9 @@ export async function resolveSystemAdminPermissions(
   });
   const allClaims = allPermissions.map((p) => p.claim);
 
-  // Get admin's role permissions
-  const admin = await prisma.systemAdmin.findUnique({
-    where: { id: systemAdminId },
+  // Get admin's record by userId (systemAdminId param is actually userId)
+  let admin = await prisma.systemAdmin.findUnique({
+    where: { userId: systemAdminId },
     include: {
       roleAssignments: {
         include: {
@@ -73,7 +73,48 @@ export async function resolveSystemAdminPermissions(
   });
 
   if (!admin) {
-    throw new Error(`System admin not found: ${systemAdminId}`);
+    // Auto-create SystemAdmin record if it doesn't exist (for users promoted to admin)
+    const user = await prisma.user.findUnique({
+      where: { id: systemAdminId },
+      select: { email: true, name: true, role: true },
+    });
+    
+    if (!user) {
+      throw new Error(`System admin not found for user: ${systemAdminId}`);
+    }
+
+    if (user.role !== 'ADMIN' && user.role !== 'GLOBAL_ADMIN') {
+      throw new Error(`User ${systemAdminId} is not an admin`);
+    }
+
+    // Create SystemAdmin record
+    admin = await prisma.systemAdmin.create({
+      data: {
+        userId: systemAdminId,
+        email: user.email,
+        name: user.name || 'System Admin',
+      },
+      include: {
+        roleAssignments: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        permissionOverrides: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
   }
 
   let allowedClaims: Set<string> = new Set();

@@ -149,6 +149,35 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Auto-create SystemAdmin record for admin users
+    const systemAdmin = await prisma.systemAdmin.create({
+      data: {
+        userId: newUser.id,
+        email: newUser.email,
+        name: newUser.name || 'System Admin',
+        isActive: true,
+      },
+    });
+
+    // Assign role based on user role
+    // GLOBAL_ADMIN gets Global_Admin role (all permissions)
+    // ADMIN gets default admin role
+    const roleToAssign = await prisma.systemAdminRole.findFirst({
+      where: {
+        name: role === 'GLOBAL_ADMIN' ? 'Global_Admin' : 'User_Manager', // Default to User_Manager for ADMIN
+      },
+    });
+
+    if (roleToAssign) {
+      await prisma.systemAdminRoleAssignment.create({
+        data: {
+          adminId: systemAdmin.id,
+          roleId: roleToAssign.id,
+          assignedBy: userId,
+        },
+      });
+    }
+
     // Log success
     await logSystemAdminAction({
       action: 'CREATE_USER',
