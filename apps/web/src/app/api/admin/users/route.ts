@@ -28,22 +28,181 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/users - Create new user
+// POST /api/admin/users - Create new system admin user
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const { cookies } = await import('next/headers');
+    const { parseAndVerifySessionToken } = await import('@/lib/session-auth');
+    const { prisma } = await import('@/lib/database');
+    const { hasSystemAdminPermission } = await import('@/lib/rbac');
+    const { logSystemAdminAction } = await import('@/lib/audit-log');
 
-    // TODO: Implement user creation logic
-    // - Validate input
-    // - Check if email already exists
-    // - Create user in database
-    // - Send welcome email
+    // Get authenticated user
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('campaignsites_session')?.value;
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const parsedToken = parseAndVerifySessionToken(sessionToken);
+    const userId = parsedToken?.userId;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check permission
+    const hasPermission = await hasSystemAdminPermission(userId, 'system_admin_portal:users:create');
+    if (!hasPermission) {
+      await logSystemAdminAction({
+        action: 'CREATE_USER_DENIED',
+        resourceType: 'User',
+        resourceId: 'pending',
+        resourceName: 'Create new user',
+        performedBy: userId,
+        status: 'failure',
+        errorMessage: 'Insufficient permissions',
+      });
+
+      return NextResponse.json(
+        { error: 'Insufficient permissions for system_admin_portal:users:create' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { email, name, role, justification } = body;
+
+    // Validate input
+    if (!email || !name || !role) {
+      return NextResponse.json(
+        { error: 'email, name, and role are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!['ADMIN', 'GLOBAL_ADMIN'].includes(role)) {
+      return NextResponse.json(
+        { error: 'role must be ADMIN or GLOBAL_ADMIN' },
+        { status: 400 }
+      );
+    }
+
+    if (!justification || typeof justification !== 'string') {
+      return NextResponse.json(
+        { error: 'justification is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Check if email already exists
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      await logSystemAdminAction({
+        action: 'CREATE_USER_FAILED',
+        resourceType: 'User',
+        resourceId: normalizedEmail,
+        resourceName: `User ${normalizedEmail}`,
+        performedBy: userId,
+        justification,
+        status: 'failure',
+        errorMessage: 'Email already exists',
+      });
+
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 409 }
+      );
+    }
+
+    // Create user with temporary password
+    const tempPassword = Math.random().toString(36).slice(-12);
+    const { hash } = await import('bcrypt');
+    const passwordHash = await hash(tempPassword, 10);
+
+    const newUser = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        name: name.trim(),
+        role: role as 'ADMIN' | 'GLOBAL_ADMIN',
+        passwordHash,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    // Log success
+    await logSystemAdminAction({
+      action: 'CREATE_USER',
+      resourceType: 'User',
+      resourceId: newUser.id,
+      resourceName: `${newUser.name} (${newUser.email})`,
+      performedBy: userId,
+      justification,
+      status: 'success',
+      changes: {
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+      },
+    });
 
     return NextResponse.json(
-      { message: 'User created successfully', data: { id: 'new-id', ...body } },
+      {
+        message: 'User created successfully',
+        data: newUser,
+        tempPassword: tempPassword,
+        tempPasswordNote: 'User must change this password on first login',
+      },
       { status: 201 }
     );
   } catch (error) {
+    console.error('Failed to create user:', error);
+
+    // Log error
+    const { cookies } = await import('next/headers');
+    const { parseAndVerifySessionToken } = await import('@/lib/session-auth');
+    const { logSystemAdminAction } = await import('@/lib/audit-log');
+
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('campaignsites_session')?.value;
+    if (sessionToken) {
+      try {
+        const parsedToken = parseAndVerifySessionToken(sessionToken);
+        if (parsedToken?.userId) {
+          await logSystemAdminAction({
+            action: 'CREATE_USER_ERROR',
+            resourceType: 'User',
+            resourceId: 'unknown',
+            resourceName: 'Create user - server error',
+            performedBy: parsedToken.userId,
+            status: 'failure',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      } catch (logError) {
+        console.error('Failed to log error:', logError);
+      }
+    }
+
     return NextResponse.json(
       { error: 'Failed to create user' },
       { status: 500 }

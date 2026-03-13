@@ -96,7 +96,12 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/welcome');
+      // Check if user needs to change password (first login)
+      if (data.requiresPasswordChange) {
+        router.push('/change-password');
+      } else {
+        router.push('/welcome');
+      }
     } catch {
       setError('Unable to log in. Please try again.');
     } finally {

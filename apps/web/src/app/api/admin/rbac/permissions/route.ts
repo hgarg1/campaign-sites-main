@@ -1,6 +1,6 @@
 /**
- * API endpoint to resolve system admin permissions
- * GET /api/admin/permissions - Returns all available system permissions that the admin can manage
+ * API endpoint to list all available system admin permissions
+ * GET /api/admin/rbac/permissions - List all permissions (requires system_admin_portal:rbac:view_permissions)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -14,11 +14,7 @@ export const dynamic = 'force-dynamic';
 async function getAuthenticatedUserId() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get('campaignsites_session')?.value;
-
-  if (!sessionToken) {
-    return null;
-  }
-
+  if (!sessionToken) return null;
   const parsedToken = parseAndVerifySessionToken(sessionToken);
   return parsedToken?.userId ?? null;
 }
@@ -27,10 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId();
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check permission to view permissions
@@ -47,7 +40,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')?.toLowerCase() || '';
     const category = searchParams.get('category') || '';
 
-    // Query all available permissions
+    // Query all permissions
     let query: any = {};
 
     if (search) {
@@ -68,11 +61,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(permissions);
   } catch (error) {
-    console.error('Permission fetch failed:', error);
+    console.error('Failed to fetch permissions:', error);
     return NextResponse.json(
       { error: 'Failed to fetch permissions' },
       { status: 500 }
     );
   }
 }
-

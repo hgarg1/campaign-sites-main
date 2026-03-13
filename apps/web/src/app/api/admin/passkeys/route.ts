@@ -9,22 +9,30 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
-import { verifySession } from '@/lib/session-auth';
+import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { hasSystemAdminPermission } from '@/lib/rbac';
+import { logSystemAdminAction } from '@/lib/audit-log';
 
-async function requireGlobalAdmin(request: NextRequest) {
-  const session = verifySession(request);
-  if (!session) return null;
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { id: true, role: true },
-  });
-  return user?.role === 'GLOBAL_ADMIN' ? user : null;
+async function getAdminSession(request: NextRequest) {
+  const sessionToken = request.cookies.get('campaignsites_session')?.value;
+  if (!sessionToken) return null;
+
+  const session = parseAndVerifySessionToken(sessionToken);
+  if (!session?.userId) return null;
+
+  return session;
 }
 
 export async function GET(request: NextRequest, { params }: { params: { slug?: string[] } }) {
   try {
-    const admin = await requireGlobalAdmin(request);
-    if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const session = await getAdminSession(request);
+    if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const hasPermission = await hasSystemAdminPermission(
+      session.userId,
+      'system_admin_portal:security:read'
+    );
+    if (!hasPermission) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const slug = params.slug ?? [];
     const [userId] = slug;
@@ -83,21 +91,60 @@ export async function GET(request: NextRequest, { params }: { params: { slug?: s
 
 export async function PATCH(request: NextRequest, { params }: { params: { slug?: string[] } }) {
   try {
-    const admin = await requireGlobalAdmin(request);
-    if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const session = await getAdminSession(request);
+    if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const hasPermission = await hasSystemAdminPermission(
+      session.userId,
+      'system_admin_portal:security:write'
+    );
+    if (!hasPermission) {
+      await logSystemAdminAction({
+        action: 'PASSKEY_REQUIREMENT_DENIED',
+        resourceType: 'User',
+        resourceId: params.slug?.[0] || 'unknown',
+        resourceName: `User ${params.slug?.[0]}`,
+        performedBy: session.userId,
+        status: 'failure',
+        errorMessage: 'Insufficient permissions',
+      });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const slug = params.slug ?? [];
     const [userId] = slug;
     if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
 
-    const body = (await request.json().catch(() => ({}))) as { requirePasskey?: boolean };
+    const body = (await request.json().catch(() => ({}))) as { 
+      requirePasskey?: boolean;
+      justification?: string;
+    };
     if (typeof body.requirePasskey !== 'boolean') {
       return NextResponse.json({ error: 'requirePasskey (boolean) required' }, { status: 400 });
     }
 
-    const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (!body.justification || typeof body.justification !== 'string') {
+      return NextResponse.json({ error: 'justification is required' }, { status: 400 });
+    }
+
+    const target = await prisma.user.findUnique({ 
+      where: { id: userId }, 
+      select: { id: true, role: true, email: true, name: true } 
+    });
     if (!target) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    if (target.role === 'GLOBAL_ADMIN' && userId !== admin.id) {
+
+    // Prevent modifying another GLOBAL_ADMIN unless you're that admin
+    if (target.role === 'GLOBAL_ADMIN' && userId !== session.userId) {
+      await logSystemAdminAction({
+        action: 'PASSKEY_REQUIREMENT_DENIED',
+        resourceType: 'User',
+        resourceId: userId,
+        resourceName: `${target.name} (${target.email})`,
+        performedBy: session.userId,
+        justification: body.justification,
+        status: 'failure',
+        errorMessage: 'Cannot modify another GLOBAL_ADMIN',
+      });
       return NextResponse.json({ error: 'Cannot modify another GLOBAL_ADMIN' }, { status: 403 });
     }
 
@@ -107,16 +154,48 @@ export async function PATCH(request: NextRequest, { params }: { params: { slug?:
       select: { id: true, email: true, requirePasskey: true },
     });
 
+    await logSystemAdminAction({
+      action: 'PASSKEY_REQUIREMENT_CHANGED',
+      resourceType: 'User',
+      resourceId: updated.id,
+      resourceName: `${target.name} (${target.email})`,
+      performedBy: session.userId,
+      justification: body.justification,
+      status: 'success',
+      changes: {
+        from: { requirePasskey: !body.requirePasskey },
+        to: { requirePasskey: body.requirePasskey },
+      },
+    });
+
     return NextResponse.json(updated);
-  } catch {
+  } catch (error) {
+    console.error('Failed to update passkey requirement:', error);
     return NextResponse.json({ error: 'Failed to update passkey requirement' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { slug?: string[] } }) {
   try {
-    const admin = await requireGlobalAdmin(request);
-    if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const session = await getAdminSession(request);
+    if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const hasPermission = await hasSystemAdminPermission(
+      session.userId,
+      'system_admin_portal:security:write'
+    );
+    if (!hasPermission) {
+      await logSystemAdminAction({
+        action: 'PASSKEY_REVOKE_DENIED',
+        resourceType: 'PasskeyCredential',
+        resourceId: params.slug?.[1] || 'unknown',
+        resourceName: `Credential ${params.slug?.[1]}`,
+        performedBy: session.userId,
+        status: 'failure',
+        errorMessage: 'Insufficient permissions',
+      });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const slug = params.slug ?? [];
     const [userId, credId] = slug;
@@ -124,18 +203,43 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug?
       return NextResponse.json({ error: 'userId and credId required in path' }, { status: 400 });
     }
 
-    const cred = await prisma.passkeyCredential.findFirst({ where: { id: credId, userId } });
+    const body = (await request.json().catch(() => ({}))) as { justification?: string };
+
+    if (!body.justification || typeof body.justification !== 'string') {
+      return NextResponse.json({ error: 'justification is required' }, { status: 400 });
+    }
+
+    const cred = await prisma.passkeyCredential.findFirst({ 
+      where: { id: credId, userId },
+      select: { id: true, revokedAt: true, deviceName: true },
+    });
     if (!cred) return NextResponse.json({ error: 'Credential not found' }, { status: 404 });
     if (cred.revokedAt) return NextResponse.json({ error: 'Already revoked' }, { status: 409 });
 
     const updated = await prisma.passkeyCredential.update({
       where: { id: credId },
-      data: { revokedAt: new Date(), revokedByUserId: admin.id },
+      data: { revokedAt: new Date(), revokedByUserId: session.userId },
       select: { id: true, revokedAt: true },
     });
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+
+    await logSystemAdminAction({
+      action: 'PASSKEY_REVOKED',
+      resourceType: 'PasskeyCredential',
+      resourceId: updated.id,
+      resourceName: `${cred.deviceName || 'Passkey'} for ${user?.name || user?.email}`,
+      performedBy: session.userId,
+      justification: body.justification,
+      status: 'success',
+    });
+
     return NextResponse.json(updated);
-  } catch {
+  } catch (error) {
+    console.error('Failed to revoke passkey:', error);
     return NextResponse.json({ error: 'Failed to revoke passkey' }, { status: 500 });
   }
 }

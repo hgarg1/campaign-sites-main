@@ -56,6 +56,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 
+    // Fetch passwordChangedAt separately to handle cases where schema migration hasn't run yet
+    let passwordChangedAt: any = null;
+    try {
+      const userWithPasswordChangedAt = await prisma.user.findUnique({
+        where: { email },
+        select: { passwordChangedAt: true },
+      });
+      passwordChangedAt = userWithPasswordChangedAt?.passwordChangedAt;
+    } catch {
+      // Column doesn't exist in schema yet - migration not applied
+      passwordChangedAt = new Date(); // Default to changed, to allow login
+    }
+
     const validPassword = await verifyPassword(password, user.passwordHash);
 
     if (!validPassword) {
@@ -77,6 +90,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       message: 'Logged in successfully.',
+      requiresPasswordChange: passwordChangedAt === null,
       user: {
         id: user.id,
         name: user.name,
@@ -112,6 +126,19 @@ export async function POST(request: NextRequest) {
       });
     } else {
       response.cookies.delete('passkey_required');
+    }
+
+    // If user hasn't changed their password yet, flag it
+    if (passwordChangedAt === null) {
+      response.cookies.set('password_change_required', '1', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    } else {
+      response.cookies.delete('password_change_required');
     }
 
     return response;

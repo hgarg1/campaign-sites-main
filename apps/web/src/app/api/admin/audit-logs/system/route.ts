@@ -1,45 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { prisma } from '@/lib/database';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Validate session to get authenticated userId
+    const cookieStore = await (await import('next/headers')).cookies();
+    const sessionToken = cookieStore.get('campaignsites_session')?.value;
     
-    const {
-      action,
-      resourceType,
-      resourceId,
-      resourceName,
-      changes,
-      justification,
-      status,
-      errorMessage,
-    } = body;
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Unauthorized - no session' }, { status: 401 });
+    }
 
-    // Get current user
-    const userId = request.headers.get('x-user-id') || 'system';
+    const parsedToken = parseAndVerifySessionToken(sessionToken);
+    if (!parsedToken?.userId) {
+      return NextResponse.json({ error: 'Unauthorized - invalid session' }, { status: 401 });
+    }
 
-    const logEntry = {
-      id: `sys-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      action,
-      resourceType,
-      resourceId,
-      resourceName: resourceName || null,
-      changes: changes || null,
-      justification: justification || null,
-      performedBy: userId,
-      status,
-      errorMessage: errorMessage || null,
-    };
+    const userId = parsedToken.userId;
 
-    // Log to console (can be collected by logging service)
-    console.log('[SYSTEM_ADMIN_LOG]', JSON.stringify(logEntry, null, 2));
+    // Verify user is a system admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, deletedAt: true },
+    });
 
-    return NextResponse.json(logEntry);
-  } catch (error) {
-    console.error('Failed to create system admin log:', error);
+    if (!user || user.deletedAt || (user.role !== 'ADMIN' && user.role !== 'GLOBAL_ADMIN')) {
+      return NextResponse.json({ error: 'Forbidden - insufficient permissions' }, { status: 403 });
+    }
+
+    // Note: This endpoint is deprecated. Use logSystemAdminAction() utility function instead.
+    // Audit logs should be created through API endpoints that use logSystemAdminAction()
     return NextResponse.json(
-      { error: 'Failed to create audit log' },
+      { error: 'This endpoint is deprecated. Use direct API endpoints that log via logSystemAdminAction().' },
+      { status: 410 }
+    );
+  } catch (error) {
+    console.error('Failed to validate system admin log request:', error);
+    return NextResponse.json(
+      { error: 'Failed to process request' },
       { status: 500 }
     );
   }

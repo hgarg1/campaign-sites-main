@@ -149,9 +149,12 @@ export function UsersTable({ data, selectedIds = [], onSelectionChange, onRowCli
       >
         View
       </Link>
-      <button className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
+      <Link
+        href={`/admin/portal/users/${row.id}?edit=true`}
+        className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+      >
         Edit
-      </button>
+      </Link>
     </motion.div>
   );
 

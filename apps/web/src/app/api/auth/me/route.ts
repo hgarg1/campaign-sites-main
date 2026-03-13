@@ -41,19 +41,6 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        organizations: {
-          include: {
-            organization: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-          },
-        },
-      },
     });
 
     if (!user) {
@@ -66,10 +53,34 @@ export async function GET() {
       });
     }
 
+    // Query organizations separately to filter soft-deleted ones
+    const organizationMembers = await prisma.organizationMember.findMany({
+      where: { userId },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            deletedAt: true,
+          },
+        },
+      },
+    });
+
+    // Filter out soft-deleted organizations
+    const activeOrganizations = organizationMembers
+      .filter((om: any) => om.organization.deletedAt === null)
+      .map((om: any) => ({
+        id: om.organization.id,
+        name: om.organization.name,
+        slug: om.organization.slug,
+      }));
+
     logger.info('User session verified', 'auth', {
       userId: user.id,
       email: user.email.split('@')[0] + '@***',
-      organizationCount: user.organizations.length,
+      organizationCount: activeOrganizations.length,
     });
 
     const response = NextResponse.json({
@@ -78,11 +89,8 @@ export async function GET() {
         name: user.name,
         role: user.role,
         requirePasskey: user.requirePasskey,
-        organizations: user.organizations.map((om: any) => ({
-          id: om.organization.id,
-          name: om.organization.name,
-          slug: om.organization.slug,
-        })),
+        passwordChangedAt: (user as any).passwordChangedAt,
+        organizations: activeOrganizations,
       },
       { status: 200 }
     );

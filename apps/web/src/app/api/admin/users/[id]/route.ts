@@ -72,22 +72,62 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const sessionToken = request.cookies.get('campaignsites_session')?.value;
-    const sessionUser = await getSessionUserFromToken(sessionToken);
-
-    if (!sessionUser) {
+    if (!sessionToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (sessionUser.role !== 'GLOBAL_ADMIN' && sessionUser.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const parsedToken = parseAndVerifySessionToken(sessionToken);
+    const adminId = parsedToken?.userId;
+
+    if (!adminId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = params.id;
-    const body = await request.json() as { role?: string; name?: string };
+
+    // Prevent self-updates (except name)
+    if (userId === adminId) {
+      return NextResponse.json(
+        { error: 'Cannot update your own role' },
+        { status: 400 }
+      );
+    }
+
+    // Check permission for user updates
+    const hasPermission = await hasSystemAdminPermission(
+      adminId,
+      'system_admin_portal:users:update'
+    );
+    if (!hasPermission) {
+      await logSystemAdminAction({
+        action: 'USER_UPDATE_DENIED',
+        resourceType: 'User',
+        resourceId: userId,
+        resourceName: `User ${userId}`,
+        performedBy: adminId,
+        status: 'failure',
+        errorMessage: 'Insufficient permissions',
+      });
+
+      return NextResponse.json(
+        { error: 'Forbidden: insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json() as { role?: string; name?: string; justification?: string };
 
     const existing = await prisma.user.findUnique({ where: { id: userId } });
     if (!existing) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // If changing role, require justification
+    if (body.role && body.role !== existing.role && !body.justification) {
+      return NextResponse.json(
+        { error: 'justification is required when changing user role' },
+        { status: 400 }
+      );
     }
 
     const updated = await prisma.user.update({
@@ -103,8 +143,38 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         type: 'USER_ROLE_CHANGED',
         title: 'User role changed',
         body: `${existing.name ?? existing.email}'s role changed from ${existing.role} to ${body.role}.`,
-        actorId: sessionUser.id,
+        actorId: adminId,
       }).catch(() => {});
+
+      // Log the role change
+      await logSystemAdminAction({
+        action: 'USER_ROLE_CHANGED',
+        resourceType: 'User',
+        resourceId: updated.id,
+        resourceName: `${updated.name} (${updated.email})`,
+        performedBy: adminId,
+        justification: body.justification || 'Role change',
+        status: 'success',
+        changes: {
+          from: { role: existing.role },
+          to: { role: updated.role },
+        },
+      });
+    }
+
+    if (body.name && body.name !== existing.name) {
+      await logSystemAdminAction({
+        action: 'USER_NAME_CHANGED',
+        resourceType: 'User',
+        resourceId: updated.id,
+        resourceName: `${updated.name} (${updated.email})`,
+        performedBy: adminId,
+        status: 'success',
+        changes: {
+          from: { name: existing.name },
+          to: { name: updated.name },
+        },
+      });
     }
 
     return NextResponse.json(
@@ -112,6 +182,28 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     );
   } catch (error) {
+    console.error('Failed to update user:', error);
+
+    const sessionToken = request.cookies.get('campaignsites_session')?.value;
+    if (sessionToken) {
+      try {
+        const parsedToken = parseAndVerifySessionToken(sessionToken);
+        if (parsedToken?.userId) {
+          await logSystemAdminAction({
+            action: 'USER_UPDATE_ERROR',
+            resourceType: 'User',
+            resourceId: params.id,
+            resourceName: `User ${params.id}`,
+            performedBy: parsedToken.userId,
+            status: 'failure',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      } catch (logError) {
+        console.error('Failed to log error:', logError);
+      }
+    }
+
     return NextResponse.json(
       { error: 'Failed to update user' },
       { status: 500 }

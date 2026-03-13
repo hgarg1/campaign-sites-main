@@ -34,8 +34,11 @@ export async function POST(request: Request) {
     const newPassword = body.newPassword?.trim() ?? '';
     const confirmPassword = body.confirmPassword?.trim() ?? '';
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return NextResponse.json({ error: 'All password fields are required' }, { status: 400 });
+    // For first-time change, currentPassword is not required. For subsequent changes, it is.
+    const newPasswordOnly = !currentPassword;
+
+    if (!newPassword || !confirmPassword) {
+      return NextResponse.json({ error: 'New password and confirm password are required' }, { status: 400 });
     }
 
     if (newPassword !== confirmPassword) {
@@ -55,17 +58,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const validCurrentPassword = await verifyPassword(currentPassword, user.passwordHash);
-    if (!validCurrentPassword) {
-      return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 });
+    // Fetch passwordChangedAt separately to handle cases where schema migration hasn't run yet
+    let passwordChangedAt: any = null;
+    try {
+      const userWithPasswordChangedAt = await prisma.user.findUnique({
+        where: { id: parsed.userId },
+        select: { passwordChangedAt: true },
+      });
+      passwordChangedAt = userWithPasswordChangedAt?.passwordChangedAt;
+    } catch {
+      // Column doesn't exist in schema yet - migration not applied
+      passwordChangedAt = new Date(); // Default to changed, to allow password change
+    }
+
+    // If user has already changed password, they must provide current password
+    if (passwordChangedAt !== null && newPasswordOnly) {
+      return NextResponse.json({ error: 'Current password is required' }, { status: 400 });
+    }
+
+    // If changing password after first login, verify current password
+    if (passwordChangedAt !== null) {
+      const validCurrentPassword = await verifyPassword(currentPassword, user.passwordHash);
+      if (!validCurrentPassword) {
+        return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 });
+      }
     }
 
     const newPasswordHash = await hashPassword(newPassword);
 
-    await prisma.user.update({
-      where: { id: parsed.userId },
-      data: { passwordHash: newPasswordHash },
-    });
+    // Try to update with passwordChangedAt, fallback to just passwordHash if column doesn't exist
+    try {
+      await prisma.user.update({
+        where: { id: parsed.userId },
+        data: {
+          passwordHash: newPasswordHash,
+          passwordChangedAt: new Date(),
+        },
+      });
+    } catch {
+      // Column might not exist yet - fallback to just updating password
+      await prisma.user.update({
+        where: { id: parsed.userId },
+        data: {
+          passwordHash: newPasswordHash,
+        },
+      });
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch {

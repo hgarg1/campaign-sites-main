@@ -18,6 +18,7 @@ model User {
   name            String?
   role            UserRole  @default(USER)
   requirePasskey  Boolean   @default(false) // GLOBAL_ADMIN can enforce passkey-only auth for ADMINs
+  passwordChangedAt DateTime? // null means user must change password on first login
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
@@ -964,4 +965,97 @@ model OrgInheritedPolicy {
   @@unique([parentOrgId, targetOrgId])
   @@index([targetOrgId])
   @@map("org_inherited_policies")
+}
+
+// ─── Email Templates & Management ──────────────────────────────────────────
+
+// Email template definitions with versioning support
+model EmailTemplate {
+  id              String    @id @default(cuid())
+  key             String    @unique
+  name            String
+  description     String?
+  category        String    // password_reset, invitation, notification, marketing, etc.
+  
+  // Template content
+  subject         String    // With {{variables}}
+  htmlContent     String    @db.Text
+  textContent     String?   @db.Text
+  preheader       String?   // Email preview text
+  
+  // Metadata
+  variables       String[]  // ["userName", "resetLink", "expiresAt"]
+  requiredVars    String[]  // ["userName", "resetLink"]
+  
+  // Status & Versioning
+  isActive        Boolean   @default(true)
+  isArchived      Boolean   @default(false)
+  version         Int       @default(1)
+  
+  // A/B Testing
+  isABTest        Boolean   @default(false)
+  abTestVariant   String?   // null = control, "variant_a", "variant_b", etc.
+  abTestSplitPercentage Int? // 50 for 50/50 split
+  
+  // Audit Trail
+  createdBy       String?
+  createdAt       DateTime  @default(now())
+  updatedBy       String?
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  sendHistory     EmailSendLog[]
+  versions        EmailTemplateVersion[]
+  
+  @@index([category])
+  @@index([isActive])
+  @@index([key])
+  @@map("email_templates")
+}
+
+// Version history for email templates (enables rollback)
+model EmailTemplateVersion {
+  id              String    @id @default(cuid())
+  templateId      String
+  version         Int
+  subject         String
+  htmlContent     String    @db.Text
+  textContent     String?   @db.Text
+  variables       String[]
+  
+  createdBy       String?
+  createdAt       DateTime  @default(now())
+  
+  template        EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  @@unique([templateId, version])
+  @@index([templateId])
+  @@map("email_template_versions")
+}
+
+// Audit log for all email sends (for tracking, A/B testing, delivery status)
+model EmailSendLog {
+  id              String    @id @default(cuid())
+  templateId      String
+  templateVersion Int
+  recipient       String
+  subject         String
+  status          String    // pending, sent, failed, bounced
+  messageId       String?   // SMTP message ID
+  errorMessage    String?
+  
+  // Metadata
+  variables       Json      // The actual values used for this send
+  abTestVariant   String?   // Which variant was sent (for A/B test tracking)
+  
+  sentAt          DateTime?
+  createdAt       DateTime  @default(now())
+  
+  template        EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  @@index([templateId])
+  @@index([status])
+  @@index([recipient])
+  @@index([createdAt])
+  @@map("email_send_logs")
 }
