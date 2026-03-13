@@ -1,0 +1,233 @@
+{
+  "enforcement_strategy": {
+    "phase": "Phase 6: Enforcement Layer",
+    "goal": "Add permission checks to all admin portal pages and actions",
+    "approach": "Prioritize critical mutation points, then expand to read operations"
+  },
+  "priority_tiers": {
+    "tier_1_critical": [
+      {
+        "page": "/admin/portal/users",
+        "file": "apps/web/src/app/admin/portal/users/page.tsx",
+        "actions": [
+          {
+            "action": "Suspend User",
+            "claim": "system_admin_portal:users:suspend",
+            "method": "POST /api/admin/users/suspend",
+            "component": "BulkActionsToolbar or UserRow",
+            "requires_justification": true
+          },
+          {
+            "action": "Delete User",
+            "claim": "system_admin_portal:users:delete",
+            "method": "DELETE /api/admin/users/{id}",
+            "component": "UserRow or ContextMenu",
+            "requires_justification": true
+          },
+          {
+            "action": "View Users",
+            "claim": "system_admin_portal:users:read",
+            "method": "GET /api/admin/users",
+            "component": "Page render",
+            "requires_justification": false
+          }
+        ]
+      },
+      {
+        "page": "/admin/portal/users/[id]",
+        "file": "apps/web/src/app/admin/portal/users/[id]/page.tsx",
+        "actions": [
+          {
+            "action": "Change User Role",
+            "claim": "system_admin_portal:users:write",
+            "method": "PATCH /api/admin/users/{id}",
+            "component": "RoleSelector",
+            "requires_justification": true
+          },
+          {
+            "action": "Manage Permissions",
+            "claim": "system_admin_portal:rbac:override",
+            "method": "POST/DELETE /api/admin/system-admins/{id}/permissions",
+            "component": "PermissionOverridePanel",
+            "requires_justification": true
+          }
+        ]
+      },
+      {
+        "page": "/admin/portal/organizations/[id]",
+        "file": "apps/web/src/app/admin/portal/organizations/[id]/page.tsx",
+        "actions": [
+          {
+            "action": "Suspend Organization",
+            "claim": "system_admin_portal:organizations:suspend",
+            "method": "POST /api/admin/organizations/{id}/suspend",
+            "component": "OrganizationProfile",
+            "requires_justification": true
+          },
+          {
+            "action": "Deactivate Organization",
+            "claim": "system_admin_portal:organizations:deactivate",
+            "method": "POST /api/admin/organizations/{id}/deactivate",
+            "component": "OrganizationProfile",
+            "requires_justification": true
+          },
+          {
+            "action": "Reactivate Organization",
+            "claim": "system_admin_portal:organizations:reactivate",
+            "method": "POST /api/admin/organizations/{id}/reactivate",
+            "component": "OrganizationProfile",
+            "requires_justification": true
+          },
+          {
+            "action": "Modify Settings",
+            "claim": "system_admin_portal:organizations:write",
+            "method": "PATCH /api/admin/organizations/{id}",
+            "component": "SettingsForm",
+            "requires_justification": true
+          }
+        ]
+      },
+      {
+        "page": "/admin/portal/organizations",
+        "file": "apps/web/src/app/admin/portal/organizations/page.tsx",
+        "actions": [
+          {
+            "action": "View Organizations",
+            "claim": "system_admin_portal:organizations:read",
+            "method": "GET /api/admin/organizations",
+            "component": "Page render",
+            "requires_justification": false
+          }
+        ]
+      }
+    ],
+    "tier_2_important": [
+      {
+        "page": "/admin/portal/rbac/admin-hierarchy",
+        "file": "apps/web/src/app/admin/portal/rbac/admin-hierarchy/page.tsx",
+        "actions": [
+          {
+            "action": "Save Hierarchy Changes",
+            "claim": "system_admin_portal:rbac:hierarchy",
+            "method": "POST /api/admin/rbac/admin-hierarchy/commit",
+            "component": "AdminHierarchyGraph",
+            "requires_justification": true
+          }
+        ]
+      },
+      {
+        "page": "/admin/portal/monitoring",
+        "file": "apps/web/src/app/admin/portal/monitoring/page.tsx",
+        "actions": [
+          {
+            "action": "Acknowledge Alert",
+            "claim": "system_admin_portal:monitoring:write",
+            "method": "POST /api/admin/alerts/{id}/acknowledge",
+            "component": "AlertRow",
+            "requires_justification": false
+          },
+          {
+            "action": "Resolve Alert",
+            "claim": "system_admin_portal:monitoring:write",
+            "method": "POST /api/admin/alerts/{id}/resolve",
+            "component": "AlertRow",
+            "requires_justification": false
+          }
+        ]
+      },
+      {
+        "page": "/admin/portal/websites/[id]",
+        "file": "apps/web/src/app/admin/portal/websites/[id]/page.tsx",
+        "actions": [
+          {
+            "action": "Rebuild Website",
+            "claim": "system_admin_portal:websites:rebuild",
+            "method": "POST /api/admin/websites/{id}/rebuild",
+            "component": "WebsiteControls",
+            "requires_justification": false
+          },
+          {
+            "action": "Delete Website",
+            "claim": "system_admin_portal:websites:delete",
+            "method": "DELETE /api/admin/websites/{id}",
+            "component": "WebsiteControls",
+            "requires_justification": true
+          }
+        ]
+      },
+      {
+        "page": "/admin/portal/security/passkeys",
+        "file": "apps/web/src/app/admin/portal/security/passkeys/page.tsx",
+        "actions": [
+          {
+            "action": "Register Passkey",
+            "claim": "system_admin_portal:security:write",
+            "method": "POST /api/auth/passkey/register",
+            "component": "PasskeyForm",
+            "requires_justification": false
+          },
+          {
+            "action": "Revoke Passkey",
+            "claim": "system_admin_portal:security:write",
+            "method": "DELETE /api/admin/passkeys/me/{credId}",
+            "component": "PasskeyRow",
+            "requires_justification": true
+          }
+        ]
+      }
+    ],
+    "tier_3_read_operations": [
+      {
+        "page": "/admin/portal/jobs",
+        "claim": "system_admin_portal:jobs:read"
+      },
+      {
+        "page": "/admin/portal/analytics",
+        "claim": "system_admin_portal:analytics:read"
+      },
+      {
+        "page": "/admin/portal/settings",
+        "claim": "system_admin_portal:settings:read"
+      },
+      {
+        "page": "/admin/portal/governance",
+        "claim": "system_admin_portal:governance:read"
+      }
+    ]
+  },
+  "implementation_pattern": {
+    "step_1_identify_claims": "Find all mutations in page.tsx and identify the claim",
+    "step_2_add_gate": "Wrap button/form with PermissionGatedButton or PermissionGatedAction",
+    "step_3_server_recheck": "Backend always re-validates permission before processing",
+    "step_4_test": "Verify permission denied users cannot see/access button",
+    "step_5_audit": "Ensure audit logging is in place for all mutations"
+  },
+  "backend_validation": {
+    "note": "Frontend gating is for UX. Backend MUST validate all permissions:",
+    "pattern": "Check hasSystemAdminPermission(userId, 'claim') before any mutation",
+    "location": "Start of every POST/PATCH/DELETE handler in /api/admin/**",
+    "example": "const canSuspend = await hasSystemAdminPermission(userId, 'system_admin_portal:organizations:suspend');"
+  },
+  "quick_reference": {
+    "tier_1_pages": [
+      "users",
+      "users/[id]",
+      "organizations",
+      "organizations/[id]"
+    ],
+    "tier_2_pages": [
+      "rbac/admin-hierarchy",
+      "monitoring",
+      "websites/[id]",
+      "security/passkeys"
+    ],
+    "tier_3_pages": [
+      "jobs",
+      "analytics",
+      "settings",
+      "governance"
+    ],
+    "total_mutation_points": 42,
+    "estimated_work": "2-3 hours for all tiers"
+  }
+}

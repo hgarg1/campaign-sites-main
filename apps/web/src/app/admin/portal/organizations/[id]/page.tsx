@@ -19,6 +19,8 @@ import {
 import { HierarchyGraph } from '@/components/shared/HierarchyGraph';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { logSystemAdminAction } from '@/lib/audit-log';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
+import { PermissionGatedButton } from '@/components/admin/rbac/PermissionGate';
 
 // ─── Hierarchy tab types ────────────────────────────────────────────────────
 
@@ -56,6 +58,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function HierarchyTab({ orgId }: { orgId: string }) {
   const router = useRouter();
+  const { hasPermission } = useSystemAdminPermissions();
   const [hierarchyData, setHierarchyData] = useState<HierarchyData | null>(null);
   const [hierarchyLoading, setHierarchyLoading] = useState(true);
   const [hierarchyError, setHierarchyError] = useState<string | null>(null);
@@ -300,29 +303,32 @@ function HierarchyTab({ orgId }: { orgId: string }) {
             )}
           </div>
           {(org.ownStatus === 'ACTIVE' || org.ownStatus === 'SUSPENDED') && (
-            <button
+            <PermissionGatedButton
+              claim="system_admin_portal:organizations:deactivate"
               onClick={() => setShowDeactivateModal(true)}
               className="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800"
             >
               Deactivate
-            </button>
+            </PermissionGatedButton>
           )}
           {org.ownStatus === 'ACTIVE' && (
-            <button
+            <PermissionGatedButton
+              claim="system_admin_portal:organizations:suspend"
               onClick={() => setShowSuspendModal(true)}
               className="bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-amber-700"
             >
               Suspend
-            </button>
+            </PermissionGatedButton>
           )}
           {(org.ownStatus === 'SUSPENDED' || org.ownStatus === 'DEACTIVATED') && (
-            <button
+            <PermissionGatedButton
+              claim="system_admin_portal:organizations:reactivate"
               onClick={() => setShowReactivateModal(true)}
               disabled={actionLoading}
               className="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-60"
             >
               {actionLoading ? 'Reactivating...' : 'Reactivate'}
-            </button>
+            </PermissionGatedButton>
           )}
         </div>
       </div>
