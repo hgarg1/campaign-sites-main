@@ -218,7 +218,7 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{key.name}</h4>
                     <p className="text-sm text-gray-600 mt-1 font-mono">
-                      {key.key.substring(0, 10)}...{key.key.substring(-10)}
+                      •••••••••• {key.key.slice(-4)}
                     </p>
                     <div className="flex gap-3 mt-3 text-xs text-gray-500">
                       <span>Created: {new Date(key.createdAt).toLocaleDateString()}</span>

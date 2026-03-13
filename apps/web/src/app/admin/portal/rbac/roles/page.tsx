@@ -25,6 +25,7 @@ export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
@@ -53,7 +54,7 @@ export default function RolesPage() {
         setPermissions(permsData);
       } catch (error) {
         console.error('Failed to load roles/permissions:', error);
-        alert('Failed to load roles');
+        setError('Failed to load roles and permissions');
       } finally {
         setLoading(false);
       }
@@ -89,7 +90,7 @@ export default function RolesPage() {
 
   const handleCreateRole = async () => {
     if (!formData.name.trim()) {
-      alert('Role name is required');
+      setError('Role name is required');
       return;
     }
 
@@ -110,9 +111,9 @@ export default function RolesPage() {
       setRoles([...roles, newRole]);
       setShowCreateModal(false);
       setFormData({ name: '', description: '' });
-      alert('Role created successfully');
+      setError(null);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to create role');
+      setError(error instanceof Error ? error.message : 'Failed to create role');
     } finally {
       setIsSubmitting(false);
     }
@@ -120,7 +121,7 @@ export default function RolesPage() {
 
   const handleUpdateRole = async () => {
     if (!selectedRole || !formData.name.trim()) {
-      alert('Role name is required');
+      setError('Role name is required');
       return;
     }
 
@@ -141,9 +142,9 @@ export default function RolesPage() {
       setRoles(roles.map(r => r.id === selectedRole.id ? updatedRole : r));
       setShowEditModal(false);
       setSelectedRole(null);
-      alert('Role updated successfully');
+      setError(null);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update role');
+      setError(error instanceof Error ? error.message : 'Failed to update role');
     } finally {
       setIsSubmitting(false);
     }
@@ -166,9 +167,9 @@ export default function RolesPage() {
       }
 
       setShowPermissionsModal(false);
-      alert('Permissions updated successfully');
+      setError(null);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to update permissions');
+      setError(error instanceof Error ? error.message : 'Failed to update permissions');
     } finally {
       setIsSubmitting(false);
     }
@@ -176,7 +177,7 @@ export default function RolesPage() {
 
   const handleDeleteRole = async (role: Role) => {
     if (role.isBuiltIn) {
-      alert('Cannot delete built-in roles');
+      setError('Cannot delete built-in roles');
       return;
     }
 
@@ -193,9 +194,9 @@ export default function RolesPage() {
       }
 
       setRoles(roles.filter(r => r.id !== role.id));
-      alert('Role deleted successfully');
+      setError(null);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Failed to delete role');
+      setError(error instanceof Error ? error.message : 'Failed to delete role');
     }
   };
 
@@ -221,6 +222,24 @@ export default function RolesPage() {
 
   return (
     <AdminLayout title="System Admin Roles" subtitle="Create and manage roles with permissions">
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+        >
+          <div className="flex items-start justify-between">
+            <p className="text-red-700">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800 font-medium text-sm"
+            >
+              Dismiss
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       <div className="mb-6 flex justify-between items-center">
         <div>
           <p className="text-gray-600">Total roles: {roles.length}</p>

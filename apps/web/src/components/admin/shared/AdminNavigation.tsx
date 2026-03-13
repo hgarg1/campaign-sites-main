@@ -196,7 +196,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex-shrink-0 p-4 border-t border-slate-700 bg-slate-900"
         >
-          {userOrgs.length > 0 ? (
+          {orgsExpanded && userOrgs.length > 0 ? (
             <Link
               href="/tenant-chooser"
               onClick={onClose}

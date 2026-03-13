@@ -130,7 +130,7 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
             type="password"
             value={formData.password || ''}
             onChange={(e) => handleChange('password', e.target.value)}
-            placeholder="••••••••"
+            placeholder={settings?.password ? '••••••••••' : 'Enter SMTP password'}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <p className="text-xs text-gray-500 mt-2">Password will be encrypted when saved</p>

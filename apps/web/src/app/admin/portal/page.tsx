@@ -57,63 +57,70 @@ export default function AdminPortalPage() {
 
   // Compute metrics from API data
   useEffect(() => {
-    if (growthData && users && organizations && websites) {
-      const computedMetrics: Metric[] = [
+    const metrics: Metric[] = [];
+    
+    if (growthData?.metrics && growthData.metrics.length > 0) {
+      const lastMetric = growthData.metrics[growthData.metrics.length - 1];
+      metrics.push(
         {
           label: 'Total Users',
-          value: growthData.metrics?.[growthData.metrics.length - 1]?.users || 0,
+          value: lastMetric?.users || 0,
           icon: '👥',
           trend: { direction: 'up', percentage: growthData.usersGrowth || 0 },
           variant: 'default',
         },
         {
           label: 'Organizations',
-          value: growthData.metrics?.[growthData.metrics.length - 1]?.organizations || 0,
+          value: lastMetric?.organizations || 0,
           icon: '🏢',
           trend: { direction: 'up', percentage: growthData.organizationsGrowth || 0 },
           variant: 'success',
         },
         {
           label: 'Websites Published',
-          value: growthData.metrics?.[growthData.metrics.length - 1]?.websites || 0,
+          value: lastMetric?.websites || 0,
           icon: '🌐',
           trend: { direction: 'up', percentage: growthData.websitesGrowth || 0 },
           variant: 'default',
-        },
-        {
-          label: 'System Health',
-          value: healthServices?.every((s) => s.status === 'UP') ? '100%' : '90%',
-          icon: '✓',
-          trend: { direction: 'up', percentage: 0 },
-          variant: healthServices?.every((s) => s.status === 'UP') ? 'success' : 'warning',
-        },
-      ];
-      setMetrics(computedMetrics);
-
-      // Generate activity feed from recent data
-      const activities: Activity[] = [
-        {
-          id: '1',
-          action: 'Dashboard loaded',
-          description: `${users?.length || 0} active users, ${organizations?.length || 0} organizations`,
-          timestamp: 'just now',
-          type: 'info',
-        },
-        ...(websites && websites.length > 0
-          ? [
-              {
-                id: '2',
-                action: 'Latest website update',
-                description: websites[0]?.name || 'Website published',
-                timestamp: 'moments ago',
-                type: 'success' as const,
-              },
-            ]
-          : []),
-      ];
-      setRecentActivities(activities);
+        }
+      );
     }
-  }, [growthData, users, organizations, websites]);
+
+    if (healthServices) {
+      metrics.push({
+        label: 'System Health',
+        value: healthServices.every((s) => s.status === 'UP') ? '100%' : '90%',
+        icon: '✓',
+        trend: { direction: 'up', percentage: 0 },
+        variant: healthServices.every((s) => s.status === 'UP') ? 'success' : 'warning',
+      });
+    }
+
+    setMetrics(metrics);
+
+    // Generate activity feed from recent data
+    const activities: Activity[] = [
+      {
+        id: '1',
+        action: 'Dashboard loaded',
+        description: `${growthData?.metrics?.[growthData.metrics.length - 1]?.users || 0} active users, ${growthData?.metrics?.[growthData.metrics.length - 1]?.organizations || 0} organizations`,
+        timestamp: 'just now',
+        type: 'info',
+      },
+    ];
+    
+    if (websites && websites.length > 0) {
+      activities.push({
+        id: '2',
+        action: 'Latest website update',
+        description: websites[0]?.name || 'Website published',
+        timestamp: 'moments ago',
+        type: 'success' as const,
+      });
+    }
+    
+    setRecentActivities(activities);
+  }, [growthData, healthServices, websites]);
 
   return (
     <AdminLayout
