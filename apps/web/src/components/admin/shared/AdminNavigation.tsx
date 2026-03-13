@@ -47,8 +47,6 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
     { label: 'Desktop App', href: '/admin/portal/download', icon: '📥' },
   ];
 
-  const visibleOrgs = orgsExpanded ? userOrgs : userOrgs.slice(0, 3);
-
   return (
     <>
       {/* Mobile backdrop */}
@@ -144,43 +142,45 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           >
             <div className="flex items-center justify-between px-2 mb-2">
               <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">My Organizations</p>
-              {userOrgs.length > 3 && (
-                <button
-                  onClick={() => setOrgsExpanded(!orgsExpanded)}
-                  className="text-slate-400 hover:text-white transition-colors flex-shrink-0"
-                  aria-label={orgsExpanded ? 'Collapse organizations' : 'Expand organizations'}
+              <button
+                onClick={() => setOrgsExpanded(!orgsExpanded)}
+                className="text-slate-400 hover:text-white transition-colors flex-shrink-0"
+                aria-label={orgsExpanded ? 'Collapse organizations' : 'Expand organizations'}
+              >
+                <motion.span
+                  animate={{ rotate: orgsExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="inline-block"
                 >
-                  <motion.span
-                    animate={{ rotate: orgsExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="inline-block"
-                  >
-                    ▼
-                  </motion.span>
-                </button>
-              )}
+                  ▼
+                </motion.span>
+              </button>
             </div>
-            <motion.div
-              className="space-y-1 overflow-hidden"
-              animate={{ maxHeight: orgsExpanded ? 'auto' : `${visibleOrgs.length * 40}px` }}
-              transition={{ duration: 0.3 }}
-            >
-              {visibleOrgs.map((org) => (
-                <Link
-                  key={org.id}
-                  href={`/tenant/${org.id}`}
-                  onClick={onClose}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-all text-sm"
-                >
-                  <span className="text-xs">🏢</span>
-                  <span className="truncate">{org.name}</span>
-                </Link>
-              ))}
-            </motion.div>
-            {userOrgs.length > 3 && !orgsExpanded && (
-              <div className="text-xs text-slate-500 px-2 mt-2">
-                +{userOrgs.length - 3} more
-              </div>
+            {orgsExpanded && (
+              <motion.div
+                className="space-y-1"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {userOrgs.slice(0, 3).map((org) => (
+                  <Link
+                    key={org.id}
+                    href={`/tenant/${org.id}`}
+                    onClick={onClose}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-all text-sm"
+                  >
+                    <span className="text-xs">🏢</span>
+                    <span className="truncate">{org.name}</span>
+                  </Link>
+                ))}
+                {userOrgs.length > 3 && (
+                  <p className="text-xs text-slate-500 px-3 py-1">
+                    +{userOrgs.length - 3} more
+                  </p>
+                )}
+              </motion.div>
             )}
           </motion.div>
         )}

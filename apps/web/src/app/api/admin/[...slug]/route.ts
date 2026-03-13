@@ -104,15 +104,15 @@ async function getAnalyticsGrowth() {
     websitesLast30, websitesPrior30,
     usersLast14, orgsLast14, websitesLast14,
   ] = await Promise.all([
-    prisma.user.count({ where: { createdAt: { gte: last30 } } }),
-    prisma.user.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
-    prisma.organization.count({ where: { createdAt: { gte: last30 } } }),
-    prisma.organization.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
+    prisma.user.count({ where: { createdAt: { gte: last30 }, deletedAt: null } }),
+    prisma.user.count({ where: { createdAt: { gte: prior30, lt: last30 }, deletedAt: null } }),
+    prisma.organization.count({ where: { createdAt: { gte: last30 }, deletedAt: null } }),
+    prisma.organization.count({ where: { createdAt: { gte: prior30, lt: last30 }, deletedAt: null } }),
     prisma.website.count({ where: { createdAt: { gte: last30 } } }),
     prisma.website.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
     // Fetch only the createdAt timestamps — tiny payload, no extra queries per day
-    prisma.user.findMany({ where: { createdAt: { gte: last14 } }, select: { createdAt: true } }),
-    prisma.organization.findMany({ where: { createdAt: { gte: last14 } }, select: { createdAt: true } }),
+    prisma.user.findMany({ where: { createdAt: { gte: last14 }, deletedAt: null }, select: { createdAt: true } }),
+    prisma.organization.findMany({ where: { createdAt: { gte: last14 }, deletedAt: null }, select: { createdAt: true } }),
     prisma.website.findMany({ where: { createdAt: { gte: last14 } }, select: { createdAt: true } }),
   ]);
 
@@ -450,11 +450,15 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
       // Cost estimates derived from live counts (no snapshot required)
       try {
         const [orgCount, siteCount, jobCount] = await Promise.all([
-          prisma.organization.count(),
+          prisma.organization.count({ where: { deletedAt: null } }),
           prisma.website.count(),
           prisma.buildJob.count(),
         ]);
-        const orgs = await prisma.organization.findMany({ select: { id: true, name: true }, take: 50 });
+        const orgs = await prisma.organization.findMany({
+          where: { deletedAt: null },
+          select: { id: true, name: true },
+          take: 50,
+        });
         const sites = await prisma.website.findMany({ select: { id: true, name: true }, take: 50 });
         return NextResponse.json({
           totalCost: Number((jobCount * 0.12).toFixed(2)),

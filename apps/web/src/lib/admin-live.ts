@@ -89,6 +89,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
     prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       take: 500,
+      where: { deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -106,6 +107,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
     prisma.organization.findMany({
       orderBy: { createdAt: 'desc' },
       take: 500,
+      where: { deletedAt: null },
       select: {
         id: true,
         name: true,

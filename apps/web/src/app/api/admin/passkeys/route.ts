@@ -47,7 +47,10 @@ export async function GET(request: NextRequest, { params }: { params: { slug?: s
     }
 
     const users = await prisma.user.findMany({
-      where: { role: { in: ['ADMIN', 'GLOBAL_ADMIN'] } },
+      where: {
+        role: { in: ['ADMIN', 'GLOBAL_ADMIN'] },
+        deletedAt: null,
+      },
       select: {
         id: true,
         name: true,
