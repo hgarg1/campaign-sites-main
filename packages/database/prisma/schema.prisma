@@ -704,6 +704,152 @@ model OrganizationInvite {
   @@map("organization_invites")
 }
 
+// ─── System Admin RBAC (separate from organization RBAC) ──────────────────
+
+// System Admin Roles (for system admin portal access)
+model SystemAdminRole {
+  id              String                      @id @default(cuid())
+  name            String                      @unique
+  description     String?
+  isBuiltIn       Boolean                     @default(false)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+
+  permissions     SystemAdminRolePermission[]
+  adminAssignments SystemAdminRoleAssignment[]
+
+  @@map("system_admin_roles")
+}
+
+// System Admin Permissions (claims for system admin portal)
+model SystemAdminPermission {
+  id              String                      @id @default(cuid())
+  claim           String                      @unique
+  description     String?
+  category        String
+  action          String
+  operationType   String                      // READ, WRITE, DELETE
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+
+  roles           SystemAdminRolePermission[]
+  userOverrides   SystemAdminPermissionOverride[]
+
+  @@map("system_admin_permissions")
+  @@index([category, action])
+}
+
+// M:M junction: Roles to Permissions
+model SystemAdminRolePermission {
+  id              String                  @id @default(cuid())
+  roleId          String
+  permissionId    String
+  createdAt       DateTime                @default(now())
+
+  role            SystemAdminRole         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission      SystemAdminPermission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("system_admin_role_permissions")
+}
+
+// System Admins (extend User model with admin-specific fields)
+model SystemAdmin {
+  id              String                      @id @default(cuid())
+  userId          String                      @unique
+  email           String                      @unique
+  name            String
+  isActive        Boolean                     @default(true)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+
+  roleAssignments SystemAdminRoleAssignment[]
+  delegatingFrom  SystemAdminDelegation[]    @relation("delegatingFrom")
+  delegatedTo     SystemAdminDelegation[]    @relation("delegatedTo")
+  permissionOverrides SystemAdminPermissionOverride[]
+
+  @@map("system_admins")
+}
+
+// M:M junction: System Admins to Roles
+model SystemAdminRoleAssignment {
+  id              String                  @id @default(cuid())
+  adminId         String
+  roleId          String
+  assignedAt      DateTime                @default(now())
+  assignedBy      String
+  createdAt       DateTime                @default(now())
+
+  admin           SystemAdmin             @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  role            SystemAdminRole         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([adminId, roleId])
+  @@map("system_admin_role_assignments")
+}
+
+// Admin Delegation Hierarchy
+model SystemAdminDelegation {
+  id                    String                  @id @default(cuid())
+  delegatingAdminId     String
+  delegatedToAdminId    String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  delegatingAdmin       SystemAdmin             @relation("delegatingFrom", fields: [delegatingAdminId], references: [id], onDelete: Cascade)
+  delegatedToAdmin      SystemAdmin             @relation("delegatedTo", fields: [delegatedToAdminId], references: [id], onDelete: Cascade)
+
+  @@unique([delegatingAdminId, delegatedToAdminId])
+  @@map("system_admin_delegations")
+}
+
+// Admin Delegation Closure Table
+model SystemAdminAncestry {
+  ancestorId      String
+  descendantId    String
+  depth           Int
+
+  @@id([ancestorId, descendantId])
+  @@map("system_admin_ancestry")
+}
+
+// Permission Overrides (Allow/Deny with time expiration)
+model SystemAdminPermissionOverride {
+  id              String                  @id @default(cuid())
+  adminId         String
+  permissionId    String
+  action          String                  // "ALLOW" or "DENY"
+  expiresAt       DateTime?
+  createdAt       DateTime                @default(now())
+  createdBy       String
+  updatedAt       DateTime                @updatedAt
+
+  admin           SystemAdmin             @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  permission      SystemAdminPermission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([adminId, permissionId])
+  @@map("system_admin_permission_overrides")
+}
+
+// System Admin Audit Log
+model SystemAdminAuditLog {
+  id              String                  @id @default(cuid())
+  action          String
+  resourceType    String
+  resourceId      String
+  resourceName    String?
+  changes         Json?
+  performedBy     String
+  performedAt     DateTime                @default(now())
+  justification   String?
+  status          String
+  errorMessage    String?
+  createdAt       DateTime                @default(now())
+
+  @@map("system_admin_audit_logs")
+  @@index([performedBy, performedAt])
+  @@index([action, resourceType])
+}
+
 // Server Application Logs
 model ServerLog {
   id        String   @id @default(cuid())

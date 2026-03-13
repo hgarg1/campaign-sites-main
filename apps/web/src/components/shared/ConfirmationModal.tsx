@@ -11,7 +11,8 @@ export interface ConfirmationModalProps {
   cancelText?: string;
   isDangerous?: boolean;
   isLoading?: boolean;
-  onConfirm: () => void | Promise<void>;
+  showJustification?: boolean;
+  onConfirm: (justification?: string) => void | Promise<void>;
   onCancel: () => void;
   icon?: 'warning' | 'info' | 'error' | 'success';
 }
@@ -24,16 +25,18 @@ export function ConfirmationModal({
   cancelText = 'Cancel',
   isDangerous = false,
   isLoading = false,
+  showJustification = false,
   onConfirm,
   onCancel,
   icon = 'warning',
 }: ConfirmationModalProps) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const [justification, setJustification] = useState('');
 
   const handleConfirm = async () => {
     setIsConfirming(true);
     try {
-      await onConfirm();
+      await onConfirm(showJustification ? justification : undefined);
     } finally {
       setIsConfirming(false);
     }
@@ -92,16 +95,16 @@ export function ConfirmationModal({
             aria-hidden="true"
           />
 
-          {/* Modal */}
+          {/* Modal - centered with proper mobile padding */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md"
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full">
               {/* Header with gradient */}
               <div
                 className={`px-6 pt-6 pb-4 bg-gradient-to-r ${
@@ -133,9 +136,27 @@ export function ConfirmationModal({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="px-6 py-4"
+                className="px-6 py-4 space-y-4"
               >
                 <p className="text-gray-700 leading-relaxed">{message}</p>
+
+                {/* Justification field for admin actions */}
+                {showJustification && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Justification <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={justification}
+                      onChange={(e) => setJustification(e.target.value)}
+                      placeholder="Please provide a reason for this action (this will be logged)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      rows={3}
+                      disabled={isLoading_}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This will be logged for audit purposes.</p>
+                  </div>
+                )}
               </motion.div>
 
               {/* Footer with actions */}
@@ -157,7 +178,7 @@ export function ConfirmationModal({
                   whileHover={{ scale: isLoading_ ? 1 : 1.02 }}
                   whileTap={{ scale: isLoading_ ? 1 : 0.98 }}
                   onClick={handleConfirm}
-                  disabled={isLoading_}
+                  disabled={isLoading_ || (showJustification && !justification.trim())}
                   className={`px-5 py-2.5 rounded-lg font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     isDangerous
                       ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg shadow-red-500/20'

@@ -982,6 +982,98 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
     return NextResponse.json(updated);
   }
 
+  // ─── Commit hierarchy changes (add/remove parent relationships) ────────────────
+  if (first === 'organizations' && second === 'hierarchy' && third === 'commit') {
+    const body = (await request.json().catch(() => ({}))) as {
+      addedEdges?: Array<{ sourceId: string; targetId: string }>;
+      removedEdges?: string[];
+    };
+
+    const { addedEdges = [], removedEdges = [] } = body;
+    const results = { successful: 0, failed: 0, errors: [] as string[] };
+
+    // Process added edges (set parent relationships)
+    for (const edge of addedEdges) {
+      try {
+        const child = await prisma.organization.findUnique({ where: { id: edge.targetId } });
+        if (!child) {
+          results.errors.push(`Child organization ${edge.targetId} not found`);
+          results.failed++;
+          continue;
+        }
+
+        const parent = await prisma.organization.findUnique({ where: { id: edge.sourceId } });
+        if (!parent) {
+          results.errors.push(`Parent organization ${edge.sourceId} not found`);
+          results.failed++;
+          continue;
+        }
+
+        // Check for cycles
+        if (await wouldCreateCycle(edge.targetId, edge.sourceId)) {
+          results.errors.push(`Cannot set ${edge.sourceId} as parent of ${edge.targetId}: would create a cycle`);
+          results.failed++;
+          continue;
+        }
+
+        // Remove old parent ancestry if exists
+        if (child.parentId) await removeAncestry(edge.targetId);
+
+        // Add new parent relationship
+        await insertAncestry(edge.targetId, edge.sourceId);
+        await prisma.organization.update({
+          where: { id: edge.targetId },
+          data: { parentId: edge.sourceId },
+        });
+
+        results.successful++;
+      } catch (error) {
+        results.errors.push(`Error processing edge ${edge.sourceId} -> ${edge.targetId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        results.failed++;
+      }
+    }
+
+    // Process removed edges (remove parent relationships)
+    for (const edgeId of removedEdges) {
+      try {
+        // Parse edgeId format: "parentId-childId"
+        const [parentId, childId] = edgeId.split('-');
+        if (!childId) {
+          results.errors.push(`Invalid edge format: ${edgeId}`);
+          results.failed++;
+          continue;
+        }
+
+        const child = await prisma.organization.findUnique({ where: { id: childId } });
+        if (!child) {
+          results.errors.push(`Child organization ${childId} not found`);
+          results.failed++;
+          continue;
+        }
+
+        // Remove ancestry and detach parent
+        await removeAncestry(childId);
+        // Rebuild self-ancestry for the detached subtree
+        await prisma.organizationAncestry.upsert({
+          where: { ancestorId_descendantId: { ancestorId: childId, descendantId: childId } },
+          create: { ancestorId: childId, descendantId: childId, depth: 0 },
+          update: {},
+        });
+        await prisma.organization.update({
+          where: { id: childId },
+          data: { parentId: null },
+        });
+
+        results.successful++;
+      } catch (error) {
+        results.errors.push(`Error processing edge removal ${edgeId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        results.failed++;
+      }
+    }
+
+    return NextResponse.json(results, { status: results.failed > 0 ? 207 : 200 });
+  }
+
   // ─── Suspend org + all descendants ──────────────────────────────────────────
   if (first === 'organizations' && second && third === 'suspend') {
     const org = await prisma.organization.findUnique({ where: { id: second } });

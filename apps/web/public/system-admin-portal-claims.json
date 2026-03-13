@@ -1,0 +1,306 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-03-13T01:36:00Z",
+  "description": "Comprehensive system admin portal claims hierarchy - auto-discovered and manually verified",
+  "claims": {
+    "system_admin_portal": {
+      "description": "All system admin portal actions",
+      "wildcard": "system_admin_portal:*",
+      "categories": {
+        "dashboard": {
+          "description": "Dashboard and overview",
+          "wildcard": "system_admin_portal:dashboard:*",
+          "claims": [
+            { "claim": "system_admin_portal:dashboard:view_metrics", "type": "READ", "description": "View system metrics (users, orgs, websites)" },
+            { "claim": "system_admin_portal:dashboard:view_activity_feed", "type": "READ", "description": "View recent activity feed" },
+            { "claim": "system_admin_portal:dashboard:view_quick_stats", "type": "READ", "description": "View quick stats (build time, uptime, etc.)" }
+          ]
+        },
+        "organizations": {
+          "description": "Organization management",
+          "wildcard": "system_admin_portal:organizations:*",
+          "claims": [
+            { "claim": "system_admin_portal:organizations:list", "type": "READ", "description": "View list of all organizations" },
+            { "claim": "system_admin_portal:organizations:view", "type": "READ", "description": "View organization details" },
+            { "claim": "system_admin_portal:organizations:filter", "type": "READ", "description": "Filter organizations (status, white-label, etc.)" },
+            { "claim": "system_admin_portal:organizations:search", "type": "READ", "description": "Search organizations by name/slug" },
+            { "claim": "system_admin_portal:organizations:create", "type": "WRITE", "description": "Create new organization" },
+            { "claim": "system_admin_portal:organizations:update", "type": "WRITE", "description": "Update organization profile" },
+            { "claim": "system_admin_portal:organizations:suspend", "type": "WRITE", "description": "Suspend organization" },
+            { "claim": "system_admin_portal:organizations:deactivate", "type": "WRITE", "description": "Deactivate organization" },
+            { "claim": "system_admin_portal:organizations:reactivate", "type": "WRITE", "description": "Reactivate organization" },
+            { "claim": "system_admin_portal:organizations:delete", "type": "DELETE", "description": "Delete organization" },
+            { "claim": "system_admin_portal:organizations:settings:view", "type": "READ", "description": "View organization settings" },
+            { "claim": "system_admin_portal:organizations:settings:update_status", "type": "WRITE", "description": "Toggle organization status (suspend/activate)" },
+            { "claim": "system_admin_portal:organizations:settings:update_white_label", "type": "WRITE", "description": "Toggle white label setting" },
+            { "claim": "system_admin_portal:organizations:settings:update", "type": "WRITE", "description": "Update organization settings" }
+          ]
+        },
+        "hierarchy": {
+          "description": "Organization hierarchy management",
+          "wildcard": "system_admin_portal:hierarchy:*",
+          "claims": [
+            { "claim": "system_admin_portal:hierarchy:view_tree", "type": "READ", "description": "View organization hierarchy tree" },
+            { "claim": "system_admin_portal:hierarchy:search", "type": "READ", "description": "Search in hierarchy" },
+            { "claim": "system_admin_portal:hierarchy:filter", "type": "READ", "description": "Filter hierarchy by status, party affiliation" },
+            { "claim": "system_admin_portal:hierarchy:toggle_node", "type": "READ", "description": "Expand/collapse tree nodes" },
+            { "claim": "system_admin_portal:hierarchy:expand_all", "type": "READ", "description": "Expand all hierarchy nodes" },
+            { "claim": "system_admin_portal:hierarchy:collapse_all", "type": "READ", "description": "Collapse all hierarchy nodes" },
+            { "claim": "system_admin_portal:hierarchy:view_details", "type": "READ", "description": "View organization hierarchy details" },
+            { "claim": "system_admin_portal:hierarchy:assign_parent", "type": "WRITE", "description": "Assign parent organization" },
+            { "claim": "system_admin_portal:hierarchy:remove_parent", "type": "WRITE", "description": "Remove parent organization" },
+            { "claim": "system_admin_portal:hierarchy:edit_edges", "type": "WRITE", "description": "Edit hierarchy relationships (drag-drop)" },
+            { "claim": "system_admin_portal:hierarchy:update_settings", "type": "WRITE", "description": "Update canCreateChildren, maxChildDepth" },
+            { "claim": "system_admin_portal:hierarchy:commit_changes", "type": "WRITE", "description": "Commit hierarchy changes" },
+            { "claim": "system_admin_portal:hierarchy:suspend", "type": "WRITE", "description": "Suspend organization from hierarchy" },
+            { "claim": "system_admin_portal:hierarchy:deactivate", "type": "WRITE", "description": "Deactivate organization from hierarchy" },
+            { "claim": "system_admin_portal:hierarchy:reactivate", "type": "WRITE", "description": "Reactivate organization from hierarchy" }
+          ]
+        },
+        "users": {
+          "description": "User management",
+          "wildcard": "system_admin_portal:users:*",
+          "claims": [
+            { "claim": "system_admin_portal:users:list", "type": "READ", "description": "View list of all users" },
+            { "claim": "system_admin_portal:users:view", "type": "READ", "description": "View user details" },
+            { "claim": "system_admin_portal:users:filter", "type": "READ", "description": "Filter users by role, status, organization" },
+            { "claim": "system_admin_portal:users:search", "type": "READ", "description": "Search users" },
+            { "claim": "system_admin_portal:users:create", "type": "WRITE", "description": "Create new user" },
+            { "claim": "system_admin_portal:users:update", "type": "WRITE", "description": "Update user information" },
+            { "claim": "system_admin_portal:users:suspend", "type": "WRITE", "description": "Suspend user" },
+            { "claim": "system_admin_portal:users:unsuspend", "type": "WRITE", "description": "Unsuspend user" },
+            { "claim": "system_admin_portal:users:delete", "type": "DELETE", "description": "Delete user" },
+            { "claim": "system_admin_portal:users:bulk_suspend", "type": "WRITE", "description": "Suspend multiple users" },
+            { "claim": "system_admin_portal:users:bulk_unsuspend", "type": "WRITE", "description": "Unsuspend multiple users" },
+            { "claim": "system_admin_portal:users:bulk_delete", "type": "DELETE", "description": "Delete multiple users" },
+            { "claim": "system_admin_portal:users:bulk_export", "type": "READ", "description": "Export users to CSV" },
+            { "claim": "system_admin_portal:users:reset_password", "type": "WRITE", "description": "Reset user password" },
+            { "claim": "system_admin_portal:users:manage_roles", "type": "WRITE", "description": "Assign/remove user roles" },
+            { "claim": "system_admin_portal:users:manage_organizations", "type": "WRITE", "description": "Assign/remove user organizations" }
+          ]
+        },
+        "analytics": {
+          "description": "Analytics and reporting",
+          "wildcard": "system_admin_portal:analytics:*",
+          "claims": [
+            { "claim": "system_admin_portal:analytics:view_dashboard", "type": "READ", "description": "View analytics dashboard" },
+            { "claim": "system_admin_portal:analytics:view_metrics", "type": "READ", "description": "View system metrics" },
+            { "claim": "system_admin_portal:analytics:view_reports", "type": "READ", "description": "View reports" },
+            { "claim": "system_admin_portal:analytics:export_data", "type": "READ", "description": "Export analytics data" },
+            { "claim": "system_admin_portal:analytics:configure", "type": "WRITE", "description": "Configure analytics settings" }
+          ]
+        },
+        "governance": {
+          "description": "Governance and compliance",
+          "wildcard": "system_admin_portal:governance:*",
+          "claims": [
+            { "claim": "system_admin_portal:governance:view_actions", "type": "READ", "description": "View governance actions" },
+            { "claim": "system_admin_portal:governance:view_rules", "type": "READ", "description": "View governance rules" },
+            { "claim": "system_admin_portal:governance:create_action", "type": "WRITE", "description": "Create governance action" },
+            { "claim": "system_admin_portal:governance:create_rule", "type": "WRITE", "description": "Create governance rule" },
+            { "claim": "system_admin_portal:governance:update_action", "type": "WRITE", "description": "Update governance action" },
+            { "claim": "system_admin_portal:governance:update_rule", "type": "WRITE", "description": "Update governance rule" },
+            { "claim": "system_admin_portal:governance:delete_action", "type": "DELETE", "description": "Delete governance action" },
+            { "claim": "system_admin_portal:governance:delete_rule", "type": "DELETE", "description": "Delete governance rule" }
+          ]
+        },
+        "policies": {
+          "description": "Policy management",
+          "wildcard": "system_admin_portal:policies:*",
+          "claims": [
+            { "claim": "system_admin_portal:policies:list", "type": "READ", "description": "View list of policies" },
+            { "claim": "system_admin_portal:policies:view", "type": "READ", "description": "View policy details" },
+            { "claim": "system_admin_portal:policies:create", "type": "WRITE", "description": "Create policy" },
+            { "claim": "system_admin_portal:policies:update", "type": "WRITE", "description": "Update policy" },
+            { "claim": "system_admin_portal:policies:delete", "type": "DELETE", "description": "Delete policy" },
+            { "claim": "system_admin_portal:policies:assign", "type": "WRITE", "description": "Assign policy to organizations" },
+            { "claim": "system_admin_portal:policies:unassign", "type": "WRITE", "description": "Unassign policy from organizations" }
+          ]
+        },
+        "master_tenants": {
+          "description": "Master tenants management",
+          "wildcard": "system_admin_portal:master_tenants:*",
+          "claims": [
+            { "claim": "system_admin_portal:master_tenants:list", "type": "READ", "description": "View master tenants" },
+            { "claim": "system_admin_portal:master_tenants:view", "type": "READ", "description": "View master tenant details" },
+            { "claim": "system_admin_portal:master_tenants:create", "type": "WRITE", "description": "Create master tenant" },
+            { "claim": "system_admin_portal:master_tenants:update", "type": "WRITE", "description": "Update master tenant" },
+            { "claim": "system_admin_portal:master_tenants:delete", "type": "DELETE", "description": "Delete master tenant" },
+            { "claim": "system_admin_portal:master_tenants:manage_credentials", "type": "WRITE", "description": "Manage master tenant credentials" }
+          ]
+        },
+        "monitoring": {
+          "description": "System monitoring and health",
+          "wildcard": "system_admin_portal:monitoring:*",
+          "claims": [
+            { "claim": "system_admin_portal:monitoring:view_health", "type": "READ", "description": "View system health status" },
+            { "claim": "system_admin_portal:monitoring:view_logs", "type": "READ", "description": "View system logs" },
+            { "claim": "system_admin_portal:monitoring:view_alerts", "type": "READ", "description": "View system alerts" },
+            { "claim": "system_admin_portal:monitoring:manage_alerts", "type": "WRITE", "description": "Manage alert settings" },
+            { "claim": "system_admin_portal:monitoring:clear_alerts", "type": "WRITE", "description": "Clear/acknowledge alerts" }
+          ]
+        },
+        "notifications": {
+          "description": "Notification management",
+          "wildcard": "system_admin_portal:notifications:*",
+          "claims": [
+            { "claim": "system_admin_portal:notifications:view", "type": "READ", "description": "View notifications" },
+            { "claim": "system_admin_portal:notifications:manage", "type": "WRITE", "description": "Manage notification settings" },
+            { "claim": "system_admin_portal:notifications:send", "type": "WRITE", "description": "Send notifications" }
+          ]
+        },
+        "jobs": {
+          "description": "Background jobs management",
+          "wildcard": "system_admin_portal:jobs:*",
+          "claims": [
+            { "claim": "system_admin_portal:jobs:view_queue", "type": "READ", "description": "View job queue" },
+            { "claim": "system_admin_portal:jobs:view_history", "type": "READ", "description": "View job history" },
+            { "claim": "system_admin_portal:jobs:cancel_job", "type": "WRITE", "description": "Cancel job" },
+            { "claim": "system_admin_portal:jobs:retry_job", "type": "WRITE", "description": "Retry failed job" },
+            { "claim": "system_admin_portal:jobs:manage_settings", "type": "WRITE", "description": "Manage job settings" }
+          ]
+        },
+        "logs": {
+          "description": "Logs and audit trail",
+          "wildcard": "system_admin_portal:logs:*",
+          "claims": [
+            { "claim": "system_admin_portal:logs:view_system_logs", "type": "READ", "description": "View system logs" },
+            { "claim": "system_admin_portal:logs:view_admin_logs", "type": "READ", "description": "View admin action logs" },
+            { "claim": "system_admin_portal:logs:search_logs", "type": "READ", "description": "Search logs" },
+            { "claim": "system_admin_portal:logs:filter_logs", "type": "READ", "description": "Filter logs" },
+            { "claim": "system_admin_portal:logs:export_logs", "type": "READ", "description": "Export logs" },
+            { "claim": "system_admin_portal:logs:clear_logs", "type": "DELETE", "description": "Clear logs" }
+          ]
+        },
+        "websites": {
+          "description": "Website management",
+          "wildcard": "system_admin_portal:websites:*",
+          "claims": [
+            { "claim": "system_admin_portal:websites:list", "type": "READ", "description": "View all websites" },
+            { "claim": "system_admin_portal:websites:view", "type": "READ", "description": "View website details" },
+            { "claim": "system_admin_portal:websites:create", "type": "WRITE", "description": "Create website" },
+            { "claim": "system_admin_portal:websites:update", "type": "WRITE", "description": "Update website" },
+            { "claim": "system_admin_portal:websites:delete", "type": "DELETE", "description": "Delete website" },
+            { "claim": "system_admin_portal:websites:suspend", "type": "WRITE", "description": "Suspend website" },
+            { "claim": "system_admin_portal:websites:reactivate", "type": "WRITE", "description": "Reactivate website" }
+          ]
+        },
+        "security": {
+          "description": "Security settings and controls",
+          "wildcard": "system_admin_portal:security:*",
+          "claims": [
+            { "claim": "system_admin_portal:security:view_settings", "type": "READ", "description": "View security settings" },
+            { "claim": "system_admin_portal:security:manage_2fa", "type": "WRITE", "description": "Manage two-factor authentication" },
+            { "claim": "system_admin_portal:security:manage_api_keys", "type": "WRITE", "description": "Manage API keys" },
+            { "claim": "system_admin_portal:security:manage_sessions", "type": "WRITE", "description": "Manage user sessions" },
+            { "claim": "system_admin_portal:security:manage_ip_whitelist", "type": "WRITE", "description": "Manage IP whitelist" }
+          ]
+        },
+        "settings": {
+          "description": "System settings",
+          "wildcard": "system_admin_portal:settings:*",
+          "claims": [
+            { "claim": "system_admin_portal:settings:view", "type": "READ", "description": "View system settings" },
+            { "claim": "system_admin_portal:settings:update", "type": "WRITE", "description": "Update system settings" },
+            { "claim": "system_admin_portal:settings:manage_integrations", "type": "WRITE", "description": "Manage system integrations" }
+          ]
+        },
+        "profile": {
+          "description": "Admin profile management",
+          "wildcard": "system_admin_portal:profile:*",
+          "claims": [
+            { "claim": "system_admin_portal:profile:view", "type": "READ", "description": "View own profile" },
+            { "claim": "system_admin_portal:profile:update", "type": "WRITE", "description": "Update own profile" },
+            { "claim": "system_admin_portal:profile:change_password", "type": "WRITE", "description": "Change own password" }
+          ]
+        },
+        "password": {
+          "description": "Password management",
+          "wildcard": "system_admin_portal:password:*",
+          "claims": [
+            { "claim": "system_admin_portal:password:reset", "type": "WRITE", "description": "Request password reset" },
+            { "claim": "system_admin_portal:password:change", "type": "WRITE", "description": "Change password" }
+          ]
+        },
+        "download": {
+          "description": "Data downloads",
+          "wildcard": "system_admin_portal:download:*",
+          "claims": [
+            { "claim": "system_admin_portal:download:export_data", "type": "READ", "description": "Download/export system data" },
+            { "claim": "system_admin_portal:download:export_reports", "type": "READ", "description": "Download reports" }
+          ]
+        },
+        "rbac": {
+          "description": "RBAC management (system admin portal permissions)",
+          "wildcard": "system_admin_portal:rbac:*",
+          "claims": [
+            { "claim": "system_admin_portal:rbac:view_permissions", "type": "READ", "description": "View all permissions/claims" },
+            { "claim": "system_admin_portal:rbac:view_roles", "type": "READ", "description": "View all roles" },
+            { "claim": "system_admin_portal:rbac:view_admins", "type": "READ", "description": "View system admins" },
+            { "claim": "system_admin_portal:rbac:view_hierarchy", "type": "READ", "description": "View admin delegation hierarchy" },
+            { "claim": "system_admin_portal:rbac:view_overrides", "type": "READ", "description": "View permission overrides" },
+            { "claim": "system_admin_portal:rbac:create_role", "type": "WRITE", "description": "Create new role" },
+            { "claim": "system_admin_portal:rbac:update_role", "type": "WRITE", "description": "Update role" },
+            { "claim": "system_admin_portal:rbac:delete_role", "type": "DELETE", "description": "Delete role" },
+            { "claim": "system_admin_portal:rbac:create_permission", "type": "WRITE", "description": "Create new permission/claim" },
+            { "claim": "system_admin_portal:rbac:update_permission", "type": "WRITE", "description": "Update permission/claim" },
+            { "claim": "system_admin_portal:rbac:delete_permission", "type": "DELETE", "description": "Delete permission/claim" },
+            { "claim": "system_admin_portal:rbac:assign_role", "type": "WRITE", "description": "Assign role to admin" },
+            { "claim": "system_admin_portal:rbac:revoke_role", "type": "WRITE", "description": "Revoke role from admin" },
+            { "claim": "system_admin_portal:rbac:add_role_permission", "type": "WRITE", "description": "Add permission to role" },
+            { "claim": "system_admin_portal:rbac:remove_role_permission", "type": "WRITE", "description": "Remove permission from role" },
+            { "claim": "system_admin_portal:rbac:edit_hierarchy", "type": "WRITE", "description": "Edit admin delegation relationships" },
+            { "claim": "system_admin_portal:rbac:add_override", "type": "WRITE", "description": "Add permission override" },
+            { "claim": "system_admin_portal:rbac:update_override", "type": "WRITE", "description": "Update permission override" },
+            { "claim": "system_admin_portal:rbac:delete_override", "type": "WRITE", "description": "Delete permission override" },
+            { "claim": "system_admin_portal:rbac:create_admin", "type": "WRITE", "description": "Create new system admin" },
+            { "claim": "system_admin_portal:rbac:update_admin", "type": "WRITE", "description": "Update system admin" },
+            { "claim": "system_admin_portal:rbac:delete_admin", "type": "DELETE", "description": "Delete system admin" },
+            { "claim": "system_admin_portal:rbac:apply_default_role", "type": "WRITE", "description": "Apply default role to new admin" }
+          ]
+        }
+      }
+    }
+  },
+  "statistics": {
+    "total_categories": 16,
+    "total_claims": 112,
+    "read_claims": 54,
+    "write_claims": 48,
+    "delete_claims": 10,
+    "wildcard_claims": 16
+  },
+  "default_roles": [
+    {
+      "name": "Global_Admin",
+      "description": "System root administrator - has all permissions",
+      "includes_claims": ["system_admin_portal:*"],
+      "bootstrap": true
+    },
+    {
+      "name": "System_Auditor",
+      "description": "Read-only access - can view everything but not modify",
+      "includes_patterns": ["system_admin_portal:**:view", "system_admin_portal:**:list", "system_admin_portal:**:search", "system_admin_portal:**:filter", "system_admin_portal:**:export"]
+    },
+    {
+      "name": "Organization_Manager",
+      "description": "Manage organizations and hierarchy",
+      "includes_claims": ["system_admin_portal:organizations:*", "system_admin_portal:hierarchy:*"]
+    },
+    {
+      "name": "User_Manager",
+      "description": "Manage system users",
+      "includes_claims": ["system_admin_portal:users:*"]
+    },
+    {
+      "name": "Policy_Manager",
+      "description": "Manage policies and governance",
+      "includes_claims": ["system_admin_portal:policies:*", "system_admin_portal:governance:*"]
+    },
+    {
+      "name": "Security_Manager",
+      "description": "Manage security settings",
+      "includes_claims": ["system_admin_portal:security:*", "system_admin_portal:logs:*"]
+    }
+  ]
+}

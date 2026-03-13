@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/shared';
+import { HierarchyGraph } from '@/components/shared/HierarchyGraph';
 
 interface OrgTreeNode {
   id: string;
@@ -419,60 +420,16 @@ export default function HierarchyOrgDetailPage() {
           </div>
         </div>
 
-        {/* Card 5: Direct Children */}
+        {/* Hierarchy visualization */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Direct Children <span className="text-gray-400 font-normal text-base">({org.children.length})</span>
-          </h2>
-          {org.children.length === 0 ? (
-            <p className="text-sm text-gray-500">No child organizations</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Name</th>
-                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Party</th>
-                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Status</th>
-                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Setup</th>
-                    <th className="text-right py-2 px-3 text-gray-500 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {org.children.map((child) => (
-                    <tr key={child.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-2 px-3 font-medium text-gray-900">{child.name}</td>
-                      <td className="py-2 px-3">
-                        {child.partyAffiliation ? (
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${PARTY_COLORS[child.partyAffiliation] ?? 'bg-gray-100 text-gray-700'}`}>
-                            {child.partyAffiliation}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[child.ownStatus]}`}>
-                          {child.ownStatus}
-                        </span>
-                      </td>
-                      <td className="py-2 px-3 text-gray-500">
-                        {child.setupCompletedAt ? new Date(child.setupCompletedAt).toLocaleDateString() : 'Incomplete'}
-                      </td>
-                      <td className="py-2 px-3 text-right">
-                        <button
-                          onClick={() => router.push(`/admin/portal/hierarchy/${child.id}`)}
-                          className="text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          View →
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Organization Hierarchy</h2>
+          <div style={{ height: '500px', width: '100%' }}>
+            <HierarchyGraph 
+              org={org}
+              editable={true}
+              onHierarchyChange={() => fetchHierarchy()}
+            />
+          </div>
         </div>
       </div>
 

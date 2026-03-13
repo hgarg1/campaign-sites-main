@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Organization } from '@/hooks/useOrganizations';
 import { useToast } from '../shared/ToastContext';
 import { ConfirmationModal } from '../../shared/ConfirmationModal';
+import { logSystemAdminAction } from '@/lib/audit-log';
 
 interface OrganizationSettingsProps {
   organization: Organization;
@@ -22,7 +23,7 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
     setShowStatusModal(true);
   };
 
-  const confirmStatusChange = async () => {
+  const confirmStatusChange = async (justification?: string) => {
     const newStatus = organization.status === 'active' ? 'suspended' : 'active';
     try {
       setUpdating(true);
@@ -31,9 +32,34 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
         ? 'Organization activated successfully'
         : 'Organization suspended successfully';
       showToast('success', successMessage);
+      
+      // Log the action
+      await logSystemAdminAction({
+        action: newStatus === 'active' ? 'ORGANIZATION_ACTIVATED' : 'ORGANIZATION_SUSPENDED',
+        resourceType: 'Organization',
+        resourceId: organization.id,
+        resourceName: organization.name,
+        changes: { status: newStatus },
+        justification,
+        status: 'success',
+      });
+      
       setShowStatusModal(false);
     } catch (error) {
-      showToast('error', `Failed to ${newStatus === 'active' ? 'activate' : 'suspend'} organization`);
+      const errorMsg = `Failed to ${newStatus === 'active' ? 'activate' : 'suspend'} organization`;
+      showToast('error', errorMsg);
+      
+      // Log the failure
+      await logSystemAdminAction({
+        action: newStatus === 'active' ? 'ORGANIZATION_ACTIVATED' : 'ORGANIZATION_SUSPENDED',
+        resourceType: 'Organization',
+        resourceId: organization.id,
+        resourceName: organization.name,
+        changes: { status: newStatus },
+        justification,
+        status: 'failure',
+        errorMessage: errorMsg,
+      });
     } finally {
       setUpdating(false);
     }
@@ -43,7 +69,7 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
     setShowWhiteLabelModal(true);
   };
 
-  const confirmWhiteLabelChange = async () => {
+  const confirmWhiteLabelChange = async (justification?: string) => {
     const newValue = !organization.whiteLabel;
     try {
       setUpdating(true);
@@ -52,9 +78,34 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
         ? 'White label enabled successfully'
         : 'White label disabled successfully';
       showToast('success', successMessage);
+      
+      // Log the action
+      await logSystemAdminAction({
+        action: newValue ? 'WHITE_LABEL_ENABLED' : 'WHITE_LABEL_DISABLED',
+        resourceType: 'Organization',
+        resourceId: organization.id,
+        resourceName: organization.name,
+        changes: { whiteLabel: newValue },
+        justification,
+        status: 'success',
+      });
+      
       setShowWhiteLabelModal(false);
     } catch (error) {
-      showToast('error', `Failed to ${newValue ? 'enable' : 'disable'} white label`);
+      const errorMsg = `Failed to ${newValue ? 'enable' : 'disable'} white label`;
+      showToast('error', errorMsg);
+      
+      // Log the failure
+      await logSystemAdminAction({
+        action: newValue ? 'WHITE_LABEL_ENABLED' : 'WHITE_LABEL_DISABLED',
+        resourceType: 'Organization',
+        resourceId: organization.id,
+        resourceName: organization.name,
+        changes: { whiteLabel: newValue },
+        justification,
+        status: 'failure',
+        errorMessage: errorMsg,
+      });
     } finally {
       setUpdating(false);
     }
@@ -138,6 +189,7 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
         cancelText="Cancel"
         isDangerous={organization.status === 'active'}
         isLoading={updating}
+        showJustification={true}
         icon={organization.status === 'active' ? 'warning' : 'info'}
         onConfirm={confirmStatusChange}
         onCancel={() => setShowStatusModal(false)}
@@ -156,6 +208,7 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
         cancelText="Cancel"
         isDangerous={false}
         isLoading={updating}
+        showJustification={true}
         icon="info"
         onConfirm={confirmWhiteLabelChange}
         onCancel={() => setShowWhiteLabelModal(false)}

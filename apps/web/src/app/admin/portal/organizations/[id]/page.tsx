@@ -16,6 +16,9 @@ import {
   useOrganizationWebsites,
   useOrganizationUsage,
 } from '@/hooks/useOrganizations';
+import { HierarchyGraph } from '@/components/shared/HierarchyGraph';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { logSystemAdminAction } from '@/lib/audit-log';
 
 // ─── Hierarchy tab types ────────────────────────────────────────────────────
 
@@ -58,6 +61,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
   const [hierarchyError, setHierarchyError] = useState<string | null>(null);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showReactivateModal, setShowReactivateModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchHierarchy = useCallback(() => {
@@ -73,33 +77,105 @@ function HierarchyTab({ orgId }: { orgId: string }) {
     fetchHierarchy();
   }, [fetchHierarchy]);
 
-  async function suspendOrg() {
+  async function suspendOrg(justification?: string) {
     setActionLoading(true);
     try {
       await globalThis.fetch(`/api/admin/organizations/${orgId}/suspend`, { method: 'POST' });
       setShowSuspendModal(false);
+      
+      // Log the action
+      await logSystemAdminAction({
+        action: 'ORGANIZATION_SUSPENDED',
+        resourceType: 'Organization',
+        resourceId: orgId,
+        resourceName: org.name,
+        changes: { status: 'SUSPENDED' },
+        justification,
+        status: 'success',
+      });
+      
       fetchHierarchy();
+    } catch (error) {
+      // Log the failure
+      await logSystemAdminAction({
+        action: 'ORGANIZATION_SUSPENDED',
+        resourceType: 'Organization',
+        resourceId: orgId,
+        resourceName: org.name,
+        changes: { status: 'SUSPENDED' },
+        justification,
+        status: 'failure',
+        errorMessage: String(error),
+      });
     } finally {
       setActionLoading(false);
     }
   }
 
-  async function deactivateOrg() {
+  async function deactivateOrg(justification?: string) {
     setActionLoading(true);
     try {
       await globalThis.fetch(`/api/admin/organizations/${orgId}/deactivate`, { method: 'POST' });
       setShowDeactivateModal(false);
+      
+      // Log the action
+      await logSystemAdminAction({
+        action: 'ORGANIZATION_DEACTIVATED',
+        resourceType: 'Organization',
+        resourceId: orgId,
+        resourceName: org.name,
+        changes: { status: 'DEACTIVATED' },
+        justification,
+        status: 'success',
+      });
+      
       fetchHierarchy();
+    } catch (error) {
+      // Log the failure
+      await logSystemAdminAction({
+        action: 'ORGANIZATION_DEACTIVATED',
+        resourceType: 'Organization',
+        resourceId: orgId,
+        resourceName: org.name,
+        changes: { status: 'DEACTIVATED' },
+        justification,
+        status: 'failure',
+        errorMessage: String(error),
+      });
     } finally {
       setActionLoading(false);
     }
   }
 
-  async function reactivateOrg() {
+  async function reactivateOrg(justification?: string) {
     setActionLoading(true);
     try {
       await globalThis.fetch(`/api/admin/organizations/${orgId}/reactivate`, { method: 'POST' });
+      
+      // Log the action
+      await logSystemAdminAction({
+        action: 'ORGANIZATION_REACTIVATED',
+        resourceType: 'Organization',
+        resourceId: orgId,
+        resourceName: org.name,
+        changes: { status: 'ACTIVE' },
+        justification,
+        status: 'success',
+      });
+      
       fetchHierarchy();
+    } catch (error) {
+      // Log the failure
+      await logSystemAdminAction({
+        action: 'ORGANIZATION_REACTIVATED',
+        resourceType: 'Organization',
+        resourceId: orgId,
+        resourceName: org.name,
+        changes: { status: 'ACTIVE' },
+        justification,
+        status: 'failure',
+        errorMessage: String(error),
+      });
     } finally {
       setActionLoading(false);
     }
@@ -241,7 +317,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
           )}
           {(org.ownStatus === 'SUSPENDED' || org.ownStatus === 'DEACTIVATED') && (
             <button
-              onClick={reactivateOrg}
+              onClick={() => setShowReactivateModal(true)}
               disabled={actionLoading}
               className="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-60"
             >
@@ -251,118 +327,80 @@ function HierarchyTab({ orgId }: { orgId: string }) {
         </div>
       </div>
 
-      {/* Direct children card */}
+      {/* Hierarchy visualization */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Direct Children <span className="text-gray-400 font-normal text-base">({org.children.length})</span>
-        </h3>
-        {org.children.length === 0 ? (
-          <p className="text-sm text-gray-500">No child organizations</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Name</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Slug</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Status</th>
-                  <th className="text-right py-2 px-3 text-gray-500 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {org.children.map((child) => (
-                  <tr key={child.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-2 px-3 font-medium text-gray-900">{child.name}</td>
-                    <td className="py-2 px-3 font-mono text-gray-500 text-xs">{child.slug}</td>
-                    <td className="py-2 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[child.ownStatus]}`}>
-                        {child.ownStatus}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 text-right">
-                      <button
-                        onClick={() => router.push(`/admin/portal/organizations/${child.id}`)}
-                        className="text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        View →
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Hierarchy</h3>
+        <div style={{ height: '500px', width: '100%' }}>
+          <HierarchyGraph 
+            org={org}
+            editable={false}
+            onHierarchyChange={() => {}}
+          />
+        </div>
       </div>
 
       {/* Suspend confirmation modal */}
-      {showSuspendModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Suspend Organization</h3>
-            <p className="text-sm text-gray-600 mb-2">
-              This will suspend <strong>{org.name}</strong>
-              {descendantCount > 0 && (
-                <> and cascade to <strong>{descendantCount} descendant organization{descendantCount !== 1 ? 's' : ''}</strong> (skipping any already suspended)</>
-              )}.
-            </p>
-            <p className="text-xs text-gray-400 mb-4">Suspension is reversible. Reactivating will restore all cascade-suspended descendants.</p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowSuspendModal(false)}
-                className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={suspendOrg}
-                disabled={actionLoading}
-                className="bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-amber-700 disabled:opacity-60"
-              >
-                {actionLoading ? 'Suspending...' : 'Suspend'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={showSuspendModal}
+        title="Suspend Organization"
+        message={
+          `This will suspend ${org.name}${
+            descendantCount > 0 
+              ? ` and cascade to ${descendantCount} descendant organization${descendantCount !== 1 ? 's' : ''} (skipping any already suspended)` 
+              : ''
+          }. Suspension is reversible.`
+        }
+        confirmText="Suspend"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={actionLoading}
+        showJustification={true}
+        icon="warning"
+        onConfirm={suspendOrg}
+        onCancel={() => setShowSuspendModal(false)}
+      />
 
       {/* Deactivate confirmation modal */}
-      {showDeactivateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                <span className="text-red-600 text-lg">⚠</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900">Deactivate Organization</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-2">
-              This will deactivate <strong>{org.name}</strong>
-              {descendantCount > 0 && (
-                <> and all <strong>{descendantCount} descendant organization{descendantCount !== 1 ? 's' : ''}</strong></>
-              )}.
-            </p>
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-              Deactivated organizations lose access to their tenant portals. Reactivation is possible but is a significant action.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowDeactivateModal(false)}
-                className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={deactivateOrg}
-                disabled={actionLoading}
-                className="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-60"
-              >
-                {actionLoading ? 'Deactivating...' : 'Deactivate'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationModal
+        isOpen={showDeactivateModal}
+        title="Deactivate Organization"
+        message={
+          `This will deactivate ${org.name}${
+            descendantCount > 0 
+              ? ` and all ${descendantCount} descendant organization${descendantCount !== 1 ? 's' : ''}`
+              : ''
+          }. Deactivated organizations lose access to their tenant portals.`
+        }
+        confirmText="Deactivate"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={actionLoading}
+        showJustification={true}
+        icon="error"
+        onConfirm={deactivateOrg}
+        onCancel={() => setShowDeactivateModal(false)}
+      />
+
+      {/* Reactivate confirmation modal */}
+      <ConfirmationModal
+        isOpen={showReactivateModal}
+        title="Reactivate Organization"
+        message={
+          `This will reactivate ${org.name} and restore access to all users.${
+            org.ownStatus === 'DEACTIVATED' 
+              ? ' Note: This is a significant action for deactivated organizations.'
+              : ''
+          }`
+        }
+        confirmText="Reactivate"
+        cancelText="Cancel"
+        isDangerous={false}
+        isLoading={actionLoading}
+        showJustification={true}
+        icon="info"
+        onConfirm={reactivateOrg}
+        onCancel={() => setShowReactivateModal(false)}
+      />
     </div>
   );
 }
