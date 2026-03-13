@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Organization } from '@/hooks/useOrganizations';
 import { useToast } from '../shared/ToastContext';
+import { ConfirmationModal } from '../../shared/ConfirmationModal';
 
 interface OrganizationSettingsProps {
   organization: Organization;
@@ -13,40 +14,47 @@ interface OrganizationSettingsProps {
 export function OrganizationSettings({ organization, onUpdate }: OrganizationSettingsProps) {
   const { showToast } = useToast();
   const [updating, setUpdating] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showWhiteLabelModal, setShowWhiteLabelModal] = useState(false);
 
   const handleToggleStatus = async () => {
     const newStatus = organization.status === 'active' ? 'suspended' : 'active';
-    const action = newStatus === 'suspended' ? 'suspend' : 'activate';
-    
-    if (!confirm(`Are you sure you want to ${action} this organization?`)) {
-      return;
-    }
+    setShowStatusModal(true);
+  };
 
+  const confirmStatusChange = async () => {
+    const newStatus = organization.status === 'active' ? 'suspended' : 'active';
     try {
       setUpdating(true);
       await onUpdate({ status: newStatus });
-      showToast('success', `Organization ${action}d successfully`);
+      const successMessage = newStatus === 'active' 
+        ? 'Organization activated successfully'
+        : 'Organization suspended successfully';
+      showToast('success', successMessage);
+      setShowStatusModal(false);
     } catch (error) {
-      showToast('error', `Failed to ${action} organization`);
+      showToast('error', `Failed to ${newStatus === 'active' ? 'activate' : 'suspend'} organization`);
     } finally {
       setUpdating(false);
     }
   };
 
   const handleToggleWhiteLabel = async () => {
-    const newValue = !organization.whiteLabel;
-    const action = newValue ? 'enable' : 'disable';
-    
-    if (!confirm(`Are you sure you want to ${action} white label for this organization?`)) {
-      return;
-    }
+    setShowWhiteLabelModal(true);
+  };
 
+  const confirmWhiteLabelChange = async () => {
+    const newValue = !organization.whiteLabel;
     try {
       setUpdating(true);
       await onUpdate({ whiteLabel: newValue });
-      showToast('success', `White label ${action}d successfully`);
+      const successMessage = newValue
+        ? 'White label enabled successfully'
+        : 'White label disabled successfully';
+      showToast('success', successMessage);
+      setShowWhiteLabelModal(false);
     } catch (error) {
-      showToast('error', `Failed to ${action} white label`);
+      showToast('error', `Failed to ${newValue ? 'enable' : 'disable'} white label`);
     } finally {
       setUpdating(false);
     }
@@ -116,6 +124,42 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
           </div>
         )}
       </div>
+
+      {/* Status Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showStatusModal}
+        title={organization.status === 'active' ? 'Suspend Organization?' : 'Activate Organization?'}
+        message={
+          organization.status === 'active'
+            ? 'This will suspend the organization and all its resources. Users will not be able to access the organization.'
+            : 'This will activate the organization and restore access to all users.'
+        }
+        confirmText={organization.status === 'active' ? 'Suspend' : 'Activate'}
+        cancelText="Cancel"
+        isDangerous={organization.status === 'active'}
+        isLoading={updating}
+        icon={organization.status === 'active' ? 'warning' : 'info'}
+        onConfirm={confirmStatusChange}
+        onCancel={() => setShowStatusModal(false)}
+      />
+
+      {/* White Label Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showWhiteLabelModal}
+        title={organization.whiteLabel ? 'Disable White Label?' : 'Enable White Label?'}
+        message={
+          organization.whiteLabel
+            ? 'This will disable white label features. The default CampaignSites branding will be used.'
+            : 'This will enable white label features. Custom branding and domains will be available.'
+        }
+        confirmText={organization.whiteLabel ? 'Disable' : 'Enable'}
+        cancelText="Cancel"
+        isDangerous={false}
+        isLoading={updating}
+        icon="info"
+        onConfirm={confirmWhiteLabelChange}
+        onCancel={() => setShowWhiteLabelModal(false)}
+      />
     </motion.div>
   );
 }
