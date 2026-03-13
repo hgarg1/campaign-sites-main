@@ -1116,6 +1116,40 @@ export async function PATCH(request: NextRequest, { params }: { params: { slug: 
   const path = params.slug || [];
   const [first, second, third] = path;
 
+  // ─── Organization settings (status, whiteLabel) ──────────────────────────────
+  if (first === 'organizations' && second && !third) {
+    const body = (await request.json().catch(() => ({}))) as {
+      status?: 'active' | 'suspended';
+      whiteLabel?: boolean;
+    };
+    const org = await prisma.organization.findUnique({ where: { id: second } });
+    if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+
+    const updated = await prisma.organization.update({
+      where: { id: second },
+      data: {
+        ...(body.status !== undefined && { ownStatus: body.status === 'active' ? 'ACTIVE' : 'SUSPENDED' }),
+        ...(body.whiteLabel !== undefined && { whiteLabel: body.whiteLabel }),
+      },
+    });
+
+    // Count members and websites for this organization
+    const memberCount = await prisma.organizationMember.count({ where: { organizationId: second } });
+    const websiteCount = await prisma.website.count({ where: { organizationId: second } });
+
+    return NextResponse.json({
+      id: updated.id,
+      name: updated.name,
+      slug: updated.slug,
+      whiteLabel: updated.whiteLabel,
+      customDomain: updated.customDomain,
+      memberCount,
+      websiteCount,
+      status: updated.ownStatus === 'ACTIVE' ? 'active' : 'suspended',
+      createdAt: updated.createdAt.toISOString(),
+    });
+  }
+
   // ─── Hierarchy settings ──────────────────────────────────────────────────────
   if (first === 'organizations' && second && third === 'hierarchy-settings') {
     const body = (await request.json().catch(() => ({}))) as {
