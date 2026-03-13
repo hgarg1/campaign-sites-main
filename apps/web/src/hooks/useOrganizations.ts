@@ -64,7 +64,8 @@ interface UseOrganizationsOptions {
 }
 
 export function useOrganizations(options: UseOrganizationsOptions = {}) {
-  const pollingIntervalMs = 15000;
+  // Polling disabled - only refetch on demand or filter changes
+  // const pollingIntervalMs = 15000;
   const {
     page: initialPage,
     pageSize: initialPageSize,
@@ -113,14 +114,6 @@ export function useOrganizations(options: UseOrganizationsOptions = {}) {
 
   useEffect(() => {
     fetchOrganizations();
-  }, [fetchOrganizations]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchOrganizations();
-    }, pollingIntervalMs);
-
-    return () => clearInterval(interval);
   }, [fetchOrganizations]);
 
   return {

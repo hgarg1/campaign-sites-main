@@ -32,7 +32,8 @@ interface UseUsersOptions {
 }
 
 export function useUsers(options: UseUsersOptions = {}) {
-  const pollingIntervalMs = 15000;
+  // Polling disabled - only refetch on demand or filter changes
+  // const pollingIntervalMs = 15000;
   const {
     page: initialPage,
     pageSize: initialPageSize,
@@ -81,14 +82,6 @@ export function useUsers(options: UseUsersOptions = {}) {
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchUsers();
-    }, pollingIntervalMs);
-
-    return () => clearInterval(interval);
   }, [fetchUsers]);
 
   return {

@@ -3,7 +3,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Alert } from '@/hooks/useMonitoring';
 import { useState } from 'react';
-import { useToast } from '../shared/ToastContext';
+import { useToast } from '@/components/admin/shared/ToastContext';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 
 interface AlertsListProps {
   alerts: Alert[];
@@ -26,28 +28,38 @@ const statusColors = {
 
 export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: AlertsListProps) {
   const { showToast } = useToast();
+  const { hasPermission } = useSystemAdminPermissions();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [justificationModal, setJustificationModal] = useState<{ alertId: string; action: 'acknowledge' | 'resolve' } | null>(null);
 
-  const handleAcknowledge = async (alertId: string) => {
-    try {
-      setProcessingId(alertId);
-      await onAcknowledge(alertId);
-      showToast('success', 'Alert acknowledged');
-    } catch (error) {
-      showToast('error', 'Failed to acknowledge alert');
-    } finally {
-      setProcessingId(null);
-    }
+  const canManageAlerts = hasPermission('system_admin_portal:monitoring:write');
+
+  const handleAcknowledgeClick = (alertId: string) => {
+    if (!canManageAlerts) return;
+    setJustificationModal({ alertId, action: 'acknowledge' });
   };
 
-  const handleResolve = async (alertId: string) => {
+  const handleResolveClick = (alertId: string) => {
+    if (!canManageAlerts) return;
+    setJustificationModal({ alertId, action: 'resolve' });
+  };
+
+  const handleConfirmAction = async (justification?: string) => {
+    if (!justificationModal) return;
+
     try {
-      setProcessingId(alertId);
-      await onResolve(alertId);
-      showToast('success', 'Alert resolved');
+      setProcessingId(justificationModal.alertId);
+      if (justificationModal.action === 'acknowledge') {
+        await onAcknowledge(justificationModal.alertId);
+        showToast('success', 'Alert acknowledged');
+      } else {
+        await onResolve(justificationModal.alertId);
+        showToast('success', 'Alert resolved');
+      }
+      setJustificationModal(null);
     } catch (error) {
-      showToast('error', 'Failed to resolve alert');
+      showToast('error', `Failed to ${justificationModal.action} alert`);
     } finally {
       setProcessingId(null);
     }
@@ -157,18 +169,20 @@ export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: Alerts
                       <div className="flex gap-2">
                         {alert.status === 'NEW' && (
                           <button
-                            onClick={() => handleAcknowledge(alert.id)}
-                            disabled={isProcessing}
-                            className="px-3 py-1.5 text-sm font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200 rounded-lg transition-colors disabled:opacity-50"
+                            onClick={() => handleAcknowledgeClick(alert.id)}
+                            disabled={isProcessing || !canManageAlerts}
+                            title={!canManageAlerts ? 'No permission to manage alerts' : ''}
+                            className="px-3 py-1.5 text-sm font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors disabled:opacity-50"
                           >
                             {isProcessing ? 'Processing...' : 'Acknowledge'}
                           </button>
                         )}
                         {alert.status !== 'RESOLVED' && (
                           <button
-                            onClick={() => handleResolve(alert.id)}
-                            disabled={isProcessing}
-                            className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors disabled:opacity-50"
+                            onClick={() => handleResolveClick(alert.id)}
+                            disabled={isProcessing || !canManageAlerts}
+                            title={!canManageAlerts ? 'No permission to manage alerts' : ''}
+                            className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors disabled:opacity-50"
                           >
                             {isProcessing ? 'Processing...' : 'Resolve'}
                           </button>
@@ -234,6 +248,22 @@ export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: Alerts
           </div>
         </div>
       )}
+
+      {/* Justification Modal for Alert Actions */}
+      <ConfirmationModal
+        isOpen={justificationModal !== null}
+        title={`${justificationModal?.action === 'acknowledge' ? 'Acknowledge' : 'Resolve'} Alert`}
+        message={`Please provide a justification for ${justificationModal?.action === 'acknowledge' ? 'acknowledging' : 'resolving'} this alert.`}
+        confirmText={justificationModal?.action === 'acknowledge' ? 'Acknowledge' : 'Resolve'}
+        cancelText="Cancel"
+        icon="info"
+        showJustification={true}
+        isLoading={processingId !== null}
+        onConfirm={handleConfirmAction}
+        onCancel={() => {
+          setJustificationModal(null);
+        }}
+      />
     </div>
   );
 }

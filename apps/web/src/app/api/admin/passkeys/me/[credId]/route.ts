@@ -54,3 +54,5 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to revoke passkey' }, { status: 500 });
   }
 }
+
+

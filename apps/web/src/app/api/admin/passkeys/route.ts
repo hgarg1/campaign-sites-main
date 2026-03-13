@@ -136,3 +136,5 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug?
     return NextResponse.json({ error: 'Failed to revoke passkey' }, { status: 500 });
   }
 }
+
+

@@ -20,6 +20,7 @@ interface AdminNavigationProps {
 export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigationProps) {
   const pathname = usePathname();
   const [userOrgs, setUserOrgs] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [orgsExpanded, setOrgsExpanded] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -45,6 +46,8 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
     { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉' },
     { label: 'Desktop App', href: '/admin/portal/download', icon: '📥' },
   ];
+
+  const visibleOrgs = orgsExpanded ? userOrgs : userOrgs.slice(0, 3);
 
   return (
     <>
@@ -139,9 +142,30 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
             transition={{ duration: 0.4 }}
             className="flex-shrink-0 p-3 border-t border-slate-700"
           >
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider px-2 mb-2">My Organizations</p>
-            <div className="space-y-1">
-              {userOrgs.slice(0, 3).map((org) => (
+            <div className="flex items-center justify-between px-2 mb-2">
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">My Organizations</p>
+              {userOrgs.length > 3 && (
+                <button
+                  onClick={() => setOrgsExpanded(!orgsExpanded)}
+                  className="text-slate-400 hover:text-white transition-colors flex-shrink-0"
+                  aria-label={orgsExpanded ? 'Collapse organizations' : 'Expand organizations'}
+                >
+                  <motion.span
+                    animate={{ rotate: orgsExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="inline-block"
+                  >
+                    ▼
+                  </motion.span>
+                </button>
+              )}
+            </div>
+            <motion.div
+              className="space-y-1 overflow-hidden"
+              animate={{ maxHeight: orgsExpanded ? 'auto' : `${visibleOrgs.length * 40}px` }}
+              transition={{ duration: 0.3 }}
+            >
+              {visibleOrgs.map((org) => (
                 <Link
                   key={org.id}
                   href={`/tenant/${org.id}`}
@@ -152,17 +176,12 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
                   <span className="truncate">{org.name}</span>
                 </Link>
               ))}
-              {userOrgs.length > 3 && (
-                <Link
-                  href="/tenant-chooser"
-                  onClick={onClose}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition-all text-xs"
-                >
-                  <span>⇄</span>
-                  <span>View all ({userOrgs.length}) →</span>
-                </Link>
-              )}
-            </div>
+            </motion.div>
+            {userOrgs.length > 3 && !orgsExpanded && (
+              <div className="text-xs text-slate-500 px-2 mt-2">
+                +{userOrgs.length - 3} more
+              </div>
+            )}
           </motion.div>
         )}
 

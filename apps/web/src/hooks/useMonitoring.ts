@@ -259,9 +259,11 @@ export function useAlerts(
     }
   }, [filters]);
 
-  const acknowledgeAlert = useCallback(async (alertId: string) => {
+  const acknowledgeAlert = useCallback(async (alertId: string, justification?: string) => {
     const response = await globalThis.fetch(`/api/admin/monitoring/alerts/${alertId}/acknowledge`, {
       method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ justification }),
     });
 
     if (!response.ok) {
@@ -271,9 +273,11 @@ export function useAlerts(
     await fetchAlerts();
   }, [fetchAlerts]);
 
-  const resolveAlert = useCallback(async (alertId: string) => {
+  const resolveAlert = useCallback(async (alertId: string, justification?: string) => {
     const response = await globalThis.fetch(`/api/admin/monitoring/alerts/${alertId}/resolve`, {
       method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ justification }),
     });
 
     if (!response.ok) {

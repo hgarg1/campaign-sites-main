@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface Column<T> {
@@ -25,6 +25,8 @@ interface DataTableProps<T> {
     total: number;
     onPageChange: (page: number) => void;
   };
+  selectable?: boolean;
+  onSelectionChange?: (selectedIds: string[]) => void;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -36,9 +38,13 @@ export function DataTable<T extends Record<string, any>>({
   loading = false,
   emptyMessage = 'No data found',
   pagination,
+  selectable = false,
+  onSelectionChange,
 }: DataTableProps<T>) {
   const [sortField, setSortField] = useState<keyof T | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const selectAllCheckboxRef = useRef<HTMLInputElement>(null);
 
   const sortedData = useMemo(() => {
     if (!sortField) return data;
@@ -53,6 +59,16 @@ export function DataTable<T extends Record<string, any>>({
     return sorted;
   }, [data, sortField, sortDir]);
 
+  const allSelected = sortedData.length > 0 && selectedIds.size === sortedData.length;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+
+  // Update indeterminate state on checkbox using ref
+  useEffect(() => {
+    if (selectAllCheckboxRef.current) {
+      selectAllCheckboxRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
+
   const handleSort = (key: keyof T) => {
     if (sortField === key) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -60,6 +76,27 @@ export function DataTable<T extends Record<string, any>>({
       setSortField(key);
       setSortDir('asc');
     }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSelected = e.target.checked
+      ? new Set(sortedData.map((row) => String(row[keyField])))
+      : new Set<string>();
+    setSelectedIds(newSelected);
+    onSelectionChange?.(Array.from(newSelected));
+  };
+
+  const handleSelectRow = (row: T, e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const id = String(row[keyField]);
+    const newSelected = new Set(selectedIds);
+    if (e.target.checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+    onSelectionChange?.(Array.from(newSelected));
   };
 
   if (loading) {
@@ -89,6 +126,17 @@ export function DataTable<T extends Record<string, any>>({
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              {selectable && (
+                <th className="px-4 py-4 text-left">
+                  <input
+                    ref={selectAllCheckboxRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                  />
+                </th>
+              )}
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
@@ -117,9 +165,21 @@ export function DataTable<T extends Record<string, any>>({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: rowIndex * 0.02 }}
-                onClick={() => onRowClick?.(row)}
-                className={`${onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''} transition-colors`}
+                onClick={() => !selectable && onRowClick?.(row)}
+                className={`${
+                  !selectable && onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''
+                } ${selectedIds.has(String(row[keyField])) ? 'bg-blue-50' : ''} transition-colors`}
               >
+                {selectable && (
+                  <td className="px-4 py-4 text-sm" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(String(row[keyField]))}
+                      onChange={(e) => handleSelectRow(row, e)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                    />
+                  </td>
+                )}
                 {columns.map((column) => (
                   <td key={String(column.key)} className="px-6 py-4 text-sm text-gray-700">
                     {column.render

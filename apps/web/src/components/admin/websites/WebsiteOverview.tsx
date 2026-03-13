@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Website } from '@/hooks/useWebsites';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 
 interface WebsiteOverviewProps {
   website: Website;
@@ -21,6 +22,10 @@ const statusColors = {
 };
 
 export function WebsiteOverview({ website, onTriggerRebuild, onDelete, rebuilding }: WebsiteOverviewProps) {
+  const { hasPermission } = useSystemAdminPermissions();
+  
+  const canRebuild = hasPermission('system_admin_portal:websites:write');
+  const canDelete = hasPermission('system_admin_portal:websites:delete');
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -114,9 +119,10 @@ export function WebsiteOverview({ website, onTriggerRebuild, onDelete, rebuildin
       <div className="flex gap-3 pt-6 border-t border-gray-200">
         <button
           onClick={onTriggerRebuild}
-          disabled={rebuilding}
-          className={`px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors ${
-            rebuilding ? 'opacity-50 cursor-not-allowed' : ''
+          disabled={rebuilding || !canRebuild}
+          title={!canRebuild ? 'No permission to rebuild websites' : ''}
+          className={`px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed ${
+            rebuilding || !canRebuild ? 'opacity-50' : ''
           }`}
         >
           {rebuilding ? 'Rebuilding...' : 'Trigger Rebuild'}
@@ -124,7 +130,9 @@ export function WebsiteOverview({ website, onTriggerRebuild, onDelete, rebuildin
 
         <button
           onClick={onDelete}
-          className="px-6 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition-colors"
+          disabled={!canDelete}
+          title={!canDelete ? 'No permission to delete websites' : ''}
+          className="px-6 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           Delete Website
         </button>

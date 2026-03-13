@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/admin/shared';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 
 interface AdminUser {
   id: string;
@@ -35,6 +36,9 @@ export default function AdminPasskeyManagementPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { hasPermission } = useSystemAdminPermissions();
+
+  const canManagePasskeys = hasPermission('system_admin_portal:security:write');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -152,11 +156,11 @@ export default function AdminPasskeyManagementPage() {
                     </span>
                     <button
                       onClick={() => handleToggleRequire(user.id, user.requirePasskey)}
-                      disabled={toggling === user.id}
+                      disabled={toggling === user.id || !canManagePasskeys}
                       className={`relative inline-flex h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
                         user.requirePasskey ? 'bg-blue-600' : 'bg-gray-200'
                       }`}
-                      title={user.requirePasskey ? 'Passkey required — click to disable' : 'Click to require passkey'}
+                      title={!canManagePasskeys ? 'No permission to manage passkeys' : (user.requirePasskey ? 'Passkey required — click to disable' : 'Click to require passkey')}
                     >
                       <span
                         className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform mt-0.5 ${
@@ -190,8 +194,8 @@ export default function AdminPasskeyManagementPage() {
                               {!c.revokedAt && (
                                 <button
                                   onClick={() => handleRevoke(user.id, c.id)}
-                                  disabled={revoking === c.id}
-                                  className="ml-4 px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50"
+                                  disabled={revoking === c.id || !canManagePasskeys}
+                                  className="ml-4 px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed" title={!canManagePasskeys ? 'No permission to manage passkeys' : ''}
                                 >
                                   {revoking === c.id ? 'Revoking…' : 'Revoke'}
                                 </button>
@@ -211,3 +215,4 @@ export default function AdminPasskeyManagementPage() {
     </AdminLayout>
   );
 }
+

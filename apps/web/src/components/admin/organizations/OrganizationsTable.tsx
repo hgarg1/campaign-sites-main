@@ -7,6 +7,8 @@ import { Organization } from '@/hooks/useOrganizations';
 interface OrganizationsTableProps {
   data: Organization[];
   onRowClick?: (org: Organization) => void;
+  onSelectionChange?: (selectedIds: string[]) => void;
+  selectable?: boolean;
   pagination?: {
     currentPage: number;
     pageSize: number;
@@ -21,7 +23,14 @@ const statusColors = {
   suspended: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
 };
 
-export function OrganizationsTable({ data, onRowClick, pagination, loading }: OrganizationsTableProps) {
+export function OrganizationsTable({ 
+  data, 
+  onRowClick, 
+  onSelectionChange, 
+  selectable = false,
+  pagination, 
+  loading 
+}: OrganizationsTableProps) {
   const columns = [
     {
       key: 'name' as const,
@@ -107,6 +116,8 @@ export function OrganizationsTable({ data, onRowClick, pagination, loading }: Or
       actions={actions}
       loading={loading}
       emptyMessage="No organizations found"
+      selectable={selectable}
+      onSelectionChange={onSelectionChange}
       pagination={pagination}
     />
   );

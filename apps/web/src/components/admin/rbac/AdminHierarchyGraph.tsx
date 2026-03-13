@@ -16,11 +16,12 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { motion } from 'framer-motion';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 
 interface AdminHierarchyGraphProps {
   initialNodes: Node[];
   initialEdges: Edge[];
-  onSave?: (edges: Edge[]) => Promise<void>;
+  onSave?: (edges: Edge[], justification: string) => Promise<void>;
 }
 
 export function AdminHierarchyGraph({
@@ -35,6 +36,9 @@ export function AdminHierarchyGraph({
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { fitView } = useReactFlow();
+  const { hasPermission } = useSystemAdminPermissions();
+
+  const canSaveHierarchy = hasPermission('system_admin_portal:rbac:hierarchy');
 
   // Track if graph has been modified
   const onConnect = useCallback(
@@ -68,7 +72,7 @@ export function AdminHierarchyGraph({
         target: edge.target,
       }));
 
-      await onSave?.(edgesToSave as any);
+      await onSave?.(edgesToSave as any, justif);
 
       setHasChanges(false);
       setShowSaveModal(false);
@@ -120,8 +124,10 @@ export function AdminHierarchyGraph({
             Discard Changes
           </button>
           <button
+            disabled={!canSaveHierarchy}
             onClick={() => setShowSaveModal(true)}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+            title={!canSaveHierarchy ? 'No permission to modify admin hierarchy' : ''}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
           >
             Save Changes
           </button>

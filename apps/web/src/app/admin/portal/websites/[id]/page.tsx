@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/shared';
+import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import {
   WebsiteOverview,
   BuildJobsTimeline,
@@ -25,6 +26,8 @@ export default function WebsiteDetailPage() {
   const websiteId = params.id as string;
 
   const [rebuilding, setRebuilding] = useState(false);
+  const [rebuildModal, setRebuildModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
 
   const { data: website, loading, triggerRebuild, deleteWebsite } = useWebsite(websiteId);
   const { data: pages, loading: pagesLoading } = useWebsitePages(websiteId);
@@ -32,15 +35,12 @@ export default function WebsiteDetailPage() {
   const { data: buildJobs, loading: jobsLoading } = useBuildJobs({ websiteId, pageSize: 50 });
   const { data: llmLogs, loading: logsLoading } = useLLMLogs(websiteId);
 
-  const handleRebuild = async () => {
-    if (!confirm('Are you sure you want to trigger a rebuild for this website?')) {
-      return;
-    }
-
+  const handleRebuild = async (justification?: string) => {
     try {
       setRebuilding(true);
       await triggerRebuild();
       showToast('success', 'Rebuild triggered successfully');
+      setRebuildModal(false);
     } catch (error) {
       showToast('error', 'Failed to trigger rebuild');
     } finally {
@@ -48,23 +48,17 @@ export default function WebsiteDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this website? This action cannot be undone.')) {
-      return;
-    }
-
-    const confirmText = prompt('Type "DELETE" to confirm:');
-    if (confirmText !== 'DELETE') {
-      showToast('info', 'Deletion cancelled');
-      return;
-    }
-
+  const handleDelete = async (justification?: string) => {
     try {
+      setRebuilding(true);
       await deleteWebsite();
       showToast('success', 'Website deleted successfully');
       router.push('/admin/portal/websites');
+      setDeleteModal(false);
     } catch (error) {
       showToast('error', 'Failed to delete website');
+    } finally {
+      setRebuilding(false);
     }
   };
 
@@ -113,8 +107,8 @@ export default function WebsiteDetailPage() {
           {/* Overview */}
           <WebsiteOverview
             website={website}
-            onTriggerRebuild={handleRebuild}
-            onDelete={handleDelete}
+            onTriggerRebuild={() => setRebuildModal(true)}
+            onDelete={() => setDeleteModal(true)}
             rebuilding={rebuilding}
           />
 
@@ -146,6 +140,36 @@ export default function WebsiteDetailPage() {
           />
         </div>
       </div>
+
+      {/* Rebuild Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={rebuildModal}
+        title="Trigger Website Rebuild"
+        message="Are you sure you want to trigger a rebuild for this website? This may take several minutes."
+        confirmText="Trigger Rebuild"
+        cancelText="Cancel"
+        icon="warning"
+        showJustification={true}
+        isLoading={rebuilding}
+        isDangerous={false}
+        onConfirm={handleRebuild}
+        onCancel={() => setRebuildModal(false)}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal}
+        title="Delete Website"
+        message="Are you sure you want to delete this website? This action cannot be undone and will permanently remove all associated data."
+        confirmText="Delete Website"
+        cancelText="Cancel"
+        icon="error"
+        showJustification={true}
+        isLoading={rebuilding}
+        isDangerous={true}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteModal(false)}
+      />
     </AdminLayout>
   );
 }

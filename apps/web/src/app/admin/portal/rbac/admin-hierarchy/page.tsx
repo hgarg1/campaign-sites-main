@@ -53,14 +53,14 @@ export default function AdminHierarchyPage() {
     }
   };
 
-  const handleSaveHierarchy = async (edges: any[]) => {
+  const handleSaveHierarchy = async (edges: any[], justification: string) => {
     try {
       const response = await fetch('/api/admin/rbac/admin-hierarchy/commit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           edges,
-          justification: 'Updated admin delegation hierarchy',
+          justification,
         }),
       });
 
