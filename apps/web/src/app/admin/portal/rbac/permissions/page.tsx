@@ -26,7 +26,7 @@ export default function PermissionsPage() {
   useEffect(() => {
     const loadPermissions = async () => {
       try {
-        const res = await fetch('/api/admin/permissions');
+        const res = await fetch('/api/admin/rbac/permissions-list');
         if (!res.ok) throw new Error('Failed to load permissions');
 
         const data = await res.json();

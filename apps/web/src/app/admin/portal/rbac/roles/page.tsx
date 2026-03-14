@@ -42,7 +42,7 @@ export default function RolesPage() {
       try {
         const [rolesRes, permsRes] = await Promise.all([
           fetch('/api/admin/roles'),
-          fetch('/api/admin/permissions'),
+          fetch('/api/admin/rbac/permissions-list'),
         ]);
 
         if (!rolesRes.ok || !permsRes.ok) throw new Error('Failed to load data');
