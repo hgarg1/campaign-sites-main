@@ -88,12 +88,26 @@ export async function resolveSystemAdminPermissions(
     }
 
     try {
-      // Try to create SystemAdmin record
+      // Get Global_Admin role for assignment
+      const globalAdminRole = await prisma.systemAdminRole.findFirst({
+        where: { name: 'Global_Admin' }
+      });
+
+      // Try to create SystemAdmin record and assign Global_Admin role
       admin = await prisma.systemAdmin.create({
         data: {
           userId: systemAdminId,
           email: user.email,
           name: user.name || 'System Admin',
+          // Auto-assign Global_Admin role if role exists
+          ...(globalAdminRole && {
+            roleAssignments: {
+              create: {
+                roleId: globalAdminRole.id,
+                assignedBy: systemAdminId, // Self-assigned during creation
+              }
+            }
+          })
         },
         include: {
           roleAssignments: {
@@ -146,10 +160,64 @@ export async function resolveSystemAdminPermissions(
         if (!admin) {
           throw new Error(`Failed to create or retrieve SystemAdmin for user: ${systemAdminId}`);
         }
+
+        // If admin has no roles, assign Global_Admin now
+        if (admin.roleAssignments.length === 0) {
+          const globalAdminRole = await prisma.systemAdminRole.findFirst({
+            where: { name: 'Global_Admin' }
+          });
+
+          if (globalAdminRole) {
+            try {
+              await prisma.systemAdminRoleAssignment.create({
+                data: {
+                  adminId: admin.id,
+                  roleId: globalAdminRole.id,
+                  assignedBy: systemAdminId,
+                }
+              });
+
+              // Refetch with roles
+              admin = await prisma.systemAdmin.findUnique({
+                where: { userId: systemAdminId },
+                include: {
+                  roleAssignments: {
+                    include: {
+                      role: {
+                        include: {
+                          permissions: {
+                            include: {
+                              permission: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  permissionOverrides: {
+                    include: {
+                      permission: true,
+                    },
+                  },
+                },
+              });
+            } catch (assignError: any) {
+              // Ignore if role assignment fails (e.g., already assigned)
+              if (assignError?.code !== 'P2002') {
+                console.warn('Failed to assign role:', assignError);
+              }
+            }
+          }
+        }
       } else {
         throw createError;
       }
     }
+  }
+
+  // Ensure admin is not null before proceeding (all code paths above should set it)
+  if (!admin) {
+    throw new Error(`Failed to resolve SystemAdmin for user: ${systemAdminId}`);
   }
 
   let allowedClaims: Set<string> = new Set();
