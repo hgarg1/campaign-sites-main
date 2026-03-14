@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminLayout } from '@/components/admin/shared';
+import { AdminLayout, ProtectedAdminLayout } from '@/components/admin/shared';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -210,18 +210,8 @@ export default function RolesPage() {
 
   const categories = [...new Set(permissions.map(p => p.category))].sort();
 
-  if (loading) {
-    return (
-      <AdminLayout title="Roles" subtitle="Manage system admin roles">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  return (
-    <AdminLayout title="System Admin Roles" subtitle="Create and manage roles with permissions">
+  const content = (
+    <>
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -522,6 +512,26 @@ export default function RolesPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </AdminLayout>
+    </>
+  );
+
+  if (loading) {
+    return (
+      <AdminLayout title="System Admin Roles" subtitle="Create and manage roles with permissions">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <ProtectedAdminLayout
+      title="System Admin Roles"
+      subtitle="Create and manage roles with permissions"
+      requiredClaim="system_admin_portal:rbac:view_roles"
+    >
+      {content}
+    </ProtectedAdminLayout>
   );
 }

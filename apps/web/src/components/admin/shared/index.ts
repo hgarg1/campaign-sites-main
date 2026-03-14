@@ -12,3 +12,4 @@ export { DateRangePicker } from './DateRangePicker';
 export { DatePicker } from './DatePicker';
 export type { DatePickerProps } from './DatePicker';
 export { PermissionAlert, PermissionErrorPage } from './PermissionAlert';
+export { ProtectedAdminLayout } from './ProtectedAdminLayout';
