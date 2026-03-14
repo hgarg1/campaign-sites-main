@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 
 interface NavItem {
   label: string;
   href: string;
   icon: string;
   active?: boolean;
+  requiredClaim?: string; // Permission required to see this item
 }
 
 interface AdminNavigationProps {
@@ -21,6 +23,8 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
   const pathname = usePathname();
   const [userOrgs, setUserOrgs] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [orgsExpanded, setOrgsExpanded] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { hasPermission } = useSystemAdminPermissions();
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -31,23 +35,23 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', href: '/admin/portal', icon: '📊' },
-    { label: 'Users', href: '/admin/portal/users', icon: '👥' },
-    { label: 'Organizations', href: '/admin/portal/organizations', icon: '🏢' },
-    { label: 'Websites', href: '/admin/portal/websites', icon: '🌐' },
-    { label: 'Build & LLM', href: '/admin/portal/jobs', icon: '⚙️' },
-    { label: 'Monitoring', href: '/admin/portal/monitoring', icon: '📈' },
-    { label: 'Logs & Audit', href: '/admin/portal/logs', icon: '📝' },
-    { label: 'Hierarchy', href: '/admin/portal/hierarchy', icon: '🌳' },
-    { label: 'Roles', href: '/admin/portal/rbac/roles', icon: '👔' },
-    { label: 'Permissions', href: '/admin/portal/rbac/permissions', icon: '🔐' },
-    { label: 'Admin Hierarchy', href: '/admin/portal/rbac/admin-hierarchy', icon: '🔗' },
-    { label: 'Permission Overrides', href: '/admin/portal/rbac/permission-overrides', icon: '🛡️' },
-    { label: 'Master Tenants', href: '/admin/portal/master-tenants', icon: '🏛️' },
-    { label: 'Governance', href: '/admin/portal/governance', icon: '⚖️' },
-    { label: 'Policies', href: '/admin/portal/policies', icon: '📋' },
-    { label: 'Security', href: '/admin/portal/security', icon: '🔐' },
-    { label: 'Settings', href: '/admin/portal/settings', icon: '⚙️' },
-    { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉' },
+    { label: 'Users', href: '/admin/portal/users', icon: '👥', requiredClaim: 'system_admin_portal:users:read' },
+    { label: 'Organizations', href: '/admin/portal/organizations', icon: '🏢', requiredClaim: 'system_admin_portal:organizations:read' },
+    { label: 'Websites', href: '/admin/portal/websites', icon: '🌐', requiredClaim: 'system_admin_portal:websites:read' },
+    { label: 'Build & LLM', href: '/admin/portal/jobs', icon: '⚙️', requiredClaim: 'system_admin_portal:jobs:read' },
+    { label: 'Monitoring', href: '/admin/portal/monitoring', icon: '📈', requiredClaim: 'system_admin_portal:monitoring:read' },
+    { label: 'Logs & Audit', href: '/admin/portal/logs', icon: '📝', requiredClaim: 'system_admin_portal:logs:read' },
+    { label: 'Hierarchy', href: '/admin/portal/hierarchy', icon: '🌳', requiredClaim: 'system_admin_portal:hierarchy:read' },
+    { label: 'Roles', href: '/admin/portal/rbac/roles', icon: '👔', requiredClaim: 'system_admin_portal:rbac:view_roles' },
+    { label: 'Permissions', href: '/admin/portal/rbac/permissions', icon: '🔐', requiredClaim: 'system_admin_portal:rbac:view_permissions' },
+    { label: 'Admin Hierarchy', href: '/admin/portal/rbac/admin-hierarchy', icon: '🔗', requiredClaim: 'system_admin_portal:rbac:view_hierarchy' },
+    { label: 'Permission Overrides', href: '/admin/portal/rbac/permission-overrides', icon: '🛡️', requiredClaim: 'system_admin_portal:rbac:view_overrides' },
+    { label: 'Master Tenants', href: '/admin/portal/master-tenants', icon: '🏛️', requiredClaim: 'system_admin_portal:master_tenants:read' },
+    { label: 'Governance', href: '/admin/portal/governance', icon: '⚖️', requiredClaim: 'system_admin_portal:governance:read' },
+    { label: 'Policies', href: '/admin/portal/policies', icon: '📋', requiredClaim: 'system_admin_portal:policies:read' },
+    { label: 'Security', href: '/admin/portal/security', icon: '🔐', requiredClaim: 'system_admin_portal:security:read' },
+    { label: 'Settings', href: '/admin/portal/settings', icon: '⚙️', requiredClaim: 'system_admin_portal:settings:read' },
+    { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉', requiredClaim: 'system_admin_portal:analytics:read' },
     { label: 'Desktop App', href: '/admin/portal/download', icon: '📥' },
   ];
 
@@ -64,11 +68,12 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
 
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 w-64 flex flex-col
+          fixed inset-y-0 left-0 z-40 flex flex-col
           lg:relative lg:sticky lg:top-0 lg:z-auto lg:h-screen
           bg-gradient-to-b from-slate-900 to-slate-800 text-white border-r border-slate-700
-          transition-transform duration-300 ease-in-out
+          transition-all duration-300 ease-in-out
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarCollapsed ? 'w-20' : 'w-64'}
         `}
       >
         {/* Logo Section */}
@@ -76,15 +81,28 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex-shrink-0 p-5 border-b border-slate-700 flex items-center justify-between"
+          className="flex-shrink-0 p-5 border-b border-slate-700 flex items-center justify-between gap-2"
         >
-          <Link href="/admin/portal" className="flex items-center gap-2" onClick={onClose}>
-            <span className="text-2xl">🛡️</span>
-            <div>
-              <h2 className="font-bold text-lg leading-tight">CampaignSites</h2>
-              <p className="text-xs text-slate-400">Admin Portal</p>
-            </div>
-          </Link>
+          {!sidebarCollapsed && (
+            <Link href="/admin/portal" className="flex items-center gap-2 min-w-0 flex-1" onClick={onClose}>
+              <span className="text-2xl flex-shrink-0">🛡️</span>
+              <div className="min-w-0">
+                <h2 className="font-bold text-lg leading-tight">CampaignSites</h2>
+                <p className="text-xs text-slate-400">Admin Portal</p>
+              </div>
+            </Link>
+          )}
+          
+          {/* Collapse button (desktop only) */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hidden lg:flex w-8 h-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? '→' : '←'}
+          </button>
+
           {/* Close button — mobile only */}
           <button
             onClick={onClose}
@@ -98,6 +116,13 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
         {/* Navigation Items — scrollable */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {navItems.map((item, index) => {
+            // Check if user has permission to view this nav item
+            const hasAccess = !item.requiredClaim || hasPermission(item.requiredClaim);
+            
+            if (!hasAccess) {
+              return null; // Hide nav item if no permission
+            }
+
             const isDashboardRoute = item.href === '/admin/portal';
             const isActive = isDashboardRoute
               ? pathname === item.href
@@ -118,17 +143,22 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                   }`}
+                  title={sidebarCollapsed ? item.label : undefined}
                 >
                   <span className="text-base flex-shrink-0">{item.icon}</span>
-                  <span className="font-medium text-sm">{item.label}</span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="ml-auto w-1 h-5 bg-white rounded-full"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2 }}
-                    />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="font-medium text-sm">{item.label}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeIndicator"
+                          className="ml-auto w-1 h-5 bg-white rounded-full"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.2 }}
+                        />
+                      )}
+                    </>
                   )}
                 </Link>
               </motion.div>
@@ -137,7 +167,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
         </nav>
 
         {/* Tenant Switcher — shown when system admin also has tenant org memberships */}
-        {userOrgs.length > 0 && (
+        {userOrgs.length > 0 && !sidebarCollapsed && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -196,7 +226,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex-shrink-0 p-4 border-t border-slate-700 bg-slate-900"
         >
-          {orgsExpanded && userOrgs.length > 0 ? (
+          {orgsExpanded && userOrgs.length > 0 && !sidebarCollapsed ? (
             <Link
               href="/tenant-chooser"
               onClick={onClose}
@@ -206,7 +236,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
               Switch to Tenant Portal
             </Link>
           ) : (
-            <p className="text-xs text-slate-500 text-center">Admin Portal v1.0</p>
+            <p className="text-xs text-slate-500 text-center">{sidebarCollapsed ? '📍' : 'Admin Portal v1.0'}</p>
           )}
         </motion.div>
       </aside>

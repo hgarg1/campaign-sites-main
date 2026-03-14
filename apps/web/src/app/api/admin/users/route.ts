@@ -160,11 +160,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Assign role based on user role
-    // GLOBAL_ADMIN gets Global_Admin role (all permissions)
-    // ADMIN gets default admin role
+    // Both GLOBAL_ADMIN and ADMIN get Global_Admin role (all permissions)
+    // They can later be restricted with permission overrides if needed
     const roleToAssign = await prisma.systemAdminRole.findFirst({
       where: {
-        name: role === 'GLOBAL_ADMIN' ? 'Global_Admin' : 'User_Manager', // Default to User_Manager for ADMIN
+        name: 'Global_Admin', // All admins get full admin role
       },
     });
 
