@@ -20,13 +20,12 @@ export default function OrgPickerPage({ onOrgSelected }: OrgPickerPageProps): JS
   const [selecting, setSelecting] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`${PRODUCTION_URL}/api/auth/me`)
+    fetch(`${PRODUCTION_URL}/api/auth/me`, { credentials: 'include' })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load organizations')
         return res.json()
       })
       .then((data) => {
-        // Support both { organizations: [...] } and { orgs: [...] } shapes
         const list: Org[] = data.organizations ?? data.orgs ?? []
         setOrgs(list)
       })

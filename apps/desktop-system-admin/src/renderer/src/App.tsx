@@ -6,7 +6,7 @@ declare global {
   interface Window {
     desktopBridge: {
       getAuthState: () => Promise<{ authenticated: boolean }>
-      loginSuccess: (token: string) => Promise<{ success: boolean }>
+      loginSuccess: () => Promise<{ success: boolean }>
       logout: () => Promise<{ success: boolean }>
       getPlatform: () => Promise<string>
       getVersion: () => Promise<string>
@@ -19,9 +19,12 @@ export default function App(): JSX.Element {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
 
   useEffect(() => {
-    window.desktopBridge.getAuthState().then(({ authenticated }) => {
-      setAuthenticated(authenticated)
-    })
+    window.desktopBridge
+      .getAuthState()
+      .then(({ authenticated }) => {
+        setAuthenticated(authenticated)
+      })
+      .catch(() => setAuthenticated(false))
 
     const cleanup = window.desktopBridge.onAuthStateChanged(({ authenticated }) => {
       setAuthenticated(authenticated)

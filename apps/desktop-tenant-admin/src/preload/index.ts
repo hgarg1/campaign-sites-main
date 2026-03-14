@@ -4,13 +4,15 @@ const desktopBridge = {
   // Auth
   getAuthState: (): Promise<{ authenticated: boolean; selectedOrgId: string | null }> =>
     ipcRenderer.invoke('get-auth-state'),
-  loginSuccess: (token: string): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('login-success', token),
+  loginSuccess: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('login-success'),
   logout: (): Promise<{ success: boolean }> => ipcRenderer.invoke('logout'),
 
   // Org selection
   selectOrg: (orgId: string): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('select-org', orgId),
+  clearSelectedOrg: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('clear-selected-org'),
   onOrgSelected: (cb: (data: { orgId: string }) => void): (() => void) => {
     ipcRenderer.on('org-selected', (_event, data) => cb(data))
     return () => ipcRenderer.removeAllListeners('org-selected')

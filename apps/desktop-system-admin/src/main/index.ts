@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, BrowserView, ipcMain, Tray, Menu, nativeImage, session, Notification } from 'electron'
+import { app, BrowserWindow, BrowserView, ipcMain, Tray, Menu, nativeImage, session, Notification } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import Store from 'electron-store'
@@ -98,8 +98,7 @@ function attachPortalView(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/portal.js'),
       contextIsolation: true,
-      nodeIntegration: false,
-      session: session.fromPartition('persist:system-admin-portal')
+      nodeIntegration: false
     }
   })
 
@@ -109,17 +108,6 @@ function attachPortalView(): void {
   const bounds = mainWindow.getBounds()
   portalView.setBounds({ x: 0, y: 48, width: bounds.width, height: bounds.height - 48 })
   portalView.setAutoResize({ width: true, height: true })
-
-  // Inject auth token as cookie
-  const token = store.get('token')
-  if (token) {
-    session.fromPartition('persist:system-admin-portal').cookies.set({
-      url: PRODUCTION_URL,
-      name: 'auth-token',
-      value: token,
-      httpOnly: true
-    })
-  }
 
   // Intercept navigation to login — session expired
   portalView.webContents.on('will-navigate', (_event, url) => {
@@ -162,8 +150,7 @@ function createBadgeDataURL(count: number): string {
 // IPC handlers
 ipcMain.handle('get-auth-state', () => ({ authenticated: isAuthenticated }))
 
-ipcMain.handle('login-success', (_event, token: string) => {
-  store.set('token', token)
+ipcMain.handle('login-success', () => {
   isAuthenticated = true
   attachPortalView()
   return { success: true }
@@ -176,6 +163,7 @@ ipcMain.handle('logout', () => {
     mainWindow.setBrowserView(null)
     portalView = null
   }
+  mainWindow?.webContents.send('auth-state-changed', { authenticated: false })
   return { success: true }
 })
 
@@ -233,15 +221,20 @@ app.whenReady().then(() => {
   createTray()
   createMainWindow()
 
-  // Auto-login if a saved token exists
-  const savedToken = store.get('token')
-  if (savedToken) {
-    isAuthenticated = true
-    mainWindow?.once('ready-to-show', () => {
-      attachPortalView()
-      mainWindow?.webContents.send('auth-state-changed', { authenticated: true })
+  // Auto-login if an authenticated session cookie exists.
+  session.defaultSession.cookies
+    .get({ url: PRODUCTION_URL, name: 'campaignsites_session' })
+    .then((cookies) => {
+      if (cookies.length === 0) return
+      isAuthenticated = true
+      mainWindow?.once('ready-to-show', () => {
+        attachPortalView()
+        mainWindow?.webContents.send('auth-state-changed', { authenticated: true })
+      })
     })
-  }
+    .catch(() => {
+      isAuthenticated = false
+    })
 
   autoUpdater.checkForUpdatesAndNotify()
 
@@ -254,5 +247,3 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// Suppress unused import warning for shell
-void shell

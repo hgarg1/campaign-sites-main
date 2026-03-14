@@ -7,9 +7,10 @@ declare global {
   interface Window {
     desktopBridge: {
       getAuthState: () => Promise<{ authenticated: boolean; selectedOrgId: string | null }>
-      loginSuccess: (token: string) => Promise<{ success: boolean }>
+      loginSuccess: () => Promise<{ success: boolean }>
       logout: () => Promise<{ success: boolean }>
       selectOrg: (orgId: string) => Promise<{ success: boolean }>
+      clearSelectedOrg: () => Promise<{ success: boolean }>
       getPlatform: () => Promise<string>
       getVersion: () => Promise<string>
       onAuthStateChanged: (
@@ -30,15 +31,18 @@ export default function App(): JSX.Element {
   const [appState, setAppState] = useState<AppState>({ phase: 'loading' })
 
   useEffect(() => {
-    window.desktopBridge.getAuthState().then(({ authenticated, selectedOrgId }) => {
-      if (!authenticated) {
-        setAppState({ phase: 'unauthenticated' })
-      } else if (!selectedOrgId) {
-        setAppState({ phase: 'pick-org' })
-      } else {
-        setAppState({ phase: 'portal', orgId: selectedOrgId })
-      }
-    })
+    window.desktopBridge
+      .getAuthState()
+      .then(({ authenticated, selectedOrgId }) => {
+        if (!authenticated) {
+          setAppState({ phase: 'unauthenticated' })
+        } else if (!selectedOrgId) {
+          setAppState({ phase: 'pick-org' })
+        } else {
+          setAppState({ phase: 'portal', orgId: selectedOrgId })
+        }
+      })
+      .catch(() => setAppState({ phase: 'unauthenticated' }))
 
     const cleanupAuth = window.desktopBridge.onAuthStateChanged(
       ({ authenticated, selectedOrgId }) => {

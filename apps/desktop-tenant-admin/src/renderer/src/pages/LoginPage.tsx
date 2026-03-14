@@ -21,6 +21,7 @@ export default function LoginPage({ onSuccess }: LoginPageProps): JSX.Element {
       const res = await fetch(`${PRODUCTION_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       })
 
@@ -29,12 +30,7 @@ export default function LoginPage({ onSuccess }: LoginPageProps): JSX.Element {
         throw new Error(data.error || 'Login failed')
       }
 
-      const data = await res.json()
-      const token = data.token || data.accessToken
-
-      if (!token) throw new Error('No token received')
-
-      await window.desktopBridge.loginSuccess(token)
+      await window.desktopBridge.loginSuccess()
       onSuccess()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')

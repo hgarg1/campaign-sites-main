@@ -26,7 +26,7 @@ export default function PortalShell({ orgId }: PortalShellProps): JSX.Element {
           <span className="text-xs text-gray-500 font-mono">{orgId}</span>
         </div>
         <button
-          onClick={() => window.desktopBridge.logout()}
+          onClick={() => window.desktopBridge.clearSelectedOrg()}
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
           className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded"
         >

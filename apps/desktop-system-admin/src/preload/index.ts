@@ -4,8 +4,8 @@ const desktopBridge = {
   // Auth
   getAuthState: (): Promise<{ authenticated: boolean }> =>
     ipcRenderer.invoke('get-auth-state'),
-  loginSuccess: (token: string): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('login-success', token),
+  loginSuccess: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('login-success'),
   logout: (): Promise<{ success: boolean }> => ipcRenderer.invoke('logout'),
 
   // System

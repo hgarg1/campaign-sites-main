@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, BrowserView, ipcMain, Tray, Menu, nativeImage, session, Notification } from 'electron'
+import { app, BrowserWindow, BrowserView, ipcMain, Tray, Menu, nativeImage, session, Notification } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import Store from 'electron-store'
@@ -105,8 +105,7 @@ function attachPortalView(orgId?: string | null): void {
     webPreferences: {
       preload: join(__dirname, '../preload/portal.js'),
       contextIsolation: true,
-      nodeIntegration: false,
-      session: session.fromPartition('persist:tenant-admin-portal')
+      nodeIntegration: false
     }
   })
 
@@ -116,17 +115,6 @@ function attachPortalView(orgId?: string | null): void {
   const bounds = mainWindow.getBounds()
   portalView.setBounds({ x: 0, y: 48, width: bounds.width, height: bounds.height - 48 })
   portalView.setAutoResize({ width: true, height: true })
-
-  // Inject auth token as cookie
-  const token = store.get('token')
-  if (token) {
-    session.fromPartition('persist:tenant-admin-portal').cookies.set({
-      url: PRODUCTION_URL,
-      name: 'auth-token',
-      value: token,
-      httpOnly: true
-    })
-  }
 
   // Intercept navigation to login — session expired
   portalView.webContents.on('will-navigate', (_event, url) => {
@@ -181,7 +169,6 @@ ipcMain.handle('get-auth-state', () => ({
 }))
 
 ipcMain.handle('login-success', (_event, token: string) => {
-  store.set('token', token)
   isAuthenticated = true
   attachPortalView()
   return { success: true }
@@ -194,6 +181,15 @@ ipcMain.handle('select-org', (_event, orgId: string) => {
   return { success: true }
 })
 
+ipcMain.handle('clear-selected-org', () => {
+  store.set('selectedOrgId', null)
+  if (isAuthenticated) {
+    attachPortalView(null)
+    mainWindow?.webContents.send('auth-state-changed', { authenticated: true, selectedOrgId: null })
+  }
+  return { success: true }
+})
+
 ipcMain.handle('logout', () => {
   store.set('token', null)
   store.set('selectedOrgId', null)
@@ -202,6 +198,7 @@ ipcMain.handle('logout', () => {
     mainWindow.setBrowserView(null)
     portalView = null
   }
+  mainWindow?.webContents.send('auth-state-changed', { authenticated: false })
   return { success: true }
 })
 
@@ -260,18 +257,23 @@ app.whenReady().then(() => {
   createTray()
   createMainWindow()
 
-  // Auto-login if a saved token exists
-  const savedToken = store.get('token')
-  if (savedToken) {
-    isAuthenticated = true
-    mainWindow?.once('ready-to-show', () => {
-      attachPortalView()
-      mainWindow?.webContents.send('auth-state-changed', {
-        authenticated: true,
-        selectedOrgId: store.get('selectedOrgId')
+  // Auto-login if an authenticated session cookie exists.
+  session.defaultSession.cookies
+    .get({ url: PRODUCTION_URL, name: 'campaignsites_session' })
+    .then((cookies) => {
+      if (cookies.length === 0) return
+      isAuthenticated = true
+      mainWindow?.once('ready-to-show', () => {
+        attachPortalView()
+        mainWindow?.webContents.send('auth-state-changed', {
+          authenticated: true,
+          selectedOrgId: store.get('selectedOrgId')
+        })
       })
     })
-  }
+    .catch(() => {
+      isAuthenticated = false
+    })
 
   autoUpdater.checkForUpdatesAndNotify()
 
@@ -284,5 +286,3 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// Suppress unused import warning for shell
-void shell
