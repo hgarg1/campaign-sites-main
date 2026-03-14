@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "ELECTRON_SKIP_BINARY_DOWNLOAD=1 pnpm install --filter @campaignsites/web...",
-  "buildCommand": "pnpm --filter @campaignsites/database db:generate && pnpm --filter @campaignsites/web build",
+  "buildCommand": "pnpm --filter @campaignsites/database db:generate && pnpm --filter @campaignsites/database prisma migrate deploy || true && pnpm --filter @campaignsites/web build",
   "outputDirectory": "apps/web/.next"
 }
