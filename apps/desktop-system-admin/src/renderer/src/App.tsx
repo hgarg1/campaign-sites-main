@@ -10,7 +10,18 @@ declare global {
       logout: () => Promise<{ success: boolean }>
       getPlatform: () => Promise<string>
       getVersion: () => Promise<string>
+      getDiagnostics: () => Promise<{
+        appName: string
+        platform: string
+        version: string
+        authenticated: boolean
+        hasSessionCookie: boolean
+        portalAttached: boolean
+        baseUrl: string
+      }>
+      checkForUpdates: () => Promise<{ success: boolean }>
       onAuthStateChanged: (cb: (state: { authenticated: boolean }) => void) => () => void
+      onUpdateStatus: (cb: (status: { stage: string; message: string }) => void) => () => void
     }
   }
 }

@@ -26,6 +26,10 @@ let tray: Tray | null = null
 let isAuthenticated = false
 let unreadCount = 0
 
+function sendUpdateStatus(stage: string, message: string): void {
+  mainWindow?.webContents.send('update-status', { stage, message })
+}
+
 function createTray(): void {
   const iconPath = join(__dirname, '../../resources/icon.png')
   const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
@@ -169,6 +173,25 @@ ipcMain.handle('logout', () => {
 
 ipcMain.handle('get-platform', () => process.platform)
 ipcMain.handle('get-version', () => app.getVersion())
+ipcMain.handle('check-for-updates', async () => {
+  await autoUpdater.checkForUpdates()
+  return { success: true }
+})
+ipcMain.handle('get-diagnostics', async () => {
+  const sessionCookies = await session.defaultSession.cookies
+    .get({ url: PRODUCTION_URL, name: 'campaignsites_session' })
+    .catch(() => [])
+
+  return {
+    appName: APP_NAME,
+    platform: process.platform,
+    version: app.getVersion(),
+    authenticated: isAuthenticated,
+    hasSessionCookie: sessionCookies.length > 0,
+    portalAttached: portalView !== null,
+    baseUrl: PRODUCTION_URL
+  }
+})
 
 ipcMain.handle('show-notification', (_event, { title, body }: { title: string; body: string }) => {
   new Notification({ title, body, icon: join(__dirname, '../../resources/icon.png') }).show()
@@ -220,6 +243,25 @@ app.whenReady().then(() => {
 
   createTray()
   createMainWindow()
+
+  autoUpdater.on('checking-for-update', () => {
+    sendUpdateStatus('checking', 'Checking for updates...')
+  })
+  autoUpdater.on('update-available', (info) => {
+    sendUpdateStatus('available', `Update available: v${info.version}`)
+  })
+  autoUpdater.on('update-not-available', () => {
+    sendUpdateStatus('up-to-date', 'You are on the latest version.')
+  })
+  autoUpdater.on('download-progress', (progress) => {
+    sendUpdateStatus('downloading', `Downloading update... ${Math.round(progress.percent)}%`)
+  })
+  autoUpdater.on('update-downloaded', (info) => {
+    sendUpdateStatus('downloaded', `Update v${info.version} downloaded. Restart app to apply.`)
+  })
+  autoUpdater.on('error', (error) => {
+    sendUpdateStatus('error', `Update error: ${error.message}`)
+  })
 
   // Auto-login if an authenticated session cookie exists.
   session.defaultSession.cookies

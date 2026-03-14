@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const PRODUCTION_URL = 'https://web-tau-eight-27.vercel.app'
 
@@ -11,6 +11,39 @@ export default function LoginPage({ onSuccess }: LoginPageProps): JSX.Element {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const onOnline = (): void => setIsOnline(true)
+    const onOffline = (): void => setIsOnline(false)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [])
+
+  async function loginWithRetry(payload: { email: string; password: string }): Promise<Response> {
+    let lastError: unknown
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await fetch(`${PRODUCTION_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        })
+      } catch (error) {
+        lastError = error
+        if (attempt === 2) break
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)))
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error('Network request failed')
+  }
 
   async function handleLogin(e: React.FormEvent): Promise<void> {
     e.preventDefault()
@@ -18,22 +51,21 @@ export default function LoginPage({ onSuccess }: LoginPageProps): JSX.Element {
     setError('')
 
     try {
-      const res = await fetch(`${PRODUCTION_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password })
-      })
+      const res = await loginWithRetry({ email: email.trim(), password })
 
       if (!res.ok) {
-        const data = await res.json()
+        const data = await res.json().catch(() => ({ error: 'Login failed' }))
         throw new Error(data.error || 'Login failed')
       }
 
       await window.desktopBridge.loginSuccess()
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      if (!navigator.onLine) {
+        setError('You appear to be offline. Reconnect and try again.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Login failed')
+      }
     } finally {
       setLoading(false)
     }
@@ -71,6 +103,11 @@ export default function LoginPage({ onSuccess }: LoginPageProps): JSX.Element {
 
         {/* Login form */}
         <form onSubmit={handleLogin} className="space-y-4">
+          {!isOnline ? (
+            <div className="px-4 py-3 bg-amber-900/30 border border-amber-700 rounded-lg text-amber-200 text-sm">
+              Offline mode detected. Login requires an internet connection.
+            </div>
+          ) : null}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
             <input

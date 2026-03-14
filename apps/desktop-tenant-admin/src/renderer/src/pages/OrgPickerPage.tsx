@@ -18,19 +18,48 @@ export default function OrgPickerPage({ onOrgSelected }: OrgPickerPageProps): JS
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selecting, setSelecting] = useState<string | null>(null)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
 
-  useEffect(() => {
-    fetch(`${PRODUCTION_URL}/api/auth/me`, { credentials: 'include' })
-      .then((res) => {
+  async function loadOrganizations(): Promise<void> {
+    setLoading(true)
+    setError('')
+
+    let lastError: unknown
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const res = await fetch(`${PRODUCTION_URL}/api/auth/me`, { credentials: 'include' })
         if (!res.ok) throw new Error('Failed to load organizations')
-        return res.json()
-      })
-      .then((data) => {
+        const data = await res.json()
         const list: Org[] = data.organizations ?? data.orgs ?? []
         setOrgs(list)
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load organizations'))
-      .finally(() => setLoading(false))
+        setLoading(false)
+        return
+      } catch (err) {
+        lastError = err
+        if (attempt === 2) break
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)))
+      }
+    }
+
+    if (!navigator.onLine) {
+      setError('You are offline. Reconnect and retry.')
+    } else {
+      setError(lastError instanceof Error ? lastError.message : 'Failed to load organizations')
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    void loadOrganizations()
+
+    const onOnline = (): void => setIsOnline(true)
+    const onOffline = (): void => setIsOnline(false)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
   }, [])
 
   async function handleSelect(orgId: string): Promise<void> {
@@ -99,6 +128,12 @@ export default function OrgPickerPage({ onOrgSelected }: OrgPickerPageProps): JS
             </div>
           )}
 
+          {!isOnline ? (
+            <div className="px-4 py-3 bg-amber-900/30 border border-amber-700 rounded-lg text-amber-200 text-sm mb-4">
+              Offline mode: organization list refresh is unavailable.
+            </div>
+          ) : null}
+
           {!loading && orgs.length === 0 && !error && (
             <p className="text-center text-gray-500 py-8">No organizations found for your account.</p>
           )}
@@ -145,6 +180,14 @@ export default function OrgPickerPage({ onOrgSelected }: OrgPickerPageProps): JS
           </div>
 
           <div className="mt-8 text-center">
+            <button
+              onClick={() => {
+                void loadOrganizations()
+              }}
+              className="text-xs text-gray-600 hover:text-gray-400 transition-colors mr-4"
+            >
+              Refresh organizations
+            </button>
             <button
               onClick={() => window.desktopBridge.logout()}
               className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
