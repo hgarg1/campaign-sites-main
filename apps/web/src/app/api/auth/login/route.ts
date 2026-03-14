@@ -64,8 +64,9 @@ export async function POST(request: NextRequest) {
         select: { passwordChangedAt: true },
       });
       passwordChangedAt = userWithPasswordChangedAt?.passwordChangedAt;
-    } catch {
+    } catch (err) {
       // Column doesn't exist in schema yet - migration not applied
+      logger.warn('passwordChangedAt column not available', 'auth', { error: err instanceof Error ? err.message : String(err) });
       passwordChangedAt = new Date(); // Default to changed, to allow login
     }
 
@@ -98,53 +99,79 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    response.cookies.set('campaignsites_session', createSessionToken(user.id), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    response.cookies.set('userRole', user.role, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    // If this admin requires a passkey but logged in with password, flag setup required
-    const needsPasskey = (user as typeof user & { requirePasskey?: boolean }).requirePasskey;
-    if (needsPasskey) {
-      response.cookies.set('passkey_required', '1', {
+    try {
+      const sessionToken = createSessionToken(user.id);
+      response.cookies.set('campaignsites_session', sessionToken, {
         httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         maxAge: 60 * 60 * 24 * 7,
       });
+    } catch (err) {
+      logger.error('Failed to set session cookie', 'auth', err);
+      throw err;
+    }
+
+    try {
+      response.cookies.set('userRole', user.role, {
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    } catch (err) {
+      logger.error('Failed to set userRole cookie', 'auth', err);
+    }
+
+    // If this admin requires a passkey but logged in with password, flag setup required
+    const needsPasskey = user.requirePasskey === true;
+    if (needsPasskey) {
+      try {
+        response.cookies.set('passkey_required', '1', {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7,
+        });
+      } catch (err) {
+        logger.error('Failed to set passkey_required cookie', 'auth', err);
+      }
     } else {
-      response.cookies.delete('passkey_required');
+      try {
+        response.cookies.delete('passkey_required');
+      } catch (err) {
+        logger.error('Failed to delete passkey_required cookie', 'auth', err);
+      }
     }
 
     // If user hasn't changed their password yet, flag it
     if (passwordChangedAt === null) {
-      response.cookies.set('password_change_required', '1', {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      });
+      try {
+        response.cookies.set('password_change_required', '1', {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7,
+        });
+      } catch (err) {
+        logger.error('Failed to set password_change_required cookie', 'auth', err);
+      }
     } else {
-      response.cookies.delete('password_change_required');
+      try {
+        response.cookies.delete('password_change_required');
+      } catch (err) {
+        logger.error('Failed to delete password_change_required cookie', 'auth', err);
+      }
     }
 
     return response;
   } catch (error) {
     logger.error('Login request failed with exception', 'auth', error, {
       timestamp: new Date().toISOString(),
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json({ error: 'Login failed. Please try again.' }, { status: 500 });
   }
