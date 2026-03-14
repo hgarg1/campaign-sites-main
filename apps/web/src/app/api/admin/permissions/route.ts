@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/database';
 import { parseAndVerifySessionToken } from '@/lib/session-auth';
-import { hasSystemAdminPermission } from '@/lib/rbac';
+import { hasSystemAdminPermission, resolveSystemAdminPermissions } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,39 +33,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check permission to view permissions
-    const hasPermission = await hasSystemAdminPermission(userId, 'system_admin_portal:rbac:view_permissions');
-    if (!hasPermission) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
-
-    // Get search/filter parameters
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search')?.toLowerCase() || '';
-    const category = searchParams.get('category') || '';
-
-    // Query all available permissions
-    let query: any = {};
-
-    if (search) {
-      query.OR = [
-        { claim: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    if (category) {
-      query.category = category;
-    }
-
-    const permissions = await prisma.systemAdminPermission.findMany({
-      where: query,
-      orderBy: [{ category: 'asc' }, { claim: 'asc' }],
-    });
-
+    // Resolve the user's permissions
+    const permissions = await resolveSystemAdminPermissions(userId);
+    
     return NextResponse.json(permissions);
   } catch (error) {
     console.error('Permission fetch failed:', error);
