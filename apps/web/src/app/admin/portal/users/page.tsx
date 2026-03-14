@@ -1,11 +1,18 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/shared';
 import { UserFilters, UsersTable, BulkActionsToolbar } from '@/components/admin/users';
 import { useUsers } from '@/hooks/useUsers';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  _count?: { permissions: number; adminAssignments: number };
+}
 
 export default function UsersPage() {
   const router = useRouter();
@@ -13,10 +20,12 @@ export default function UsersPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     name: '',
-    role: 'ADMIN' as 'ADMIN' | 'GLOBAL_ADMIN',
+    role: '' as string,
     justification: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +45,32 @@ export default function UsersPage() {
 
   // Ensure data is always an array
   const data = Array.isArray(userData) ? userData : [];
+
+  // Fetch available roles when modal opens or step changes to 2
+  useEffect(() => {
+    if (showCreateModal && wizardStep === 2 && availableRoles.length === 0) {
+      fetchAvailableRoles();
+    }
+  }, [showCreateModal, wizardStep]);
+
+  const fetchAvailableRoles = async () => {
+    setLoadingRoles(true);
+    try {
+      const res = await fetch('/api/admin/roles');
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableRoles(data);
+        // Set default to first role if not already set
+        if (!formData.role && data.length > 0) {
+          setFormData(prev => ({ ...prev, role: data[0].id }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch roles:', err);
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
 
   const handleFilterChange = useCallback((newFilters: typeof filters) => {
     setFilters(newFilters);
@@ -143,7 +178,7 @@ export default function UsersPage() {
       case 1:
         return isValidEmail(formData.email) && formData.name.trim().length > 0;
       case 2:
-        return formData.role && formData.role.length > 0;
+        return typeof formData.role === 'string' && formData.role.length > 0;
       case 3:
         return formData.justification.trim().length > 10;
       default:
@@ -241,28 +276,30 @@ export default function UsersPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-8"
+              className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-8 flex flex-col max-h-[90vh]"
             >
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-gray-900">Create New User</h2>
                 <p className="text-gray-600 mt-2">Step {wizardStep} of 4</p>
               </div>
 
-              {/* Progress Bar */}
-              <div className="mb-8 flex gap-2">
-                {[1, 2, 3, 4].map((step) => (
-                  <div
-                    key={step}
-                    className={`h-2 flex-1 rounded-full transition-colors ${
-                      step < wizardStep
-                        ? 'bg-green-600'
-                        : step === wizardStep
-                        ? 'bg-blue-600'
-                        : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto min-h-0">
+                {/* Progress Bar */}
+                <div className="mb-8 flex gap-2">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div
+                      key={step}
+                      className={`h-2 flex-1 rounded-full transition-colors ${
+                        step < wizardStep
+                          ? 'bg-green-600'
+                          : step === wizardStep
+                          ? 'bg-blue-600'
+                          : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
 
               {/* Step 1: Email & Name */}
               {wizardStep === 1 && (
@@ -330,42 +367,58 @@ export default function UsersPage() {
                     System Role *
                   </label>
 
-                  {[
-                    {
-                      value: 'ADMIN',
-                      label: 'Admin',
-                      description: 'Can manage most system functions, limited to organization hierarchy',
-                    },
-                    {
-                      value: 'GLOBAL_ADMIN',
-                      label: 'Global Admin',
-                      description: 'Full system access, can manage all organizations and admins',
-                    },
-                  ].map((option) => (
-                    <label
-                      key={option.value}
-                      className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors ${
-                        formData.role === option.value
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value={option.value}
-                        checked={formData.role === option.value}
-                        onChange={(e) =>
-                          setFormData({ ...formData, role: e.target.value as any })
-                        }
-                        className="mt-1"
-                      />
-                      <div>
-                        <div className="font-semibold text-gray-900">{option.label}</div>
-                        <div className="text-sm text-gray-600">{option.description}</div>
+                  {loadingRoles ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="inline-block animate-spin">
+                          <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-4">Loading available roles...</p>
                       </div>
-                    </label>
-                  ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                        {availableRoles.map((role) => (
+                          <label
+                            key={role.id}
+                            className={`flex items-start gap-4 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                              formData.role === role.id
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="role"
+                              value={role.id}
+                              checked={formData.role === role.id}
+                              onChange={(e) =>
+                                setFormData({ ...formData, role: e.target.value })
+                              }
+                              className="mt-1 flex-shrink-0"
+                            />
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-900">{role.name}</div>
+                              {role.description && (
+                                <div className="text-sm text-gray-600 mt-1">{role.description}</div>
+                              )}
+                              <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                                {role._count && (
+                                  <>
+                                    <span>
+                                      📋 {role._count.permissions} permission{role._count.permissions !== 1 ? 's' : ''}
+                                    </span>
+                                    <span>
+                                      👤 {role._count.adminAssignments} assignment{role._count.adminAssignments !== 1 ? 's' : ''}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </label>
+                        ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -420,64 +473,67 @@ export default function UsersPage() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4"
+                  className="flex flex-col h-full"
                 >
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-                    <div className="text-4xl mb-2">✅</div>
-                    <h3 className="text-xl font-bold text-green-900">User Created Successfully!</h3>
-                    <p className="text-green-700 mt-2">
-                      {createdUser.data.name} ({createdUser.data.email}) has been created.
-                    </p>
-                  </div>
-
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Important - Temporary Password</h4>
-                    <p className="text-sm text-yellow-800 mb-3">
-                      A temporary password has been generated. Share this with the user securely:
-                    </p>
-                    <div className="bg-white border border-yellow-200 rounded p-3 font-mono text-sm break-all">
-                      {createdUser.tempPassword}
+                  <div className="max-h-[calc(100vh-300px)] overflow-y-auto pr-2 space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                      <div className="text-4xl mb-2">✅</div>
+                      <h3 className="text-xl font-bold text-green-900">User Created Successfully!</h3>
+                      <p className="text-green-700 mt-2">
+                        {createdUser.data.name} ({createdUser.data.email}) has been created.
+                      </p>
                     </div>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(createdUser.tempPassword);
-                        alert('Password copied to clipboard');
-                      }}
-                      className="mt-2 text-xs text-yellow-700 hover:text-yellow-900 underline"
-                    >
-                      📋 Copy to clipboard
-                    </button>
-                    <p className="text-xs text-yellow-700 mt-3">
-                      The user must change this password on their first login.
-                    </p>
-                  </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-900 mb-2">📋 User Details</h4>
-                    <div className="text-sm text-blue-800 space-y-1">
-                      <p>
-                        <strong>User ID:</strong> {createdUser.data.id}
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Important - Temporary Password</h4>
+                      <p className="text-sm text-yellow-800 mb-3">
+                        A temporary password has been generated. Share this with the user securely:
                       </p>
-                      <p>
-                        <strong>Email:</strong> {createdUser.data.email}
+                      <div className="bg-white border border-yellow-200 rounded p-3 font-mono text-sm break-all">
+                        {createdUser.tempPassword}
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(createdUser.tempPassword);
+                          alert('Password copied to clipboard');
+                        }}
+                        className="mt-2 text-xs text-yellow-700 hover:text-yellow-900 underline"
+                      >
+                        📋 Copy to clipboard
+                      </button>
+                      <p className="text-xs text-yellow-700 mt-3">
+                        The user must change this password on their first login.
                       </p>
-                      <p>
-                        <strong>Name:</strong> {createdUser.data.name}
-                      </p>
-                      <p>
-                        <strong>Role:</strong> {createdUser.data.role}
-                      </p>
-                      <p>
-                        <strong>Created:</strong>{' '}
-                        {new Date(createdUser.data.createdAt).toLocaleString()}
-                      </p>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2">📋 User Details</h4>
+                      <div className="text-sm text-blue-800 space-y-1">
+                        <p>
+                          <strong>User ID:</strong> {createdUser.data.id}
+                        </p>
+                        <p>
+                          <strong>Email:</strong> {createdUser.data.email}
+                        </p>
+                        <p>
+                          <strong>Name:</strong> {createdUser.data.name}
+                        </p>
+                        <p>
+                          <strong>Role:</strong> {createdUser.data.role}
+                        </p>
+                        <p>
+                          <strong>Created:</strong>{' '}
+                          {new Date(createdUser.data.createdAt).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               )}
+              </div>
 
               {/* Navigation Buttons */}
-              <div className="flex gap-3 mt-8">
+              <div className={`flex gap-3 ${wizardStep === 4 ? 'mt-6 pt-4 border-t border-gray-200' : 'mt-8'}`}>
                 {wizardStep !== 4 && (
                   <>
                     <button

@@ -2,6 +2,8 @@
  * Audit logging for system admin and tenant admin actions
  */
 
+import { prisma } from './database';
+
 export interface AuditLogEntry {
   action: string;
   resourceType: string;
@@ -16,17 +18,28 @@ export interface AuditLogEntry {
 }
 
 /**
- * Log a system admin action
+ * Log a system admin action directly to the database
+ * This is the primary method for logging all admin actions
  */
 export async function logSystemAdminAction(entry: AuditLogEntry): Promise<void> {
   try {
-    await fetch('/api/admin/audit-logs/system', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry),
+    await prisma.systemAdminAuditLog.create({
+      data: {
+        action: entry.action,
+        resourceType: entry.resourceType,
+        resourceId: entry.resourceId,
+        resourceName: entry.resourceName || undefined,
+        changes: entry.changes || undefined,
+        justification: entry.justification || undefined,
+        performedBy: entry.performedBy || 'system',
+        performedAt: entry.performedAt ? new Date(entry.performedAt) : new Date(),
+        status: entry.status,
+        errorMessage: entry.errorMessage || undefined,
+      },
     });
   } catch (error) {
-    console.error('Failed to log system admin action:', error);
+    console.error('Failed to log system admin action to database:', error);
+    // Don't throw - logging failures should not break the main operation
   }
 }
 

@@ -21,6 +21,78 @@ interface Permission {
   operationType: string;
 }
 
+// Expandable permission category component
+function PermissionCategory({
+  category,
+  permissions,
+  selectedPermissions,
+  onTogglePermission,
+}: {
+  category: string;
+  permissions: Permission[];
+  selectedPermissions: string[];
+  onTogglePermission: (permId: string, checked: boolean) => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const categoryCount = permissions.filter(p => selectedPermissions.includes(p.id)).length;
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {/* Category Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full bg-gray-50 hover:bg-gray-100 px-4 py-3 flex items-center justify-between transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <svg
+            className={`w-5 h-5 text-gray-600 transition-transform ${expanded ? 'rotate-90' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <div className="text-left">
+            <h3 className="font-semibold text-gray-900 capitalize">{category}</h3>
+            <p className="text-xs text-gray-600">{permissions.length} permissions</p>
+          </div>
+        </div>
+        {categoryCount > 0 && (
+          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+            {categoryCount} selected
+          </span>
+        )}
+      </button>
+
+      {/* Category Permissions */}
+      {expanded && (
+        <div className="bg-white border-t border-gray-200 divide-y">
+          {permissions.map(perm => (
+            <label
+              key={perm.id}
+              className="flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selectedPermissions.includes(perm.id)}
+                onChange={(e) => onTogglePermission(perm.id, e.target.checked)}
+                className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-gray-900 break-all text-sm">{perm.claim}</div>
+                {perm.description && (
+                  <div className="text-sm text-gray-600 mt-0.5">{perm.description}</div>
+                )}
+                <div className="text-xs text-gray-500 mt-1">{perm.operationType}</div>
+              </div>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -438,65 +510,91 @@ export default function RolesPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto"
+              className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Manage Permissions: {selectedRole.name}
-              </h2>
+              {/* Fixed Header */}
+              <div className="flex-shrink-0 border-b border-gray-200 p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Manage Permissions: {selectedRole.name}
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">{selectedPermissions.length} selected</p>
+                  </div>
+                  <button
+                    onClick={() => setShowPermissionsModal(false)}
+                    className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-              <div className="mb-4 space-y-2">
-                <input
-                  type="text"
-                  placeholder="Search permissions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                {/* Search and Filter */}
+                <div className="mt-4 space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Search permissions..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-2 max-h-96 overflow-y-auto mb-6">
-                {filteredPermissions.length > 0 ? (
-                  filteredPermissions.map(perm => (
-                    <label key={perm.id} className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedPermissions.includes(perm.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedPermissions([...selectedPermissions, perm.id]);
-                          } else {
-                            setSelectedPermissions(selectedPermissions.filter(id => id !== perm.id));
-                          }
-                        }}
-                        className="mt-1"
-                      />
-                      <div>
-                        <div className="font-medium text-gray-900">{perm.claim}</div>
-                        <div className="text-sm text-gray-600">{perm.description || 'No description'}</div>
-                        <div className="text-xs text-gray-500 mt-1">{perm.operationType}</div>
-                      </div>
-                    </label>
+              {/* Scrollable Permissions List - Grouped by Category */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {Object.entries(
+                  filteredPermissions.reduce((acc, perm) => {
+                    if (!acc[perm.category]) acc[perm.category] = [];
+                    acc[perm.category].push(perm);
+                    return acc;
+                  }, {} as Record<string, Permission[]>)
+                ).length > 0 ? (
+                  Object.entries(
+                    filteredPermissions.reduce((acc, perm) => {
+                      if (!acc[perm.category]) acc[perm.category] = [];
+                      acc[perm.category].push(perm);
+                      return acc;
+                    }, {} as Record<string, Permission[]>)
+                  ).map(([category, perms]) => (
+                    <PermissionCategory
+                      key={category}
+                      category={category}
+                      permissions={perms}
+                      selectedPermissions={selectedPermissions}
+                      onTogglePermission={(permId, checked) => {
+                        if (checked) {
+                          setSelectedPermissions([...selectedPermissions, permId]);
+                        } else {
+                          setSelectedPermissions(selectedPermissions.filter(id => id !== permId));
+                        }
+                      }}
+                    />
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No permissions found</p>
+                  <p className="text-gray-500 text-center py-8">No permissions found</p>
                 )}
               </div>
 
-              <div className="flex gap-3">
+              {/* Fixed Footer */}
+              <div className="flex-shrink-0 border-t border-gray-200 p-6 bg-gray-50 rounded-b-lg flex gap-3">
                 <button
                   onClick={() => setShowPermissionsModal(false)}
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>

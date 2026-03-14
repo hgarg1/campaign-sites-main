@@ -78,7 +78,7 @@ export default function AdminHierarchyPage() {
   };
 
   return (
-    <AdminLayout title="Admin Hierarchy" subtitle="Manage system admin delegation structure">
+    <AdminLayout title="Admin Hierarchy" subtitle="Manage global admin delegation structure">
       <div className="space-y-6">
         {/* Header Card */}
         <motion.div
@@ -93,7 +93,7 @@ export default function AdminHierarchyPage() {
                 Admin Delegation Hierarchy
               </h3>
               <p className="text-sm text-gray-600">
-                Visualize and manage the system admin hierarchy. Admins can delegate authority to
+                Visualize and manage the global admin delegation hierarchy. Admins can delegate authority to
                 subordinates, who inherit permissions cascading down the hierarchy.
               </p>
             </div>

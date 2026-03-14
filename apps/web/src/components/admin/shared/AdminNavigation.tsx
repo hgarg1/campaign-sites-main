@@ -14,6 +14,11 @@ interface NavItem {
   requiredClaim?: string; // Permission required to see this item
 }
 
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
 interface AdminNavigationProps {
   isMobileOpen?: boolean;
   onClose?: () => void;
@@ -24,6 +29,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
   const [userOrgs, setUserOrgs] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [orgsExpanded, setOrgsExpanded] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Core', 'RBAC']));
   const { hasPermission } = useSystemAdminPermissions();
 
   useEffect(() => {
@@ -33,27 +39,63 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
       .catch(() => {});
   }, []);
 
-  const navItems: NavItem[] = [
-    { label: 'Dashboard', href: '/admin/portal', icon: '📊' },
-    { label: 'Users', href: '/admin/portal/users', icon: '👥', requiredClaim: 'system_admin_portal:users:read' },
-    { label: 'Organizations', href: '/admin/portal/organizations', icon: '🏢', requiredClaim: 'system_admin_portal:organizations:read' },
-    { label: 'Websites', href: '/admin/portal/websites', icon: '🌐', requiredClaim: 'system_admin_portal:websites:read' },
-    { label: 'Build & LLM', href: '/admin/portal/jobs', icon: '⚙️', requiredClaim: 'system_admin_portal:jobs:read' },
-    { label: 'Monitoring', href: '/admin/portal/monitoring', icon: '📈', requiredClaim: 'system_admin_portal:monitoring:read' },
-    { label: 'Logs & Audit', href: '/admin/portal/logs', icon: '📝', requiredClaim: 'system_admin_portal:logs:read' },
-    { label: 'Hierarchy', href: '/admin/portal/hierarchy', icon: '🌳', requiredClaim: 'system_admin_portal:hierarchy:read' },
-    { label: 'Roles', href: '/admin/portal/rbac/roles', icon: '👔', requiredClaim: 'system_admin_portal:rbac:view_roles' },
-    { label: 'Permissions', href: '/admin/portal/rbac/permissions', icon: '🔐', requiredClaim: 'system_admin_portal:rbac:view_permissions' },
-    { label: 'Admin Hierarchy', href: '/admin/portal/rbac/admin-hierarchy', icon: '🔗', requiredClaim: 'system_admin_portal:rbac:view_hierarchy' },
-    { label: 'Permission Overrides', href: '/admin/portal/rbac/permission-overrides', icon: '🛡️', requiredClaim: 'system_admin_portal:rbac:view_overrides' },
-    { label: 'Master Tenants', href: '/admin/portal/master-tenants', icon: '🏛️', requiredClaim: 'system_admin_portal:master_tenants:read' },
-    { label: 'Governance', href: '/admin/portal/governance', icon: '⚖️', requiredClaim: 'system_admin_portal:governance:read' },
-    { label: 'Policies', href: '/admin/portal/policies', icon: '📋', requiredClaim: 'system_admin_portal:policies:read' },
-    { label: 'Security', href: '/admin/portal/security', icon: '🔐', requiredClaim: 'system_admin_portal:security:read' },
-    { label: 'Settings', href: '/admin/portal/settings', icon: '⚙️', requiredClaim: 'system_admin_portal:settings:read' },
-    { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉', requiredClaim: 'system_admin_portal:analytics:read' },
-    { label: 'Desktop App', href: '/admin/portal/download', icon: '📥' },
+  const navGroups: NavGroup[] = [
+    {
+      label: 'Core',
+      items: [
+        { label: 'Dashboard', href: '/admin/portal', icon: '📊' },
+        { label: 'Users', href: '/admin/portal/users', icon: '👥', requiredClaim: 'system_admin_portal:users:read' },
+        { label: 'Organizations', href: '/admin/portal/organizations', icon: '🏢', requiredClaim: 'system_admin_portal:organizations:read' },
+        { label: 'Websites', href: '/admin/portal/websites', icon: '🌐', requiredClaim: 'system_admin_portal:websites:read' },
+      ]
+    },
+    {
+      label: 'Operations',
+      items: [
+        { label: 'Build & LLM', href: '/admin/portal/jobs', icon: '⚙️', requiredClaim: 'system_admin_portal:jobs:read' },
+        { label: 'Monitoring', href: '/admin/portal/monitoring', icon: '📈', requiredClaim: 'system_admin_portal:monitoring:read' },
+        { label: 'Logs & Audit', href: '/admin/portal/logs', icon: '📝', requiredClaim: 'system_admin_portal:logs:read' },
+        { label: 'Analytics', href: '/admin/portal/analytics', icon: '📉', requiredClaim: 'system_admin_portal:analytics:read' },
+      ]
+    },
+    {
+      label: 'RBAC',
+      items: [
+        { label: 'Roles', href: '/admin/portal/rbac/roles', icon: '👔', requiredClaim: 'system_admin_portal:rbac:view_roles' },
+        { label: 'Permissions', href: '/admin/portal/rbac/permissions', icon: '🔐', requiredClaim: 'system_admin_portal:rbac:view_permissions' },
+        { label: 'Admin Hierarchy', href: '/admin/portal/rbac/admin-hierarchy', icon: '🔗', requiredClaim: 'system_admin_portal:rbac:view_hierarchy' },
+        { label: 'Permission Overrides', href: '/admin/portal/rbac/permission-overrides', icon: '🛡️', requiredClaim: 'system_admin_portal:rbac:view_overrides' },
+      ]
+    },
+    {
+      label: 'Governance',
+      items: [
+        { label: 'Policies', href: '/admin/portal/policies', icon: '📋', requiredClaim: 'system_admin_portal:policies:read' },
+        { label: 'Governance', href: '/admin/portal/governance', icon: '⚖️', requiredClaim: 'system_admin_portal:governance:read' },
+        { label: 'Master Tenants', href: '/admin/portal/master-tenants', icon: '🏛️', requiredClaim: 'system_admin_portal:master_tenants:read' },
+      ]
+    },
+    {
+      label: 'System',
+      items: [
+        { label: 'Security', href: '/admin/portal/security', icon: '🔐', requiredClaim: 'system_admin_portal:security:read' },
+        { label: 'Settings', href: '/admin/portal/settings', icon: '⚙️', requiredClaim: 'system_admin_portal:settings:read' },
+        { label: 'Desktop App', href: '/admin/portal/download', icon: '📥' },
+      ]
+    }
   ];
+
+  const toggleGroupExpanded = (groupLabel: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupLabel)) {
+        newSet.delete(groupLabel);
+      } else {
+        newSet.add(groupLabel);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <>
@@ -114,54 +156,85 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
         </motion.div>
 
         {/* Navigation Items — scrollable */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {navItems.map((item, index) => {
-            // Check if user has permission to view this nav item
-            const hasAccess = !item.requiredClaim || hasPermission(item.requiredClaim);
+        <nav className="flex-1 overflow-y-auto p-3 space-y-2">
+          {navGroups.map((group, groupIndex) => {
+            // Filter items to only those with permission
+            const visibleItems = group.items.filter(item => !item.requiredClaim || hasPermission(item.requiredClaim));
             
-            if (!hasAccess) {
-              return null; // Hide nav item if no permission
+            if (visibleItems.length === 0) {
+              return null; // Hide group if no visible items
             }
 
-            const isDashboardRoute = item.href === '/admin/portal';
-            const isActive = isDashboardRoute
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(item.href + '/');
+            const isExpanded = expandedGroups.has(group.label);
 
             return (
-              <motion.div
-                key={item.href}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.04 }}
-              >
-                <Link
-                  href={item.href}
-                  onClick={onClose}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-                  }`}
-                  title={sidebarCollapsed ? item.label : undefined}
-                >
-                  <span className="text-base flex-shrink-0">{item.icon}</span>
-                  {!sidebarCollapsed && (
-                    <>
-                      <span className="font-medium text-sm">{item.label}</span>
-                      {isActive && (
+              <div key={group.label}>
+                {/* Group Header */}
+                {!sidebarCollapsed && (
+                  <button
+                    onClick={() => toggleGroupExpanded(group.label)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-700/50 text-slate-300 hover:text-white mb-1"
+                  >
+                    <span className="text-xs font-semibold uppercase tracking-wider flex-1 text-left">{group.label}</span>
+                    <svg
+                      className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7-7m0 0L5 14m7-7v12" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Group Items */}
+                {isExpanded && (
+                  <div className="space-y-1 pl-2">
+                    {visibleItems.map((item, itemIndex) => {
+                      const isDashboardRoute = item.href === '/admin/portal';
+                      const isActive = isDashboardRoute
+                        ? pathname === item.href
+                        : pathname === item.href || pathname.startsWith(item.href + '/');
+
+                      return (
                         <motion.div
-                          layoutId="activeIndicator"
-                          className="ml-auto w-1 h-5 bg-white rounded-full"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.2 }}
-                        />
-                      )}
-                    </>
-                  )}
-                </Link>
-              </motion.div>
+                          key={item.href}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: (groupIndex * 5 + itemIndex) * 0.02 }}
+                        >
+                          <Link
+                            href={item.href}
+                            onClick={onClose}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                              isActive
+                                ? 'bg-blue-600 text-white shadow-lg'
+                                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                            }`}
+                            title={sidebarCollapsed ? item.label : undefined}
+                          >
+                            <span className="text-base flex-shrink-0">{item.icon}</span>
+                            {!sidebarCollapsed && (
+                              <>
+                                <span className="font-medium text-sm">{item.label}</span>
+                                {isActive && (
+                                  <motion.div
+                                    layoutId="activeIndicator"
+                                    className="ml-auto w-1 h-5 bg-white rounded-full"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.2 }}
+                                  />
+                                )}
+                              </>
+                            )}
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

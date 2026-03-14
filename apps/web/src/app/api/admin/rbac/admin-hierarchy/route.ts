@@ -1,5 +1,5 @@
 /**
- * API endpoint to fetch and update system admin hierarchy
+ * API endpoint to fetch and update global admin hierarchy
  * GET  /api/admin/rbac/admin-hierarchy - Fetch hierarchy as graph (nodes + edges)
  * POST /api/admin/rbac/admin-hierarchy/commit - Commit hierarchy changes
  */

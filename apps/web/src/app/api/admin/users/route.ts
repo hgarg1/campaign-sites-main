@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: newUser.id,
         email: newUser.email,
-        name: newUser.name || 'System Admin',
+        name: newUser.name || newUser.email.split('@')[0], // Use email username if no name provided
         isActive: true,
       },
     });

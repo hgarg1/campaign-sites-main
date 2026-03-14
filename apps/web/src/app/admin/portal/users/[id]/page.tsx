@@ -124,10 +124,15 @@ export default function UserDetailPage({ params }: PageProps) {
           <ApiUsagePanel userId={user.id} />
 
           <PermissionsManager
+            userId={user.id}
+            userName={user.name || user.email}
             systemRole={user.role}
             organizations={SAMPLE_ORGANIZATIONS}
             onRoleChange={(newRole) => {
               console.log('Change role:', newRole);
+            }}
+            onRoleChangeSuccess={() => {
+              refetch();
             }}
             onOrgRoleChange={(orgId, role) => {
               console.log('Change org role:', orgId, role);

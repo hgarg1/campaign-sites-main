@@ -3,6 +3,7 @@ export { UsersTable } from './UsersTable';
 export { UserProfile } from './UserProfile';
 export { UserActivityTimeline } from './UserActivityTimeline';
 export { PermissionsManager } from './PermissionsManager';
+export { ChangeRoleModal } from './ChangeRoleModal';
 export { UserActionsPanel } from './UserActionsPanel';
 export { BulkActionsToolbar } from './BulkActionsToolbar';
 export { UserStatsCard } from './UserStatsCard';
