@@ -57,12 +57,15 @@ export function PermissionsManager({
     if (!userId) return;
     setLoadingPermissions(true);
     try {
-      const res = await fetch(`/api/admin/system-admins/${userId}/permissions`);
+      const res = await fetch(`/api/admin/system-admins/${userId}/permissions`, {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setUserPermissions(data);
       } else {
-        console.error(`Failed to load user permissions: ${res.status} ${res.statusText}`, await res.text());
+        const errorText = await res.text();
+        console.error(`Failed to load user permissions: ${res.status} ${res.statusText}`, errorText);
       }
     } catch (err) {
       console.error('Failed to load user permissions:', err);

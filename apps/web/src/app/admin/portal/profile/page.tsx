@@ -480,7 +480,7 @@ export default function ProfilePage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between gap-3">
                 <span className="text-gray-500">Account Type</span>
-                <span className="font-medium text-gray-900">System Admin</span>
+                <span className="font-medium text-gray-900">{user?.role?.replace(/_/g, ' ') || 'Admin'}</span>
               </div>
               <div className="flex justify-between gap-3">
                 <span className="text-gray-500">Session</span>

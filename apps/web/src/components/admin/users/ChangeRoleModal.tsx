@@ -43,7 +43,9 @@ export function ChangeRoleModal({
   const fetchRoles = async () => {
     setLoadingRoles(true);
     try {
-      const res = await fetch('/api/admin/roles');
+      const res = await fetch('/api/admin/roles', {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setRoles(data.filter((r: Role) => r.name !== currentRole));
@@ -72,6 +74,7 @@ export function ChangeRoleModal({
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           role: selectedRole,
           justification: justification.trim(),
@@ -81,10 +84,14 @@ export function ChangeRoleModal({
       if (!res.ok) {
         let errorData: any = {};
         try {
-          errorData = await res.json();
-        } catch {
+          const text = await res.text();
+          if (text) {
+            errorData = JSON.parse(text);
+          }
+        } catch (parseErr) {
           // Response might not be JSON
-          errorData = { error: res.statusText };
+          console.error('Failed to parse error response:', parseErr);
+          errorData = { error: res.statusText || `HTTP ${res.status}` };
         }
         throw new Error(errorData.error || 'Failed to change role');
       }
