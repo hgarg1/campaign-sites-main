@@ -89,6 +89,7 @@ model Organization {
   childProposals      GovernanceProposal[]   @relation("ProposalChild")
   governanceVotes     GovernanceVote[]       @relation("VoteVoter")
   proposalBallots     GovernanceProposalVoter[] @relation("ProposalVoter")
+  governanceRules     OrgGovernanceRule[]    @relation("OrgRuleChild")
   governanceNotifs    GovernanceNotification[] @relation("NotifRecipient")
 
   // System permission policies assigned by system admins
@@ -531,18 +532,81 @@ model SystemConfig {
   @@map("system_config")
 }
 
-// Per-action-type voting rules (admin-configurable)
+// Per-action-type voting rules (admin-configurable). Platform-wide defaults;
+// an individual org may override them via OrgGovernanceRule.
 model GovernanceRuleSet {
   id            String              @id @default(cuid())
   actionType    GovernanceActionType @unique
   votingMode    VotingMode          @default(UNANIMOUS)
-  quorumPercent Int?                // required when votingMode = QUORUM (e.g., 51 = >50%)
+  /// Deprecated in favour of approveNum/approveDen. Retained so pre-existing
+  /// rows keep working until they are translated; a whole-percent threshold
+  /// cannot express "two thirds" correctly at every electorate size.
+  quorumPercent Int?
   rejectMode    RejectMode          @default(SINGLE_VETO)
   ttlDays       Int                 @default(7)
   isActive      Boolean             @default(true)
   updatedAt     DateTime            @updatedAt
 
+  tallyBasis       TallyBasis @default(HEADCOUNT)
+  /// Approval threshold as the rational approveNum/approveDen.
+  approveNum       Int        @default(1)
+  approveDen       Int        @default(1)
+  /// false → strictly greater than (a true majority); true → at least.
+  approveInclusive Boolean    @default(true)
+  /// Explicit veto threshold, used only when rejectMode = WEIGHTED_VETO.
+  vetoNum          Int?
+  vetoDen          Int?
+  vetoInclusive    Boolean    @default(true)
+  /// Turnout floor, independent of the approval threshold. 0/1 = none.
+  quorumNum        Int        @default(0)
+  quorumDen        Int        @default(1)
+  /// Whether a full-turnout deadlock escalates to the national tenant.
+  tieBreakEnabled  Boolean    @default(false)
+  /// Minimum stake a lone approver needs under DEAL_MAKER.
+  dealMakerMinStakeBps Int    @default(0)
+
   @@map("governance_rule_sets")
+}
+
+/// A governance rule owned by the governed org itself.
+///
+/// Scoped to the child org rather than to a single ownership edge: a proposal
+/// about a child is voted on by *all* its co-parents, so a rule hanging off one
+/// edge would leave "whose rule applies?" undefined. Amending it requires a
+/// SET_GOVERNANCE_RULE proposal passed under the rules currently in force, so
+/// no single co-parent can rewrite the terms the others vote under.
+model OrgGovernanceRule {
+  id            String                @id @default(cuid())
+  childOrgId    String
+  /// null = the org's default for any action without a more specific rule.
+  actionType    GovernanceActionType?
+
+  votingMode    VotingMode @default(UNANIMOUS)
+  rejectMode    RejectMode @default(SINGLE_VETO)
+  ttlDays       Int        @default(7)
+  tallyBasis    TallyBasis @default(HEADCOUNT)
+  approveNum       Int     @default(1)
+  approveDen       Int     @default(1)
+  approveInclusive Boolean @default(true)
+  vetoNum          Int?
+  vetoDen          Int?
+  vetoInclusive    Boolean @default(true)
+  quorumNum        Int     @default(0)
+  quorumDen        Int     @default(1)
+  tieBreakEnabled  Boolean @default(false)
+  dealMakerMinStakeBps Int @default(0)
+
+  isActive        Boolean  @default(true)
+  /// The proposal that established this rule, for audit.
+  setByProposalId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  childOrg        Organization @relation("OrgRuleChild", fields: [childOrgId], references: [id], onDelete: Cascade)
+
+  @@unique([childOrgId, actionType])
+  @@index([childOrgId])
+  @@map("org_governance_rules")
 }
 
 // A proposed change to a child org, requiring votes from all co-parents
@@ -569,6 +633,32 @@ model GovernanceProposal {
   /// signal to evaluate it against the live owner set as before. "No voter
   /// rows" is NOT a usable signal — it is ambiguous with "all withdrawn".
   electorateSnapshotAt DateTime?
+
+  /// Policy snapshot, nullable so proposals created before rational thresholds
+  /// existed are distinguishable and keep their original legacy semantics.
+  tallyBasis           TallyBasis?
+  approveNum           Int?
+  approveDen           Int?
+  approveInclusive     Boolean?
+  vetoNum              Int?
+  vetoDen              Int?
+  vetoInclusive        Boolean?
+  quorumNum            Int?
+  quorumDen            Int?
+  dealMakerMinStakeBps Int?
+  /// Records that stakes were unallocated, so the UI can say the result was
+  /// decided by headcount rather than implying a weighting that did not apply.
+  tallyBasisEffective  TallyBasis?
+
+  /// Tie-break, resolved at CREATION so that a proposal which itself mutates
+  /// ancestry cannot move its own casting vote.
+  tieBreakEnabled      Boolean   @default(false)
+  tieBreakOrgId        String?
+  tieDetectedAt        DateTime?
+  tieBreakExpiresAt    DateTime?
+  tieBreakDecision     VoteDecision?
+  tieBreakByUserId     String?
+  tieBreakReason       String?
 
   childOrg            Organization         @relation("ProposalChild", fields: [childOrgId], references: [id], onDelete: Cascade)
   initiatorOrg        Organization         @relation("ProposalInitiator", fields: [initiatorOrgId], references: [id], onDelete: Cascade)
@@ -657,20 +747,38 @@ enum GovernanceActionType {
   ADD_CHILD
   SET_CHILD_POLICY
   REMOVE_CHILD_POLICY
+  SET_OWNERSHIP_STAKES // reallocate voting weight across co-parents
+  SET_GOVERNANCE_RULE  // amend this org's own governance policy
 }
 
+/// How a proposal reaches approval. Orthogonal to RejectMode.
 enum VotingMode {
-  UNANIMOUS
-  QUORUM
+  UNANIMOUS       // every eligible voter must approve (headcount only)
+  QUORUM          // legacy: quorumPercent of headcount
+  SIMPLE_MAJORITY // strictly more than half
+  SUPERMAJORITY   // a configurable rational, two-thirds by default
+  WEIGHTED        // a configurable rational of ownership stake
+  DEAL_MAKER      // the first approval carries the proposal
 }
 
+/// Whether a tally is counted by heads or by ownership stake.
+enum TallyBasis {
+  HEADCOUNT
+  STAKE_WEIGHTED
+}
+
+/// How a proposal reaches rejection. Orthogonal to VotingMode.
 enum RejectMode {
-  SINGLE_VETO    // any single REJECT kills the proposal
+  SINGLE_VETO    // any single REJECT kills the proposal ("deal breaker")
   MAJORITY_VETO  // only a majority REJECT kills the proposal
+  WEIGHTED_VETO  // a configurable rational of rejecting stake (blocking minority)
+  DERIVED        // reject as soon as approval is arithmetically unreachable
+  NONE           // only approval or expiry can resolve the proposal
 }
 
 enum ProposalStatus {
   PENDING_VOTES
+  PENDING_TIEBREAK // full turnout, no rule fired — awaiting the national tenant
   APPROVED
   REJECTED
   EXPIRED
@@ -689,6 +797,8 @@ enum NotificationType {
   PROPOSAL_REJECTED
   PROPOSAL_EXPIRED
   PROPOSAL_CANCELLED
+  TIEBREAK_REQUESTED
+  PROPOSAL_TIEBROKEN
 }
 
 // ─── Generic Notification Infrastructure ──────────────────────────────────────

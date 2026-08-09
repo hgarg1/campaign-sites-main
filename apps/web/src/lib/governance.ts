@@ -14,6 +14,12 @@ import {
 } from '@prisma/client';
 import { logSystemAdminAction } from '@/lib/audit-log';
 import { tally as tallyBallots, type Ballot, type BallotDecision } from '@/lib/governance-math';
+import {
+  evaluateOutcome,
+  toPolicyConfig,
+  type PolicyColumns,
+  type PolicyConfig,
+} from '@/lib/governance-policy';
 
 /** Roles a governance UPDATE_RBAC action may assign. */
 const ALLOWED_MEMBER_ROLES: MemberRole[] = ['MEMBER', 'ADMIN', 'OWNER'];
@@ -64,6 +70,81 @@ export async function getActiveOwners(
     // Stable order so an even split's remainder basis point always lands on the
     // same (earliest) owner rather than moving between calls.
     orderBy: { addedAt: 'asc' },
+  });
+}
+
+// ─── Policy resolution ────────────────────────────────────────────────────────
+
+/** Defaults when neither the org nor the platform has configured a rule. */
+const FALLBACK_POLICY: PolicyColumns = {
+  votingMode: 'UNANIMOUS',
+  rejectMode: 'SINGLE_VETO',
+  tallyBasis: 'HEADCOUNT',
+  approveNum: 1,
+  approveDen: 1,
+  approveInclusive: true,
+  vetoNum: null,
+  vetoDen: null,
+  vetoInclusive: true,
+  quorumNum: 0,
+  quorumDen: 1,
+  tieBreakEnabled: false,
+  dealMakerMinStakeBps: 0,
+  ttlDays: 7,
+  quorumPercent: null,
+};
+
+/**
+ * Resolves the governance policy for an action on a child org.
+ *
+ * Most specific wins:
+ *   org rule for this action → org-wide default rule → platform rule → fallback
+ *
+ * The rule is scoped to the governed child rather than to one ownership edge,
+ * because a proposal about a child is voted on by *all* of its co-parents — a
+ * rule attached to a single edge would leave "whose rule applies" undefined.
+ */
+export async function resolvePolicy(
+  childOrgId: string,
+  actionType: GovernanceActionType
+): Promise<PolicyConfig> {
+  const [specific, orgDefault, platform] = await Promise.all([
+    prisma.orgGovernanceRule.findFirst({ where: { childOrgId, actionType, isActive: true } }),
+    prisma.orgGovernanceRule.findFirst({
+      where: { childOrgId, actionType: null, isActive: true },
+    }),
+    prisma.governanceRuleSet.findFirst({ where: { actionType, isActive: true } }),
+  ]);
+
+  const row = specific ?? orgDefault ?? platform ?? FALLBACK_POLICY;
+  return toPolicyConfig(row as PolicyColumns);
+}
+
+/**
+ * Rebuilds a policy from the snapshot frozen onto a proposal.
+ *
+ * Proposals created before the rational threshold columns existed have them all
+ * NULL, and fall through to their legacy `votingMode` + `quorumPercent`, which
+ * `toPolicyConfig` translates. That keeps in-flight proposals resolving exactly
+ * as they would have before this change.
+ */
+function proposalPolicy(proposal: GovernanceProposal): PolicyConfig {
+  return toPolicyConfig({
+    votingMode: proposal.votingMode,
+    rejectMode: proposal.rejectMode,
+    tallyBasis: proposal.tallyBasis ?? 'HEADCOUNT',
+    approveNum: proposal.approveNum ?? 1,
+    approveDen: proposal.approveDen ?? 1,
+    approveInclusive: proposal.approveInclusive ?? true,
+    vetoNum: proposal.vetoNum,
+    vetoDen: proposal.vetoDen,
+    vetoInclusive: proposal.vetoInclusive ?? true,
+    quorumNum: proposal.quorumNum ?? 0,
+    quorumDen: proposal.quorumDen ?? 1,
+    tieBreakEnabled: proposal.tieBreakEnabled,
+    dealMakerMinStakeBps: proposal.dealMakerMinStakeBps ?? 0,
+    ttlDays: 7,
+    quorumPercent: proposal.quorumPercent,
   });
 }
 
@@ -209,7 +290,10 @@ export async function createProposal(params: {
     throw new Error(`Organization ${initiatorOrgId} is not an active owner of ${childOrgId}`);
   }
 
-  // Load rule set — fall back to sensible defaults if none exists for this actionType
+  // Resolve the policy this proposal will be judged by, most specific first.
+  const policy = await resolvePolicy(childOrgId, actionType);
+
+  // Legacy columns are still written so anything reading them keeps working.
   const ruleSet = await prisma.governanceRuleSet.findFirst({
     where: { actionType, isActive: true },
   });
@@ -244,6 +328,16 @@ export async function createProposal(params: {
         expiresAt: now,
         resolvedAt: now,
         resolvedReason: 'Auto-approved: sole owner',
+        tallyBasis: policy.tallyBasis,
+        approveNum: policy.approve.num,
+        approveDen: policy.approve.den,
+        approveInclusive: policy.approve.inclusive,
+        vetoNum: policy.veto?.num ?? null,
+        vetoDen: policy.veto?.den ?? null,
+        vetoInclusive: policy.veto?.inclusive ?? true,
+        quorumNum: policy.quorum.num,
+        quorumDen: policy.quorum.den,
+        dealMakerMinStakeBps: policy.dealMakerMinStakeBps,
         electorateSnapshotAt: now,
         // Recorded even though no vote was needed, so every proposal has a
         // consistent electorate for the history view to render.
@@ -276,6 +370,16 @@ export async function createProposal(params: {
       rejectMode,
       requiredVoterCount,
       expiresAt,
+      tallyBasis: policy.tallyBasis,
+      approveNum: policy.approve.num,
+      approveDen: policy.approve.den,
+      approveInclusive: policy.approve.inclusive,
+      vetoNum: policy.veto?.num ?? null,
+      vetoDen: policy.veto?.den ?? null,
+      vetoInclusive: policy.veto?.inclusive ?? true,
+      quorumNum: policy.quorum.num,
+      quorumDen: policy.quorum.den,
+      dealMakerMinStakeBps: policy.dealMakerMinStakeBps,
       electorateSnapshotAt: new Date(),
       // Freeze who may vote and how much each weighs. Without this, a co-parent
       // could reallocate stakes mid-vote to change an outcome already underway.
@@ -391,43 +495,28 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
     return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposalId } });
   }
 
-  const approveCount = t.ah;
-  const rejectCount = t.rh;
-  const required = t.n;
+  // Judge against the policy frozen onto the proposal, so amending the rulebook
+  // cannot change a vote already under way. Proposals created before the
+  // rational columns existed fall back to their legacy votingMode/quorumPercent
+  // through `toPolicyConfig`.
+  const policy = proposalPolicy(proposal);
+
+  // Only relevant to DEAL_MAKER: the largest stake among approvers, so a token
+  // owner cannot single-handedly carry a decision when a floor is configured.
+  const maxApprovingStakeBps = ballots
+    .filter((b) => b.decision === 'APPROVE')
+    .reduce((max, b) => Math.max(max, b.stakeBps), 0);
+
+  const decision = evaluateOutcome(t, policy, { maxApprovingStakeBps });
 
   let outcome: 'APPROVED' | 'REJECTED' | null = null;
   let resolvedReason: string | undefined;
 
-  if (proposal.votingMode === ('UNANIMOUS' as VotingMode)) {
-    if (proposal.rejectMode === ('SINGLE_VETO' as RejectMode) && rejectCount > 0) {
-      outcome = 'REJECTED';
-      resolvedReason = 'Rejected by vote';
-    } else if (
-      proposal.rejectMode === ('MAJORITY_VETO' as RejectMode) &&
-      rejectCount > required / 2
-    ) {
-      outcome = 'REJECTED';
-      resolvedReason = 'Rejected by vote';
-    } else if (approveCount === required) {
-      outcome = 'APPROVED';
-    }
-  } else {
-    // QUORUM mode
-    const pct = (proposal.quorumPercent ?? 51) / 100;
-
-    if (proposal.rejectMode === ('SINGLE_VETO' as RejectMode) && rejectCount > 0) {
-      outcome = 'REJECTED';
-      resolvedReason = 'Rejected by vote';
-    } else if (
-      proposal.rejectMode === ('MAJORITY_VETO' as RejectMode) &&
-      required > 0 &&
-      rejectCount / required > 1 - pct
-    ) {
-      outcome = 'REJECTED';
-      resolvedReason = 'Rejected by vote';
-    } else if (required > 0 && approveCount / required >= pct) {
-      outcome = 'APPROVED';
-    }
+  if (decision.kind === 'APPROVED') {
+    outcome = 'APPROVED';
+  } else if (decision.kind === 'REJECTED') {
+    outcome = 'REJECTED';
+    resolvedReason = decision.reason;
   }
 
   if (!outcome) {
