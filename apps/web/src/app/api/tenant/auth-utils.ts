@@ -170,7 +170,9 @@ export async function writeAuditLog(payload: {
     | 'governance.propose'
     | 'governance.vote'
     | 'governance.cancel'
-    | 'governance.tiebreak';
+    | 'governance.tiebreak'
+    | 'governance.proxy_grant'
+    | 'governance.proxy_revoke';
   targetUserId?: string;
   targetEmail?: string;
   fromRole?: string;

@@ -20,6 +20,8 @@ import {
   OwnershipStatus,
 } from '@prisma/client';
 import { logSystemAdminAction } from '@/lib/audit-log';
+import { getSystemConfigValue as readConfig } from '@/lib/system-config';
+import { assertNoVoteConcentration } from '@/lib/governance-proxy';
 import { tally as tallyBallots, type Ballot, type BallotDecision } from '@/lib/governance-math';
 import {
   evaluateOutcome,
@@ -80,12 +82,9 @@ export interface GovernanceResult {
 
 // ─── System config ────────────────────────────────────────────────────────────
 
-export async function getSystemConfigValue(key: string, defaultValue: number): Promise<number> {
-  const row = await prisma.systemConfig.findUnique({ where: { key } });
-  if (!row) return defaultValue;
-  const parsed = Number(row.value);
-  return isNaN(parsed) ? defaultValue : parsed;
-}
+// Re-exported from its own module so governance and governance-proxy can both
+// use it without a circular import. Existing callers are unaffected.
+export { getSystemConfigValue } from '@/lib/system-config';
 
 // ─── Ownership helpers ────────────────────────────────────────────────────────
 
@@ -221,7 +220,7 @@ async function escalateToTieBreak(proposal: GovernanceProposal): Promise<Governa
     return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposal.id } });
   }
 
-  const tieBreakTtlDays = await getSystemConfigValue('tieBreakTtlDays', 3);
+  const tieBreakTtlDays = await readConfig('tieBreakTtlDays', 3);
 
   const { count } = await prisma.governanceProposal.updateMany({
     where: { id: proposal.id, status: 'PENDING_VOTES' as ProposalStatus },
@@ -500,8 +499,7 @@ export async function createProposal(params: {
   const votingMode: VotingMode = ruleSet?.votingMode ?? 'UNANIMOUS';
   const quorumPercent: number = ruleSet?.quorumPercent ?? 51;
   const rejectMode: RejectMode = ruleSet?.rejectMode ?? 'SINGLE_VETO';
-  const ttlDays: number =
-    ruleSet?.ttlDays ?? (await getSystemConfigValue('proposalDefaultTtlDays', 7));
+  const ttlDays: number = ruleSet?.ttlDays ?? (await readConfig('proposalDefaultTtlDays', 7));
 
   const owners = await getActiveOwners(childOrgId);
   const requiredVoterCount = owners.length;
@@ -605,8 +603,13 @@ export async function castVote(params: {
   voterUserId: string;
   decision: VoteDecision;
   comment?: string;
+  /**
+   * Set when the caller's authority comes from a delegated proxy rather than
+   * from their own membership. The ballot is still attributed to voterOrgId.
+   */
+  viaProxyId?: string;
 }): Promise<GovernanceProposal> {
-  const { proposalId, voterOrgId, voterUserId, decision, comment } = params;
+  const { proposalId, voterOrgId, voterUserId, decision, comment, viaProxyId } = params;
 
   const proposal = await prisma.governanceProposal.findUniqueOrThrow({
     where: { id: proposalId },
@@ -649,9 +652,14 @@ export async function castVote(params: {
   // constraint rather than a read-then-write check, which two concurrent
   // requests can both pass. P2002 is the expected, non-exceptional outcome of a
   // double submit.
+  // One person may not control several organizations' votes on one proposal.
+  // This is checked even without a proxy, because inherited authority already
+  // lets an admin of a shared ancestor cast for two co-parents.
+  await assertNoVoteConcentration({ proposalId, userId: voterUserId });
+
   try {
     await prisma.governanceVote.create({
-      data: { proposalId, voterOrgId, voterUserId, decision, comment },
+      data: { proposalId, voterOrgId, voterUserId, decision, comment, castViaProxyId: viaProxyId },
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

@@ -31,6 +31,7 @@ model User {
   passkeyCredentials PasskeyCredential[]
   webauthnChallenge  WebauthnChallenge?
 
+  governanceProxiesHeld   GovernanceProxy[]         @relation("ProxyHolder")
   notificationsReceived   Notification[]            @relation("NotificationsReceived")
   notificationsActed      Notification[]            @relation("NotificationsActed")
   notificationSettings    UserNotificationSettings?
@@ -90,6 +91,7 @@ model Organization {
   governanceVotes     GovernanceVote[]       @relation("VoteVoter")
   proposalBallots     GovernanceProposalVoter[] @relation("ProposalVoter")
   governanceRules     OrgGovernanceRule[]    @relation("OrgRuleChild")
+  governanceProxies   GovernanceProxy[]      @relation("ProxyPrincipal")
   governanceNotifs    GovernanceNotification[] @relation("NotifRecipient")
 
   // System permission policies assigned by system admins
@@ -568,6 +570,47 @@ model GovernanceRuleSet {
   @@map("governance_rule_sets")
 }
 
+/// Delegation of an organization's vote to one named person.
+///
+/// The target is always a User, never another organization. Delegating to an
+/// org would let two co-parents' voting power merge into a single bloc, which
+/// is the concentration co-ownership exists to prevent. The resulting ballot is
+/// still attributed to `principalOrgId`, so the electorate is unchanged — only
+/// who may press the button moves.
+model GovernanceProxy {
+  id              String                @id @default(cuid())
+  principalOrgId  String
+  /// null = every child this org co-owns.
+  scopeChildOrgId String?
+  /// null = every action type.
+  scopeActionType GovernanceActionType?
+  proxyUserId     String
+  /// When true only the holder may cast; otherwise the principal's own
+  /// admins keep their voice and whoever acts first casts the single vote.
+  exclusive       Boolean               @default(false)
+
+  grantedByUserId String
+  grantedAt       DateTime              @default(now())
+  /// Required. A proxy that never expires is an unreviewed standing transfer
+  /// of a vote.
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  revokedByUserId String?
+
+  /// How the holder qualified when the proxy was granted, for audit. Structure
+  /// drifts, so eligibility is re-checked at cast time regardless.
+  eligibilitySource String
+  eligibilityOrgId  String
+  note              String?
+
+  principalOrg    Organization @relation("ProxyPrincipal", fields: [principalOrgId], references: [id], onDelete: Cascade)
+  proxyUser       User         @relation("ProxyHolder", fields: [proxyUserId], references: [id], onDelete: Cascade)
+
+  @@index([principalOrgId, proxyUserId])
+  @@index([proxyUserId])
+  @@map("governance_proxies")
+}
+
 /// A governance rule owned by the governed org itself.
 ///
 /// Scoped to the child org rather than to a single ownership edge: a proposal
@@ -706,6 +749,10 @@ model GovernanceVote {
   decision     VoteDecision
   comment      String?
   votedAt      DateTime     @default(now())
+  /// Set when the ballot was cast under a delegated proxy. The vote still
+  /// belongs to voterOrgId — a proxy lends a person the ability to act, it
+  /// never merges two organizations' voting power.
+  castViaProxyId String?
 
   proposal     GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   voterOrg     Organization       @relation("VoteVoter", fields: [voterOrgId], references: [id], onDelete: Cascade)

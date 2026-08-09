@@ -8,6 +8,7 @@ import {
   writeAuditLog,
 } from '@/app/api/tenant/auth-utils';
 import { castVote, cancelProposal, castTieBreak } from '@/lib/governance';
+import { resolveProxyForVote } from '@/lib/governance-proxy';
 import { VoteDecision, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -94,6 +95,35 @@ export async function POST(
         { status: 403 }
       );
 
+    // A live proxy is re-verified here rather than trusted from grant time,
+    // because membership and hierarchy both drift after a proxy is issued.
+    const proxy = await resolveProxyForVote({
+      principalOrgId: orgId,
+      childOrgId: proposal.childOrgId,
+      actionType: proposal.actionType,
+      actingUserId: userId,
+    });
+
+    // An exclusive proxy hands the vote to its holder alone, so the principal's
+    // own admins step back for its duration.
+    const exclusiveHeldByOther = await prisma.governanceProxy.findFirst({
+      where: {
+        principalOrgId: orgId,
+        exclusive: true,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+        proxyUserId: { not: userId },
+        OR: [{ scopeChildOrgId: null }, { scopeChildOrgId: proposal.childOrgId }],
+      },
+      select: { id: true },
+    });
+    if (exclusiveHeldByOther && !proxy) {
+      return NextResponse.json(
+        { error: 'This organization’s vote is currently delegated exclusively to another person' },
+        { status: 403 }
+      );
+    }
+
     try {
       const updated = await castVote({
         proposalId,
@@ -101,6 +131,7 @@ export async function POST(
         voterUserId: userId,
         decision: decision as VoteDecision,
         comment,
+        viaProxyId: proxy?.proxyId,
       });
 
       await writeAuditLog({
