@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
 import { QuorumProgress, type ProposalProgress } from '@/components/governance/QuorumProgress';
 import { TieBreakPanel } from '@/components/governance/TieBreakPanel';
+import { VoteConsequence } from '@/components/governance/VoteConsequence';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import {
   StakeAllocationEditor,
@@ -361,6 +362,15 @@ function ProposalDetailSlideOver({
                   </div>
                 ) : (
                   <div className="space-y-2">
+                    {proposal.progress && (
+                      <VoteConsequence
+                        progress={proposal.progress}
+                        decision={voteState.decision}
+                        myStakePercent={
+                          proposal.progress.voters.find((v) => v.orgId === orgId)?.sharePercent
+                        }
+                      />
+                    )}
                     <textarea
                       className="w-full border rounded-lg px-3 py-2 text-sm"
                       placeholder="Optional comment…"
