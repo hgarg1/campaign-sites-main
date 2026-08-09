@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -40,7 +40,7 @@ jobs:
       - name: Reject tags not reachable from main
         if: github.event_name == 'push'
         run: |
-          # checkout@v4 resolves the tag ref; main is not guaranteed to be
+          # checkout resolves the tag ref; main is not guaranteed to be
           # present as a remote-tracking branch, and a missing ref here would
           # block every release rather than just unmerged ones.
           git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
@@ -71,7 +71,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           # Manual dispatch builds the ref the operator named; tag pushes
@@ -79,12 +79,12 @@ jobs:
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 8
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: 'pnpm'
@@ -125,7 +125,7 @@ jobs:
 
       # Upload system-admin artifacts
       - name: Upload system-admin artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: system-admin-${{ matrix.platform }}
           path: |
@@ -137,7 +137,7 @@ jobs:
 
       # Upload tenant-admin artifacts
       - name: Upload tenant-admin artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: tenant-admin-${{ matrix.platform }}
           path: |
@@ -153,7 +153,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           # Manual dispatch builds the ref the operator named; tag pushes
@@ -161,7 +161,7 @@ jobs:
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           path: release-artifacts
 
