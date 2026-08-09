@@ -13,11 +13,33 @@ const TENANT_API_DIR = path.join(process.cwd(), 'src/app/api/tenant');
 
 /**
  * Self-service routes act on the caller's own resources, so they require a
- * session but deliberately not an admin claim.
+ * session but deliberately not an admin claim. `permissions/route.ts` returns
+ * only the calling admin's own resolved claims.
  */
-const SELF_SERVICE = [path.join('passkeys', 'me')];
+const SELF_SERVICE = [path.join('passkeys', 'me'), path.join('permissions', 'route.ts')];
 
 const HANDLER = /export\s+async\s+function\s+(GET|POST|PUT|PATCH|DELETE)\s*\(/g;
+
+const GUARD =
+  /requireAdmin|requireAdminForSlug|hasSystemAdminPermission|hasSystemAdminAnyPermission/;
+
+/**
+ * Splits a route module into one slice per exported handler.
+ *
+ * Checking guards per FILE rather than per HANDLER is what let an
+ * unauthenticated `GET /api/admin/users` ship: the file's POST was guarded, so
+ * a file-level search found a match and the GET went unnoticed.
+ */
+function handlerSlices(source: string): Array<{ method: string; body: string }> {
+  const marks = [...source.matchAll(HANDLER)].map((m) => ({
+    index: m.index ?? 0,
+    method: m[1],
+  }));
+  return marks.map((mark, i) => ({
+    method: mark.method,
+    body: source.slice(mark.index, marks[i + 1]?.index ?? source.length),
+  }));
+}
 
 function findRoutes(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
@@ -36,21 +58,16 @@ describe('admin API route guards', () => {
   });
 
   it.each(routes.map((r) => [path.relative(ADMIN_API_DIR, r), r]))(
-    '%s enforces a permission claim',
+    'every handler in %s enforces a permission claim',
     (rel, full) => {
       const source = fs.readFileSync(full, 'utf-8');
       if (SELF_SERVICE.some((s) => (rel as string).startsWith(s))) return;
 
-      const handlers = [...source.matchAll(HANDLER)].map((m) => m[1]);
-      expect(handlers.length).toBeGreaterThan(0);
+      const slices = handlerSlices(source);
+      expect(slices.length).toBeGreaterThan(0);
 
-      const guarded =
-        source.includes('requireAdmin') ||
-        source.includes('requireAdminForSlug') ||
-        source.includes('hasSystemAdminPermission') ||
-        source.includes('hasSystemAdminAnyPermission');
-
-      expect(guarded).toBe(true);
+      const unguarded = slices.filter((s) => !GUARD.test(s.body)).map((s) => s.method);
+      expect(unguarded).toEqual([]);
     }
   );
 

@@ -151,8 +151,8 @@ describe('Email Template Integration Tests', () => {
       });
 
       expect(template).toBeDefined();
-      expect(template.key).toBe('password-reset');
-      expect(template.requiredVars).toContain('userName');
+      expect(template!.key).toBe('password-reset');
+      expect(template!.requiredVars).toContain('userName');
     });
 
     it('should retrieve all active templates', async () => {

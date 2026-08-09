@@ -3,6 +3,7 @@ import { prisma } from '@/lib/database';
 import { getSessionUserFromToken } from '@/lib/session-auth';
 import { parseAndVerifySessionToken } from '@/lib/session-auth';
 import { hasSystemAdminPermission } from '@/lib/rbac';
+import { requireAdmin } from '@/lib/require-admin';
 import { logSystemAdminAction } from '@/lib/audit-log';
 import { notifyAdmins } from '@/lib/notifications';
 
@@ -14,18 +15,10 @@ interface RouteParams {
 
 // GET /api/admin/users/[id] - Get user details
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const auth = await requireAdmin('system_admin_portal:users:read');
+  if (!auth.ok) return auth.error;
+
   try {
-    const sessionToken = request.cookies.get('campaignsites_session')?.value;
-    const sessionUser = await getSessionUserFromToken(sessionToken);
-
-    if (!sessionUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (sessionUser.role !== 'GLOBAL_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const userId = params.id;
 
     const user = await prisma.user.findUnique({
@@ -61,10 +54,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch user' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
   }
 }
 
@@ -87,10 +77,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Prevent self-updates (except name)
     if (userId === adminId) {
-      return NextResponse.json(
-        { error: 'Cannot update your own role' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Cannot update your own role' }, { status: 400 });
     }
 
     // Check permission for user updates
@@ -109,13 +96,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         errorMessage: 'Insufficient permissions',
       });
 
-      return NextResponse.json(
-        { error: 'Forbidden: insufficient permissions' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
     }
 
-    const body = await request.json() as { role?: string; name?: string; justification?: string };
+    const body = (await request.json()) as { role?: string; name?: string; justification?: string };
 
     const existing = await prisma.user.findUnique({ where: { id: userId } });
     if (!existing) {
@@ -178,7 +162,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     return NextResponse.json(
-      { message: 'User updated successfully', data: { id: updated.id, email: updated.email, name: updated.name, role: updated.role } },
+      {
+        message: 'User updated successfully',
+        data: { id: updated.id, email: updated.email, name: updated.name, role: updated.role },
+      },
       { status: 200 }
     );
   } catch (error) {
@@ -204,10 +191,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 }
 
@@ -227,10 +211,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check RBAC permission
-    const canDelete = await hasSystemAdminPermission(
-      userId,
-      'system_admin_portal:users:delete'
-    );
+    const canDelete = await hasSystemAdminPermission(userId, 'system_admin_portal:users:delete');
     if (!canDelete) {
       await logSystemAdminAction({
         action: 'USER_DELETE_DENIED',
@@ -241,10 +222,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         justification: 'Permission denied',
         status: 'failure',
       });
-      return NextResponse.json(
-        { error: 'Forbidden: insufficient permissions' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
     }
 
     // Get user before deletion
@@ -280,9 +258,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     );
   } catch (error) {
     console.error('Failed to delete user:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
   }
 }

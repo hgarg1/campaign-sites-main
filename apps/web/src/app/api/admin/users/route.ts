@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSnapshot, getPaginatedUsers } from '@/lib/admin-live';
+import { requireAdmin } from '@/lib/require-admin';
 
 // GET /api/admin/users - List all users
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin('system_admin_portal:users:read');
+  if (!auth.ok) return auth.error;
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -21,10 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 }
 
@@ -51,7 +52,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permission
-    const hasPermission = await hasSystemAdminPermission(userId, 'system_admin_portal:users:create');
+    const hasPermission = await hasSystemAdminPermission(
+      userId,
+      'system_admin_portal:users:create'
+    );
     if (!hasPermission) {
       await logSystemAdminAction({
         action: 'CREATE_USER_DENIED',
@@ -74,33 +78,21 @@ export async function POST(request: NextRequest) {
 
     // Validate input
     if (!email || !name || !role) {
-      return NextResponse.json(
-        { error: 'email, name, and role are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'email, name, and role are required' }, { status: 400 });
     }
 
     if (!['ADMIN', 'GLOBAL_ADMIN'].includes(role)) {
-      return NextResponse.json(
-        { error: 'role must be ADMIN or GLOBAL_ADMIN' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'role must be ADMIN or GLOBAL_ADMIN' }, { status: 400 });
     }
 
     if (!justification || typeof justification !== 'string') {
-      return NextResponse.json(
-        { error: 'justification is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'justification is required' }, { status: 400 });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
     // Check if email already exists
@@ -122,10 +114,7 @@ export async function POST(request: NextRequest) {
         errorMessage: 'Email already exists',
       });
 
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
     }
 
     // Create user with temporary password
@@ -232,9 +221,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
   }
 }

@@ -28,6 +28,9 @@ export class EmailService {
   private lastError: EmailError | null = null;
   private sendAttempts = 0;
   private readonly MAX_RETRIES = 3;
+  // Base unit for exponential backoff. Zero under test so retry paths exercise
+  // the logic without spending seven seconds of real time per send.
+  private readonly RETRY_BASE_DELAY_MS = process.env.NODE_ENV === 'test' ? 0 : 1000;
   private readonly RATE_LIMIT_WINDOW = 60000; // 1 minute
   private readonly RATE_LIMIT_MAX_PER_RECIPIENT = 5; // Max 5 emails per recipient per minute
 
@@ -114,7 +117,9 @@ export class EmailService {
       return compiled(safeVariables);
     } catch (error) {
       console.error('Failed to render template:', error);
-      throw new Error(`Template rendering failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Template rendering failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -196,9 +201,23 @@ export class EmailService {
   }
 
   /**
-   * Clear rate limit for a recipient (useful for testing)
+   * Whether this recipient has exhausted their send quota for the current
+   * window. Consumes one unit of quota, mirroring what `send` does — callers
+   * use it to check before composing an expensive message.
    */
-  clearRateLimit(recipient: string): void {
+  isRateLimited(recipient: string): boolean {
+    return !this.checkRateLimit(recipient);
+  }
+
+  /**
+   * Clear the rate limit for one recipient, or for everyone when called with
+   * no argument (useful for resetting between tests).
+   */
+  clearRateLimit(recipient?: string): void {
+    if (recipient === undefined) {
+      rateLimitStore.clear();
+      return;
+    }
     rateLimitStore.delete(`email:${recipient}`);
   }
 
@@ -247,7 +266,9 @@ export class EmailService {
     return {
       subject: this.renderTemplate(template.subject, options.variables),
       html: this.renderTemplate(template.htmlContent, options.variables),
-      text: template.textContent ? this.renderTemplate(template.textContent, options.variables) : undefined,
+      text: template.textContent
+        ? this.renderTemplate(template.textContent, options.variables)
+        : undefined,
     };
   }
 
@@ -324,7 +345,9 @@ export class EmailService {
       // Validate required variables
       const missingVars = template.requiredVars.filter((v) => !(v in options.variables));
       if (missingVars.length > 0) {
-        const error: EmailError = new Error(`Missing required variables: ${missingVars.join(', ')}`);
+        const error: EmailError = new Error(
+          `Missing required variables: ${missingVars.join(', ')}`
+        );
         error.code = 'MISSING_VARIABLES';
         error.statusCode = 400;
         error.retryable = false;
@@ -391,7 +414,10 @@ export class EmailService {
       };
     } catch (error) {
       const emailError = error as EmailError;
-      const isRetryable = emailError.retryable !== false && emailError.code !== 'INVALID_EMAIL' && attempt < this.MAX_RETRIES;
+      const isRetryable =
+        emailError.retryable !== false &&
+        emailError.code !== 'INVALID_EMAIL' &&
+        attempt < this.MAX_RETRIES;
 
       this.log('error', `Email send attempt ${attempt} failed`, {
         error: emailError.message,
@@ -402,7 +428,7 @@ export class EmailService {
 
       if (isRetryable) {
         // Exponential backoff: 1s, 2s, 4s
-        const delayMs = Math.pow(2, attempt - 1) * 1000;
+        const delayMs = Math.pow(2, attempt - 1) * this.RETRY_BASE_DELAY_MS;
         this.log('info', `Retrying in ${delayMs}ms`, { attempt: attempt + 1 });
 
         await new Promise((resolve) => setTimeout(resolve, delayMs));
@@ -457,10 +483,14 @@ export class EmailService {
         variables: testVariables,
       });
     } catch (error) {
-      this.log('error', `Test email failed: ${error instanceof Error ? error.message : String(error)}`, {
-        templateKey,
-        recipientEmail,
-      });
+      this.log(
+        'error',
+        `Test email failed: ${error instanceof Error ? error.message : String(error)}`,
+        {
+          templateKey,
+          recipientEmail,
+        }
+      );
       throw error;
     }
   }

@@ -1,7 +1,9 @@
 import { prisma } from './database';
 import { cacheGet, cacheSet } from './redis';
 
-const SNAPSHOT_CACHE_KEY = 'admin:snapshot:v1';
+// v2 adds `counts`. Bumped so cached v1 payloads, which have no counts field,
+// are not deserialised into a shape the paginators now dereference.
+const SNAPSHOT_CACHE_KEY = 'admin:snapshot:v2';
 const SNAPSHOT_TTL_SECONDS = 15;
 
 export type AdminSnapshot = {
@@ -67,24 +69,46 @@ export type AdminSnapshot = {
       slug: string;
     };
   }>;
+  /**
+   * True row counts from the database. The lists above are capped at 500 rows
+   * for snapshot size, so `users.length` is not the number of users — reporting
+   * it as a total silently plateaus at 500.
+   */
+  counts: {
+    users: number;
+    organizations: number;
+    websites: number;
+    jobs: number;
+  };
   generatedAt: string;
 };
 
 let inflightSnapshot: Promise<AdminSnapshot> | null = null;
 
-function paginate<T>(items: T[], page: number, pageSize: number) {
+function paginate<T>(items: T[], page: number, pageSize: number, unfilteredTotal?: number) {
   const start = (page - 1) * pageSize;
   return {
     data: items.slice(start, start + pageSize),
     pagination: {
       page,
       pageSize,
-      total: items.length,
+      // When no filter narrowed the list, report the real database count rather
+      // than the length of the 500-row snapshot window.
+      total: unfilteredTotal ?? items.length,
     },
   };
 }
 
 async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
+  // Counts are queried separately from the row windows below, which are capped
+  // at 500 for payload size. Four cheap COUNT queries, run in the same batch.
+  const [userCount, orgCount, websiteCount, jobCount] = await Promise.all([
+    prisma.user.count({ where: { deletedAt: null } }),
+    prisma.organization.count({ where: { deletedAt: null } }),
+    prisma.website.count(),
+    prisma.buildJob.count(),
+  ]);
+
   const [users, organizations, websites, jobs] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
@@ -172,7 +196,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
   ]);
 
   return {
-    users: users.map((user: typeof users[number]) => ({
+    users: users.map((user: (typeof users)[number]) => ({
       id: user.id,
       email: user.email,
       name: user.name,
@@ -183,7 +207,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
       createdAt: user.createdAt.toISOString(),
       lastLogin: undefined,
     })),
-    organizations: organizations.map((org: typeof organizations[number]) => ({
+    organizations: organizations.map((org: (typeof organizations)[number]) => ({
       id: org.id,
       name: org.name,
       slug: org.slug,
@@ -195,7 +219,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
       createdAt: org.createdAt.toISOString(),
       owner: org.members[0]?.user,
     })),
-    websites: websites.map((site: typeof websites[number]) => ({
+    websites: websites.map((site: (typeof websites)[number]) => ({
       id: site.id,
       name: site.name,
       slug: site.slug,
@@ -207,7 +231,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
       organization: site.organization,
       owner: site.user,
     })),
-    jobs: jobs.map((job: typeof jobs[number]) => ({
+    jobs: jobs.map((job: (typeof jobs)[number]) => ({
       id: job.id,
       websiteId: job.websiteId,
       stage: job.stage,
@@ -218,6 +242,7 @@ async function buildSnapshotFromDatabase(): Promise<AdminSnapshot> {
       createdAt: job.createdAt.toISOString(),
       website: job.website,
     })),
+    counts: { users: userCount, organizations: orgCount, websites: websiteCount, jobs: jobCount },
     generatedAt: new Date().toISOString(),
   };
 }
@@ -258,15 +283,21 @@ function emptySnapshot(): AdminSnapshot {
     organizations: [],
     websites: [],
     jobs: [],
+    counts: { users: 0, organizations: 0, websites: 0, jobs: 0 },
     generatedAt: new Date().toISOString(),
   };
 }
 
-export function getPaginatedUsers(snapshot: AdminSnapshot, page: number, pageSize: number, filters?: {
-  role?: string | null;
-  status?: string | null;
-  search?: string | null;
-}) {
+export function getPaginatedUsers(
+  snapshot: AdminSnapshot,
+  page: number,
+  pageSize: number,
+  filters?: {
+    role?: string | null;
+    status?: string | null;
+    search?: string | null;
+  }
+) {
   let items = snapshot.users;
 
   if (filters?.role) {
@@ -277,19 +308,28 @@ export function getPaginatedUsers(snapshot: AdminSnapshot, page: number, pageSiz
   }
   if (filters?.search) {
     const search = filters.search.toLowerCase();
-    items = items.filter((u) =>
-      u.email.toLowerCase().includes(search) || (u.name ?? '').toLowerCase().includes(search)
+    items = items.filter(
+      (u) => u.email.toLowerCase().includes(search) || (u.name ?? '').toLowerCase().includes(search)
     );
   }
 
-  return paginate(items, page, pageSize);
+  // Only the unfiltered view can use the database count; a filtered view's
+  // true size is not knowable from the capped snapshot window.
+  const unfiltered =
+    !filters || Object.values(filters).every((v) => v === null || v === undefined || v === '');
+  return paginate(items, page, pageSize, unfiltered ? snapshot.counts.users : undefined);
 }
 
-export function getPaginatedOrganizations(snapshot: AdminSnapshot, page: number, pageSize: number, filters?: {
-  whiteLabel?: string | null;
-  status?: string | null;
-  search?: string | null;
-}) {
+export function getPaginatedOrganizations(
+  snapshot: AdminSnapshot,
+  page: number,
+  pageSize: number,
+  filters?: {
+    whiteLabel?: string | null;
+    status?: string | null;
+    search?: string | null;
+  }
+) {
   let items = snapshot.organizations;
 
   if (filters?.whiteLabel !== null && filters?.whiteLabel !== undefined) {
@@ -300,19 +340,28 @@ export function getPaginatedOrganizations(snapshot: AdminSnapshot, page: number,
   }
   if (filters?.search) {
     const search = filters.search.toLowerCase();
-    items = items.filter((org) =>
-      org.name.toLowerCase().includes(search) || org.slug.toLowerCase().includes(search)
+    items = items.filter(
+      (org) => org.name.toLowerCase().includes(search) || org.slug.toLowerCase().includes(search)
     );
   }
 
-  return paginate(items, page, pageSize);
+  // Only the unfiltered view can use the database count; a filtered view's
+  // true size is not knowable from the capped snapshot window.
+  const unfiltered =
+    !filters || Object.values(filters).every((v) => v === null || v === undefined || v === '');
+  return paginate(items, page, pageSize, unfiltered ? snapshot.counts.organizations : undefined);
 }
 
-export function getPaginatedWebsites(snapshot: AdminSnapshot, page: number, pageSize: number, filters?: {
-  status?: string | null;
-  organizationId?: string | null;
-  search?: string | null;
-}) {
+export function getPaginatedWebsites(
+  snapshot: AdminSnapshot,
+  page: number,
+  pageSize: number,
+  filters?: {
+    status?: string | null;
+    organizationId?: string | null;
+    search?: string | null;
+  }
+) {
   let items = snapshot.websites;
 
   if (filters?.status) {
@@ -323,18 +372,27 @@ export function getPaginatedWebsites(snapshot: AdminSnapshot, page: number, page
   }
   if (filters?.search) {
     const search = filters.search.toLowerCase();
-    items = items.filter((site) =>
-      site.name.toLowerCase().includes(search) || site.slug.toLowerCase().includes(search)
+    items = items.filter(
+      (site) => site.name.toLowerCase().includes(search) || site.slug.toLowerCase().includes(search)
     );
   }
 
-  return paginate(items, page, pageSize);
+  // Only the unfiltered view can use the database count; a filtered view's
+  // true size is not knowable from the capped snapshot window.
+  const unfiltered =
+    !filters || Object.values(filters).every((v) => v === null || v === undefined || v === '');
+  return paginate(items, page, pageSize, unfiltered ? snapshot.counts.websites : undefined);
 }
 
-export function getPaginatedJobs(snapshot: AdminSnapshot, page: number, pageSize: number, filters?: {
-  status?: string | null;
-  websiteId?: string | null;
-}) {
+export function getPaginatedJobs(
+  snapshot: AdminSnapshot,
+  page: number,
+  pageSize: number,
+  filters?: {
+    status?: string | null;
+    websiteId?: string | null;
+  }
+) {
   let items = snapshot.jobs;
 
   if (filters?.status) {
@@ -344,5 +402,9 @@ export function getPaginatedJobs(snapshot: AdminSnapshot, page: number, pageSize
     items = items.filter((job) => job.websiteId === filters.websiteId);
   }
 
-  return paginate(items, page, pageSize);
+  // Only the unfiltered view can use the database count; a filtered view's
+  // true size is not knowable from the capped snapshot window.
+  const unfiltered =
+    !filters || Object.values(filters).every((v) => v === null || v === undefined || v === '');
+  return paginate(items, page, pageSize, unfiltered ? snapshot.counts.jobs : undefined);
 }

@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        # Electron binaries are only needed by the desktop release workflow.
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @campaignsites/database db:generate
+
+      - name: Typecheck
+        run: pnpm --filter @campaignsites/web exec tsc --noEmit
+
+      # The route-guard suite is a static walk of the route tree — no server and
+      # no database — so it runs here without any service containers. It fails
+      # the build if an admin route ships without a permission claim.
+      - name: Test
+        run: pnpm --filter @campaignsites/web test
+
+      - name: Build
+        env:
+          # Build-time only: Next collects page data without reaching a real
+          # database, but Prisma requires the variable to be present.
+          DATABASE_URL: postgresql://user:pass@localhost:5432/placeholder
+          AUTH_SESSION_SECRET: ci-placeholder-secret
+        run: pnpm --filter @campaignsites/web build
