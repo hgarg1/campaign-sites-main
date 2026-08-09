@@ -52,7 +52,7 @@ export function PermissionGatedButton({
     : hasPermission(claim);
 
   return (
-    <button
+    <button type="button"
       {...props}
       disabled={!hasAccess || props.disabled}
       title={!hasAccess ? fallbackText : props.title}

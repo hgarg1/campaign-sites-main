@@ -44,6 +44,11 @@ jobs:
       # The route-guard suite is a static walk of the route tree — no server and
       # no database — so it runs here without any service containers. It fails
       # the build if an admin route ships without a permission claim.
+      # Zero errors as of this change. Warnings are allowed through so the
+      # remaining accessibility work surfaces without blocking every merge.
+      - name: Lint
+        run: pnpm --filter @campaignsites/web exec next lint --max-warnings 250
+
       - name: Test
         run: pnpm --filter @campaignsites/web test
 

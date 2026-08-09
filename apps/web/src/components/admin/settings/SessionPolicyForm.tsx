@@ -48,9 +48,9 @@ export function SessionPolicyForm({ policy, loading, onUpdate }: SessionPolicyFo
       <div className="space-y-6">
         {/* Session Timeout */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout</label>
+          <label htmlFor="f5c2151" className="block text-sm font-medium text-gray-700 mb-2">Session Timeout</label>
           <div className="flex items-center gap-4">
-            <input
+            <input id="f5c2151"
               type="number"
               min="5"
               max="1440"
@@ -65,9 +65,9 @@ export function SessionPolicyForm({ policy, loading, onUpdate }: SessionPolicyFo
 
         {/* Remember Me Duration */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Remember Me Duration</label>
+          <label htmlFor="f5c2168" className="block text-sm font-medium text-gray-700 mb-2">Remember Me Duration</label>
           <div className="flex items-center gap-4">
-            <input
+            <input id="f5c2168"
               type="number"
               min="1"
               max="365"
@@ -77,14 +77,14 @@ export function SessionPolicyForm({ policy, loading, onUpdate }: SessionPolicyFo
             />
             <span className="text-sm text-gray-600">days</span>
           </div>
-          <p className="text-xs text-gray-500 mt-2">How long the session persists when "Remember me" is checked</p>
+          <p className="text-xs text-gray-500 mt-2">How long the session persists when &quot;Remember me&quot; is checked</p>
         </div>
 
         {/* Concurrent Sessions */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Max Concurrent Sessions per User</label>
+          <label htmlFor="f5c2185" className="block text-sm font-medium text-gray-700 mb-2">Max Concurrent Sessions per User</label>
           <div className="flex items-center gap-4">
-            <input
+            <input id="f5c2185"
               type="number"
               min="1"
               max="10"
@@ -115,7 +115,7 @@ export function SessionPolicyForm({ policy, loading, onUpdate }: SessionPolicyFo
 
         {/* Save Button */}
         <div className="pt-4 border-t border-gray-200 flex justify-end">
-          <button
+          <button type="button"
             onClick={handleSave}
             disabled={saving}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"

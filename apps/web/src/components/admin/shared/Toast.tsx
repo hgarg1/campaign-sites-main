@@ -74,7 +74,7 @@ function ToastItem({ id, title, message, type, duration = 5000, action, onClose 
           <p className={`font-semibold ${style.title}`}>{title}</p>
           {message && <p className={`text-sm mt-1 ${style.message}`}>{message}</p>}
           {action && (
-            <button
+            <button type="button"
               onClick={() => {
                 action.onClick();
                 onClose(id);
@@ -85,7 +85,7 @@ function ToastItem({ id, title, message, type, duration = 5000, action, onClose 
             </button>
           )}
         </div>
-        <button
+        <button type="button"
           onClick={() => onClose(id)}
           className={`text-xl flex-shrink-0 hover:opacity-70 transition-opacity ${style.message}`}
         >
@@ -103,7 +103,15 @@ interface ToastContainerProps {
 
 export function ToastContainer({ toasts, onClose }: ToastContainerProps) {
   return (
-    <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
+    // A live region, so a screen reader announces the outcome of an action.
+    // Without this a failed save was silent for anyone not watching the corner
+    // of the screen. `polite` rather than `assertive` so it does not interrupt.
+    <div
+      className="fixed bottom-6 right-6 z-50 pointer-events-none"
+      role="status"
+      aria-live="polite"
+      aria-atomic="false"
+    >
       <div className="pointer-events-auto">
         <AnimatePresence>
           {toasts.map((toast) => (

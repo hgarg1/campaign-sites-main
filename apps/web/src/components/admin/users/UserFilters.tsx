@@ -99,10 +99,10 @@ export function UserFilters({ onSearch, onFilterChange }: UserFiltersProps) {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="f2103102" className="block text-sm font-medium text-gray-700 mb-2">
               Min Organizations
             </label>
-            <input
+            <input id="f2103102"
               type="number"
               min="0"
               placeholder="0"
@@ -116,10 +116,10 @@ export function UserFilters({ onSearch, onFilterChange }: UserFiltersProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="f2103119" className="block text-sm font-medium text-gray-700 mb-2">
               Min Websites
             </label>
-            <input
+            <input id="f2103119"
               type="number"
               min="0"
               placeholder="0"

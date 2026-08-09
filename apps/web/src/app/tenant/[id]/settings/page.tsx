@@ -105,7 +105,7 @@ export default function SettingsPage() {
         <div className="w-48 flex-shrink-0">
           <nav className="space-y-1">
             {TABS.map(tab => (
-              <button
+              <button type="button"
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
@@ -229,7 +229,7 @@ export default function SettingsPage() {
 
             {activeTab !== 'billing' && (
               <div className="mt-6 pt-4 border-t border-gray-100 flex items-center gap-3">
-                <button
+                <button type="button"
                   onClick={handleSave}
                   disabled={saving || (activeTab === 'general' && settingsBlocked) || (activeTab === 'branding' && brandingBlocked)}
                   title={

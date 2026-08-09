@@ -80,7 +80,7 @@ export default function WebsitePagesPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-400">{page.updatedAt ? new Date(page.updatedAt).toLocaleDateString() : ''}</span>
-                    <button
+                    <button type="button"
                       onClick={e => { e.stopPropagation(); editingId === page.id ? cancelEdit() : startEdit(page); }}
                       className="text-blue-600 hover:text-blue-700 text-xs font-medium px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
                     >
@@ -102,14 +102,14 @@ export default function WebsitePagesPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button
+                      <button type="button"
                         onClick={() => handleSave(page.id)}
                         disabled={saving}
                         className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
                       >
                         {saving ? 'Saving...' : 'Save Changes'}
                       </button>
-                      <button onClick={cancelEdit} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <button type="button" onClick={cancelEdit} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                         Cancel
                       </button>
                     </div>

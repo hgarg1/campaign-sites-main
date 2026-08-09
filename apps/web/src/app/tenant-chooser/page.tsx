@@ -90,7 +90,7 @@ export default function TenantChooserPage() {
             Choose Your <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Workspace</span>
           </h1>
           <p className="text-xl text-gray-600">
-            Select which organization you'd like to access
+            Select which organization you&apos;d like to access
           </p>
         </motion.div>
 
@@ -200,7 +200,7 @@ export default function TenantChooserPage() {
               animate={{ opacity: 1 }}
               className="md:col-span-2 lg:col-span-3 text-center py-16"
             >
-              <p className="text-gray-500 text-lg mb-4">You don't belong to any organizations yet.</p>
+              <p className="text-gray-500 text-lg mb-4">You don&apos;t belong to any organizations yet.</p>
               <Link href="/contact" className="text-blue-600 hover:underline font-medium">Contact support to get access →</Link>
             </motion.div>
           )}
@@ -214,7 +214,7 @@ export default function TenantChooserPage() {
           className="text-center mt-12"
         >
           <p className="text-gray-600">
-            Don't see the organization you're looking for?{' '}
+            Don&apos;t see the organization you&apos;re looking for?{' '}
             <Link
               href="/contact"
               className="font-semibold text-blue-600 hover:text-blue-700"

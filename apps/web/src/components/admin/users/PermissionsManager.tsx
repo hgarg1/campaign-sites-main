@@ -102,7 +102,7 @@ export function PermissionsManager({
               <p className="text-lg font-bold text-gray-900 mt-1">{systemRole}</p>
               <p className="text-xs text-gray-600 mt-2 group-hover:text-blue-700">Click to view all permissions</p>
             </div>
-            <button
+            <button type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowChangeRoleModal(true);
@@ -141,7 +141,7 @@ export function PermissionsManager({
                     <p className="font-medium text-gray-900">{org.name}</p>
                     <p className="text-sm text-gray-600">Role: {org.memberRole}</p>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => onOrgRoleChange?.(org.id, org.memberRole)}
                     className="px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                   >
@@ -177,7 +177,7 @@ export function PermissionsManager({
                   <h2 className="text-2xl font-bold text-gray-900">User Permissions</h2>
                   <p className="text-sm text-gray-600 mt-1">System Role: {systemRole}</p>
                 </div>
-                <button
+                <button type="button"
                   onClick={() => setShowPermissionsModal(false)}
                   className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label="Close modal"
@@ -270,7 +270,7 @@ export function PermissionsManager({
 
             {/* Footer */}
             <div className="flex-shrink-0 border-t border-gray-200 p-6 bg-gray-50 rounded-b-lg">
-              <button
+              <button type="button"
                 onClick={() => setShowPermissionsModal(false)}
                 className="w-full px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >

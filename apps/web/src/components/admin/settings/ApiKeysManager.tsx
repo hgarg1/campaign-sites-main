@@ -92,7 +92,7 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
           <h3 className="text-lg font-semibold text-gray-900">API Keys</h3>
           <p className="text-sm text-gray-600 mt-1">{keys.length} active key{keys.length !== 1 ? 's' : ''}</p>
         </div>
-        <button
+        <button type="button"
           onClick={() => setShowCreate(!showCreate)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
         >
@@ -112,19 +112,19 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h4 className="font-semibold text-green-900 mb-2">✓ API Key Created</h4>
                 <p className="text-sm text-green-800 mb-3">
-                  Save this key somewhere safe. You won't be able to see it again.
+                  Save this key somewhere safe. You won&apos;t be able to see it again.
                 </p>
                 <div className="bg-white rounded p-3 font-mono text-sm text-gray-900 break-all mb-3 border border-green-200">
                   {newKey}
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <button type="button"
                     onClick={() => handleCopy(newKey, 'new')}
                     className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
                   >
                     {copiedKey === 'new' ? '✓ Copied!' : 'Copy to Clipboard'}
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setNewKey(null);
                       setShowCreate(false);
@@ -139,8 +139,8 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Key Name</label>
-                <input
+                <label htmlFor="fc818142" className="block text-sm font-medium text-gray-700 mb-2">Key Name</label>
+                <input id="fc818142"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -150,11 +150,11 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
+                <label htmlFor="fc818153" className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-gray-200 rounded-lg">
                   {defaultPermissions.map((permission) => (
                     <label key={permission} className="flex items-center gap-2 cursor-pointer">
-                      <input
+                      <input id="fc818153"
                         type="checkbox"
                         checked={formData.permissions.includes(permission)}
                         onChange={(e) => {
@@ -179,13 +179,13 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
               </div>
 
               <div className="flex justify-end gap-2">
-                <button
+                <button type="button"
                   onClick={() => setShowCreate(false)}
                   className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-medium transition-colors"
                 >
                   Cancel
                 </button>
-                <button
+                <button type="button"
                   onClick={handleCreate}
                   disabled={creatingKey || !formData.name}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
@@ -241,7 +241,7 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
                       </div>
                     )}
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => handleRevoke(key.id)}
                     disabled={revoking === key.id}
                     className="px-4 py-2 bg-red-100 hover:bg-red-200 disabled:opacity-50 text-red-700 rounded-lg font-medium transition-colors"

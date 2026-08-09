@@ -91,7 +91,7 @@ export function AlertChannelsConfig({ channels, loading, onToggleChannel }: Aler
                 </div>
 
                 {/* Toggle Switch */}
-                <button
+                <button type="button"
                   onClick={() => handleToggle(channel.id, channel.enabled)}
                   disabled={isProcessing}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 ${

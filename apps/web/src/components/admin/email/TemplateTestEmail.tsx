@@ -177,7 +177,7 @@ export function TemplateTestEmail({
 
           {/* Send Button */}
           <div className="mt-6 flex gap-3">
-            <button
+            <button type="button"
               onClick={handleSendTest}
               disabled={sending || !validateEmail(recipientEmail)}
               className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
@@ -185,7 +185,7 @@ export function TemplateTestEmail({
               {sending && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
               {sending ? 'Sending...' : '✉️ Send Test Email'}
             </button>
-            <button
+            <button type="button"
               onClick={() => setShowPreview(false)}
               disabled={sending}
               className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"

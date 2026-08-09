@@ -109,7 +109,7 @@ export default function BlogPage() {
           {/* Tag Filter */}
           <div className="mb-12">
             <div className="flex flex-wrap items-center gap-3">
-              <button
+              <button type="button"
                 onClick={() => setSelectedTag(null)}
                 className={`px-4 py-2 rounded-full font-medium transition-all ${
                   selectedTag === null
@@ -120,7 +120,7 @@ export default function BlogPage() {
                 All Articles
               </button>
               {allTags.map((tag) => (
-                <button
+                <button type="button"
                   key={tag}
                   onClick={() => setSelectedTag(tag)}
                   className={`px-4 py-2 rounded-full font-medium transition-all capitalize ${

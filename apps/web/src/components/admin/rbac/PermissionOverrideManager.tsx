@@ -176,7 +176,7 @@ export function PermissionOverrideManager({
               Overrides take precedence over role-based permissions.
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors whitespace-nowrap"
           >
@@ -280,7 +280,7 @@ export function PermissionOverrideManager({
                       )}
                     </div>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setDeleteTargetId(override.permission.id);
                       setShowDeleteModal(true);
@@ -436,7 +436,7 @@ export function PermissionOverrideManager({
                 Action <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-3">
-                <button
+                <button type="button"
                   onClick={() => setSelectedAction('ALLOW')}
                   className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                     selectedAction === 'ALLOW'
@@ -446,7 +446,7 @@ export function PermissionOverrideManager({
                 >
                   Allow
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setSelectedAction('DENY')}
                   className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                     selectedAction === 'DENY'
@@ -460,10 +460,10 @@ export function PermissionOverrideManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="f50ee463" className="block text-sm font-medium text-gray-700 mb-2">
                 Expiration (Days)
               </label>
-              <input
+              <input id="f50ee463"
                 type="number"
                 min="1"
                 placeholder="Leave empty for no expiration"
@@ -478,7 +478,7 @@ export function PermissionOverrideManager({
               </p>
             </div>
 
-            <button
+            <button type="button"
               onClick={() => {
                 if (justification) {
                   handleCreateOverride(justification);

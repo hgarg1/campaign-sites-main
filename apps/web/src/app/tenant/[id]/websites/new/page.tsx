@@ -122,7 +122,7 @@ export default function NewWebsitePage() {
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Choose a Template</h2>
                 <div className="grid grid-cols-2 gap-4">
                   {TEMPLATES.map(t => (
-                    <button
+                    <button type="button"
                       key={t.id}
                       onClick={() => setTemplateId(t.id)}
                       className={`p-4 rounded-xl border-2 text-left transition-all ${
@@ -159,7 +159,7 @@ export default function NewWebsitePage() {
           </AnimatePresence>
 
           <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
-            <button
+            <button type="button"
               onClick={() => setStep(s => s - 1)}
               disabled={step === 1}
               className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -167,7 +167,7 @@ export default function NewWebsitePage() {
               Back
             </button>
             {step < 3 ? (
-              <button
+              <button type="button"
                 onClick={() => setStep(s => s + 1)}
                 disabled={!canGoNext}
                 className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
@@ -175,7 +175,7 @@ export default function NewWebsitePage() {
                 Next →
               </button>
             ) : (
-              <button
+              <button type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
                 className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-50"

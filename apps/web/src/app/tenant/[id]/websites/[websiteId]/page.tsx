@@ -101,7 +101,7 @@ export default function WebsiteDetailPage() {
       <TenantLayout title="Not Found" orgId={orgId}>
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <p className="text-gray-600">Website not found</p>
-          <button onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mt-4 text-blue-600 hover:text-blue-700 font-medium">
+          <button type="button" onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mt-4 text-blue-600 hover:text-blue-700 font-medium">
             ← Back to Websites
           </button>
         </div>
@@ -111,7 +111,7 @@ export default function WebsiteDetailPage() {
 
   return (
     <TenantLayout title={website.name} subtitle="Website Details" orgId={orgId}>
-      <button onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 text-sm">
+      <button type="button" onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 text-sm">
         ← Back to Websites
       </button>
 
@@ -132,16 +132,16 @@ export default function WebsiteDetailPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Website</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} className={inputClass} />
+                <label htmlFor="f4df7135" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input id="f4df7135" type="text" value={name} onChange={e => setName(e.target.value)} className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Domain</label>
-                <input type="text" value={domain} onChange={e => setDomain(e.target.value)} className={inputClass} placeholder="e.g. www.mycampaign.com" />
+                <label htmlFor="f4df7139" className="block text-sm font-medium text-gray-700 mb-1">Custom Domain</label>
+                <input id="f4df7139" type="text" value={domain} onChange={e => setDomain(e.target.value)} className={inputClass} placeholder="e.g. www.mycampaign.com" />
               </div>
               {msg && <p className="text-sm text-green-700">{msg}</p>}
               {err && <p className="text-sm text-red-700">{err}</p>}
-              <button onClick={handleSave} disabled={saving} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+              <button type="button" onClick={handleSave} disabled={saving} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
@@ -150,7 +150,7 @@ export default function WebsiteDetailPage() {
           <div className="bg-white rounded-xl border border-red-200 p-6">
             <h3 className="text-lg font-semibold text-red-700 mb-2">Danger Zone</h3>
             <p className="text-sm text-gray-600 mb-4">Permanently delete this website and all its content.</p>
-            <button onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700 rounded-lg px-4 py-2 text-sm font-medium">
+            <button type="button" onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700 rounded-lg px-4 py-2 text-sm font-medium">
               Delete Website
             </button>
           </div>
@@ -169,10 +169,10 @@ export default function WebsiteDetailPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Actions</h3>
             <div className="space-y-2">
-              <button onClick={handleRebuild} disabled={rebuilding} className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+              <button type="button" onClick={handleRebuild} disabled={rebuilding} className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
                 {rebuilding ? 'Rebuilding...' : 'Rebuild'}
               </button>
-              <button
+              <button type="button"
                 onClick={handleTogglePublish}
                 disabled={toggling}
                 className={`w-full rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 ${

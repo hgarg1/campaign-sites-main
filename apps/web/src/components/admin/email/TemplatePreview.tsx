@@ -145,7 +145,7 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
       <div className="flex items-center justify-between gap-4">
         {/* Tabs */}
         <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
-          <button
+          <button type="button"
             onClick={() => setActiveTab('html')}
             className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
               activeTab === 'html'
@@ -155,7 +155,7 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
           >
             HTML View
           </button>
-          <button
+          <button type="button"
             onClick={() => setActiveTab('text')}
             className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
               activeTab === 'text'
@@ -169,7 +169,7 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={() => setMobilePreview(!mobilePreview)}
             className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
             title={mobilePreview ? 'Show full width' : 'Show mobile (600px)'}
@@ -178,14 +178,14 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
           </button>
 
           {activeTab === 'html' ? (
-            <button
+            <button type="button"
               onClick={handleCopyHtml}
               className="px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1"
             >
               📋 Copy HTML
             </button>
           ) : (
-            <button
+            <button type="button"
               onClick={handleCopyText}
               className="px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-1"
             >

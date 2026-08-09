@@ -71,11 +71,11 @@ export function RetentionAndBackupPanel({
         <div className="space-y-6">
           {/* Deleted Websites */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="f9dfe74" className="block text-sm font-medium text-gray-700 mb-2">
               Deleted Websites Retention
             </label>
             <div className="flex items-center gap-4">
-              <input
+              <input id="f9dfe74"
                 type="number"
                 min="1"
                 max="365"
@@ -89,11 +89,11 @@ export function RetentionAndBackupPanel({
 
           {/* Deleted Users */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="f9dfe92" className="block text-sm font-medium text-gray-700 mb-2">
               Deleted Users Retention
             </label>
             <div className="flex items-center gap-4">
-              <input
+              <input id="f9dfe92"
                 type="number"
                 min="1"
                 max="365"
@@ -107,9 +107,9 @@ export function RetentionAndBackupPanel({
 
           {/* Logs */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Logs Retention</label>
+            <label htmlFor="f9dfe110" className="block text-sm font-medium text-gray-700 mb-2">Logs Retention</label>
             <div className="flex items-center gap-4">
-              <input
+              <input id="f9dfe110"
                 type="number"
                 min="1"
                 max="365"
@@ -123,7 +123,7 @@ export function RetentionAndBackupPanel({
 
           {/* Save */}
           <div className="pt-4 border-t border-gray-200 flex justify-end">
-            <button
+            <button type="button"
               onClick={handleSaveRetention}
               disabled={saving}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
@@ -182,7 +182,7 @@ export function RetentionAndBackupPanel({
 
             {/* Manual Backup */}
             <div className="pt-4 border-t border-gray-200">
-              <button
+              <button type="button"
                 onClick={handleBackup}
                 disabled={backingUp}
                 className="w-full px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"

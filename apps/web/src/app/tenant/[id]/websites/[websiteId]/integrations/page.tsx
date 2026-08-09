@@ -97,13 +97,13 @@ export default function WebsiteIntegrationsPage() {
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${existing.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
                           {existing.isActive ? 'Active' : 'Disabled'}
                         </span>
-                        <button
+                        <button type="button"
                           onClick={() => handleToggle(existing)}
                           className="text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50"
                         >
                           {existing.isActive ? 'Disable' : 'Enable'}
                         </button>
-                        <button
+                        <button type="button"
                           onClick={() => handleDelete(existing, provider.name)}
                           className="text-xs font-medium px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50"
                         >
@@ -111,7 +111,7 @@ export default function WebsiteIntegrationsPage() {
                         </button>
                       </>
                     ) : (
-                      <button
+                      <button type="button"
                         onClick={() => handleEnable(provider)}
                         disabled={saving === provider.id}
                         className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50"

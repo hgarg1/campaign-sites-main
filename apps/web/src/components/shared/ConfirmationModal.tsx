@@ -143,10 +143,10 @@ export function ConfirmationModal({
                 {/* Justification field for admin actions */}
                 {showJustification && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="f0135146" className="block text-sm font-medium text-gray-700 mb-2">
                       Justification <span className="text-red-500">*</span>
                     </label>
-                    <textarea
+                    <textarea id="f0135146"
                       value={justification}
                       onChange={(e) => setJustification(e.target.value)}
                       placeholder="Please provide a reason for this action (this will be logged)"
@@ -166,7 +166,7 @@ export function ConfirmationModal({
                 transition={{ delay: 0.2 }}
                 className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3 justify-end"
               >
-                <button
+                <button type="button"
                   onClick={onCancel}
                   disabled={isLoading_}
                   className="px-5 py-2.5 rounded-lg font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

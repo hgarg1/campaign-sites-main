@@ -210,7 +210,7 @@ export default function HierarchyOrgDetailPage() {
       <AdminLayout title="Error" subtitle="">
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <p className="text-red-600">{error ?? 'Organization not found'}</p>
-          <button onClick={() => router.push('/admin/portal/hierarchy')} className="mt-4 text-blue-600 hover:text-blue-700 font-medium">
+          <button type="button" onClick={() => router.push('/admin/portal/hierarchy')} className="mt-4 text-blue-600 hover:text-blue-700 font-medium">
             ← Back to Hierarchy
           </button>
         </div>
@@ -230,7 +230,7 @@ export default function HierarchyOrgDetailPage() {
   return (
     <AdminLayout title={org.name} subtitle={`Hierarchy Management · ${org.slug}`}>
       {/* Back button */}
-      <button onClick={() => router.push('/admin/portal/hierarchy')} className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
+      <button type="button" onClick={() => router.push('/admin/portal/hierarchy')} className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
         ← Back to Hierarchy
       </button>
 
@@ -240,7 +240,7 @@ export default function HierarchyOrgDetailPage() {
           {ancestors.map((a, i) => (
             <span key={a.id} className="flex items-center gap-1">
               {i > 0 && <span>→</span>}
-              <button onClick={() => router.push(`/admin/portal/hierarchy/${a.id}`)} className="hover:text-blue-600 hover:underline">
+              <button type="button" onClick={() => router.push(`/admin/portal/hierarchy/${a.id}`)} className="hover:text-blue-600 hover:underline">
                 {a.name}
               </button>
             </span>
@@ -337,7 +337,7 @@ export default function HierarchyOrgDetailPage() {
               <span className="text-xs text-gray-400">Leave blank for unlimited</span>
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <button type="button"
                 onClick={saveSettings}
                 disabled={savingSettings}
                 className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
@@ -357,7 +357,7 @@ export default function HierarchyOrgDetailPage() {
               {parent ? (
                 <div className="text-sm">
                   <span className="text-gray-500">Current parent: </span>
-                  <button
+                  <button type="button"
                     onClick={() => router.push(`/admin/portal/hierarchy/${parent.id}`)}
                     className="font-medium text-blue-600 hover:underline"
                   >
@@ -370,11 +370,11 @@ export default function HierarchyOrgDetailPage() {
               )}
             </div>
             <div className="flex gap-2">
-              <button onClick={openParentModal} className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700">
+              <button type="button" onClick={openParentModal} className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700">
                 Change Parent
               </button>
               {parent && (
-                <button
+                <button type="button"
                   onClick={removeParent}
                   disabled={removingParent}
                   className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
@@ -400,7 +400,7 @@ export default function HierarchyOrgDetailPage() {
               )}
             </div>
             {(org.ownStatus === 'ACTIVE' || org.ownStatus === 'SUSPENDED') && (
-              <button
+              <button type="button"
                 onClick={() => setShowDeactivateModal(true)}
                 className="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800"
               >
@@ -408,12 +408,12 @@ export default function HierarchyOrgDetailPage() {
               </button>
             )}
             {org.ownStatus === 'ACTIVE' && (
-              <button onClick={() => setShowSuspendModal(true)} className="bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-amber-700">
+              <button type="button" onClick={() => setShowSuspendModal(true)} className="bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-amber-700">
                 Suspend Organization
               </button>
             )}
             {(org.ownStatus === 'SUSPENDED' || org.ownStatus === 'DEACTIVATED') && (
-              <button onClick={reactivateOrg} disabled={reactivating} className="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+              <button type="button" onClick={reactivateOrg} disabled={reactivating} className="bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-green-700 disabled:opacity-60">
                 {reactivating ? 'Reactivating...' : 'Reactivate Organization'}
               </button>
             )}
@@ -454,7 +454,7 @@ export default function HierarchyOrgDetailPage() {
                 <p className="text-center text-gray-500 py-6 text-sm">No organizations found</p>
               ) : (
                 filteredOrgs.map((o) => (
-                  <button
+                  <button type="button"
                     key={o.id}
                     onClick={() => setSelectedParentId(o.id)}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${selectedParentId === o.id ? 'bg-blue-50' : ''}`}
@@ -466,10 +466,10 @@ export default function HierarchyOrgDetailPage() {
               )}
             </div>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowParentModal(false)} className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50">
+              <button type="button" onClick={() => setShowParentModal(false)} className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50">
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={assignParent}
                 disabled={!selectedParentId || assigningParent}
                 className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
@@ -494,10 +494,10 @@ export default function HierarchyOrgDetailPage() {
             </p>
             <p className="text-xs text-gray-400 mb-4">Suspension is reversible. Reactivating this org will restore all cascade-suspended descendants.</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowSuspendModal(false)} className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50">
+              <button type="button" onClick={() => setShowSuspendModal(false)} className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50">
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={suspendOrg}
                 disabled={suspending}
                 className="bg-amber-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-amber-700 disabled:opacity-60"
@@ -529,10 +529,10 @@ export default function HierarchyOrgDetailPage() {
               Deactivated organizations lose access to their tenant portals. You can reactivate later, but this is a significant action.
             </p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeactivateModal(false)} className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50">
+              <button type="button" onClick={() => setShowDeactivateModal(false)} className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50">
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={deactivateOrg}
                 disabled={deactivating}
                 className="bg-gray-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-800 disabled:opacity-60"

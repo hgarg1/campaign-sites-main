@@ -60,10 +60,10 @@ export function OrganizationFilters({ onFilterChange }: OrganizationFiltersProps
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Search */}
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="f469f63" className="block text-sm font-medium text-gray-700 mb-2">
             Search
           </label>
-          <input
+          <input id="f469f63"
             type="text"
             placeholder="Search by name or slug..."
             value={search}
@@ -74,7 +74,7 @@ export function OrganizationFilters({ onFilterChange }: OrganizationFiltersProps
 
         {/* Advanced Filters Toggle */}
         <div className="flex items-end">
-          <button
+          <button type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="px-6 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
           >
@@ -85,7 +85,7 @@ export function OrganizationFilters({ onFilterChange }: OrganizationFiltersProps
         {/* Clear Filters */}
         {hasActiveFilters && (
           <div className="flex items-end">
-            <button
+            <button type="button"
               onClick={clearFilters}
               className="px-6 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
@@ -106,10 +106,10 @@ export function OrganizationFilters({ onFilterChange }: OrganizationFiltersProps
         >
           {/* White Label Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="f469f109" className="block text-sm font-medium text-gray-700 mb-2">
               White Label
             </label>
-            <select
+            <select id="f469f109"
               value={whiteLabel}
               onChange={(e) => handleWhiteLabelChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -122,10 +122,10 @@ export function OrganizationFilters({ onFilterChange }: OrganizationFiltersProps
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="f469f125" className="block text-sm font-medium text-gray-700 mb-2">
               Status
             </label>
-            <select
+            <select id="f469f125"
               value={status}
               onChange={(e) => handleStatusChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

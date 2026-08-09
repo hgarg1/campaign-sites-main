@@ -92,7 +92,7 @@ function TreeNode({ node, depth, expandedIds, onToggle, filtersActive }: TreeNod
         style={{ paddingLeft: `${depth * 20 + 12}px` }}
       >
         {/* Expand/collapse toggle */}
-        <button
+        <button type="button"
           onClick={(e) => { e.stopPropagation(); onToggle(node.id); }}
           className="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 flex-shrink-0"
         >
@@ -100,7 +100,7 @@ function TreeNode({ node, depth, expandedIds, onToggle, filtersActive }: TreeNod
         </button>
 
         {/* Org name */}
-        <button
+        <button type="button"
           onClick={() => router.push(`/admin/portal/hierarchy/${node.id}`)}
           className="font-medium text-gray-900 hover:text-blue-600 text-sm text-left"
         >
@@ -212,7 +212,7 @@ export default function HierarchyPage() {
           <span>{tree.length} root orgs</span>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={() => router.push('/admin/portal/master-tenants')}
             className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700"
           >
@@ -234,7 +234,7 @@ export default function HierarchyPage() {
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {filtersActive && (
-              <button
+              <button type="button"
                 onClick={() => { setSearch(''); setStatusFilter('ALL'); setPartyFilter('ALL'); }}
                 className="text-sm text-gray-500 hover:text-gray-700 font-medium px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
@@ -247,7 +247,7 @@ export default function HierarchyPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-gray-500 font-medium uppercase tracking-wide w-14">Status</span>
             {STATUS_FILTERS.map((f) => (
-              <button
+              <button type="button"
                 key={f.value}
                 onClick={() => setStatusFilter(f.value)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
@@ -264,7 +264,7 @@ export default function HierarchyPage() {
           {/* Party filter row */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-gray-500 font-medium uppercase tracking-wide w-14">Party</span>
-            <button
+            <button type="button"
               onClick={() => setPartyFilter('ALL')}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                 partyFilter === 'ALL'
@@ -275,7 +275,7 @@ export default function HierarchyPage() {
               All
             </button>
             {ALL_PARTIES.map((p) => (
-              <button
+              <button type="button"
                 key={p}
                 onClick={() => setPartyFilter(p)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
@@ -301,11 +301,11 @@ export default function HierarchyPage() {
             </span>
             {!filtersActive && (
               <div className="flex items-center gap-2">
-                <button onClick={expandAll} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                <button type="button" onClick={expandAll} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                   Expand All
                 </button>
                 <span className="text-gray-300">·</span>
-                <button onClick={collapseAll} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                <button type="button" onClick={collapseAll} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                   Collapse All
                 </button>
               </div>
@@ -330,7 +330,7 @@ export default function HierarchyPage() {
             <div className="text-center py-12">
               <p className="text-gray-500">No organizations match the current filters</p>
               {filtersActive && (
-                <button
+                <button type="button"
                   onClick={() => { setSearch(''); setStatusFilter('ALL'); setPartyFilter('ALL'); }}
                   className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >

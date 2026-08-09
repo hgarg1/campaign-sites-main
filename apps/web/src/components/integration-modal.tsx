@@ -80,7 +80,7 @@ export function IntegrationModal({
             className="relative w-full max-w-3xl max-h-[calc(100vh-32px)] rounded-3xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden flex flex-col"
           >
             {/* Close button */}
-            <button
+            <button type="button"
               onClick={onClose}
               className="absolute top-6 right-6 z-10 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
               aria-label="Close modal"
@@ -183,7 +183,7 @@ export function IntegrationModal({
               >
                 Get Started with {integration.name}
               </Link>
-              <button
+              <button type="button"
                 onClick={onClose}
                 className="flex-1 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-6 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >

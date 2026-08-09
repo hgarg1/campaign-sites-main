@@ -118,13 +118,13 @@ export default function TenantWebsitesPage() {
               >
                 Edit
               </Link>
-              <button
+              <button type="button"
                 onClick={e => handleRebuild(w.id, e)}
                 className="text-gray-600 hover:text-gray-900 text-xs font-medium px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
               >
                 Rebuild
               </button>
-              <button
+              <button type="button"
                 onClick={e => handleDelete(w.id, e)}
                 disabled={deletingId === w.id}
                 className="text-red-600 hover:text-red-700 text-xs font-medium px-2 py-1 rounded border border-red-200 hover:bg-red-50 disabled:opacity-50"

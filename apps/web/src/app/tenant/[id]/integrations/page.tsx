@@ -231,7 +231,7 @@ export default function OrgIntegrationsPage() {
                         </span>
 
                         {/* Test connection */}
-                        <button
+                        <button type="button"
                           onClick={() => handleTest(existing.id)}
                           disabled={testing === existing.id}
                           className="text-xs font-medium px-2 py-1 rounded border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 flex items-center gap-1"
@@ -242,20 +242,20 @@ export default function OrgIntegrationsPage() {
                         </button>
 
                         {/* Edit credentials */}
-                        <button
+                        <button type="button"
                           onClick={() => openModal(provider)}
                           className="text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50"
                         >
                           Edit
                         </button>
 
-                        <button
+                        <button type="button"
                           onClick={() => handleToggle(existing.id, !existing.isActive)}
                           className="text-xs font-medium px-2 py-1 rounded border border-gray-200 text-gray-600 hover:bg-gray-50"
                         >
                           {existing.isActive ? 'Disable' : 'Enable'}
                         </button>
-                        <button
+                        <button type="button"
                           onClick={() => handleDelete(existing.id, provider.name)}
                           className="text-xs font-medium px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50"
                         >
@@ -265,7 +265,7 @@ export default function OrgIntegrationsPage() {
                     ) : (
                       <>
                         <span className="text-xs text-gray-400">Not configured</span>
-                        <button
+                        <button type="button"
                           onClick={() => openModal(provider)}
                           className="text-xs font-medium px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
                         >
@@ -336,14 +336,14 @@ export default function OrgIntegrationsPage() {
             </div>
 
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={handleModalSave}
                 disabled={saving}
                 className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save & Enable'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setModalProvider(null)}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >

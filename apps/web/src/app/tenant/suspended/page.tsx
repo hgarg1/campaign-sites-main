@@ -25,13 +25,13 @@ export default function SuspendedPage() {
           Your organization or one of its parent organizations has been suspended. Please contact support for assistance.
         </p>
         <div className="flex gap-3 justify-center">
-          <button
+          <button type="button"
             onClick={() => router.back()}
             className="bg-white border border-gray-300 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
             Go Back
           </button>
-          <button
+          <button type="button"
             onClick={handleSignOut}
             disabled={signingOut}
             className="bg-red-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"

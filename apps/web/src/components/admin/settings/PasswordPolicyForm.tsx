@@ -48,9 +48,9 @@ export function PasswordPolicyForm({ policy, loading, onUpdate }: PasswordPolicy
       <div className="space-y-6">
         {/* Minimum Length */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Password Length</label>
+          <label htmlFor="f303551" className="block text-sm font-medium text-gray-700 mb-2">Minimum Password Length</label>
           <div className="flex items-center gap-4">
-            <input
+            <input id="f303551"
               type="number"
               min="1"
               max="128"
@@ -64,10 +64,10 @@ export function PasswordPolicyForm({ policy, loading, onUpdate }: PasswordPolicy
 
         {/* Requirements Checkboxes */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700">Requirements</label>
+          <label htmlFor="f303567" className="block text-sm font-medium text-gray-700">Requirements</label>
 
           <label className="flex items-center gap-3 cursor-pointer">
-            <input
+            <input id="f303567"
               type="checkbox"
               checked={formData.requireUppercase || false}
               onChange={(e) => handleChange('requireUppercase', e.target.checked)}
@@ -99,9 +99,9 @@ export function PasswordPolicyForm({ policy, loading, onUpdate }: PasswordPolicy
 
         {/* Expiration */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Password Expiration</label>
+          <label htmlFor="f3035102" className="block text-sm font-medium text-gray-700 mb-2">Password Expiration</label>
           <div className="flex items-center gap-4">
-            <input
+            <input id="f3035102"
               type="number"
               min="0"
               value={formData.expirationDays ?? ''}
@@ -118,9 +118,9 @@ export function PasswordPolicyForm({ policy, loading, onUpdate }: PasswordPolicy
 
         {/* Password History */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Password History</label>
+          <label htmlFor="f3035121" className="block text-sm font-medium text-gray-700 mb-2">Password History</label>
           <div className="flex items-center gap-4">
-            <input
+            <input id="f3035121"
               type="number"
               min="0"
               max="12"
@@ -135,7 +135,7 @@ export function PasswordPolicyForm({ policy, loading, onUpdate }: PasswordPolicy
 
         {/* Save Button */}
         <div className="pt-4 border-t border-gray-200 flex justify-end">
-          <button
+          <button type="button"
             onClick={handleSave}
             disabled={saving}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"

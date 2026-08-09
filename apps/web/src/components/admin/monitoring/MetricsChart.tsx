@@ -76,7 +76,7 @@ export function MetricsChart({ metrics, loading, timeRange, onTimeRangeChange }:
           {/* Time Range Selector */}
           <div className="flex gap-1 bg-white rounded-lg border border-gray-200 p-1">
             {(['1h', '24h', '7d', '30d'] as const).map((range) => (
-              <button
+              <button type="button"
                 key={range}
                 onClick={() => onTimeRangeChange(range)}
                 className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
@@ -100,7 +100,7 @@ export function MetricsChart({ metrics, loading, timeRange, onTimeRangeChange }:
             const value = currentMetric ? getMetricValue(currentMetric, metric) : 0;
 
             return (
-              <button
+              <button type="button"
                 key={metric}
                 onClick={() => setSelectedMetric(metric)}
                 className={`p-4 rounded-lg border-2 transition-all text-left ${

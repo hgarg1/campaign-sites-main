@@ -136,7 +136,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           )}
           
           {/* Collapse button (desktop only) */}
-          <button
+          <button type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="hidden lg:flex w-8 h-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -146,7 +146,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           </button>
 
           {/* Close button — mobile only */}
-          <button
+          <button type="button"
             onClick={onClose}
             className="lg:hidden w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-white hover:bg-slate-700 transition-colors flex-shrink-0"
             aria-label="Close menu"
@@ -171,7 +171,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
               <div key={group.label}>
                 {/* Group Header */}
                 {!sidebarCollapsed && (
-                  <button
+                  <button type="button"
                     onClick={() => toggleGroupExpanded(group.label)}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:bg-slate-700/50 text-slate-300 hover:text-white mb-1"
                   >
@@ -249,7 +249,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           >
             <div className="flex items-center justify-between px-2 mb-2">
               <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">My Organizations</p>
-              <button
+              <button type="button"
                 onClick={() => setOrgsExpanded(!orgsExpanded)}
                 className="text-slate-400 hover:text-white transition-colors flex-shrink-0"
                 aria-label={orgsExpanded ? 'Collapse organizations' : 'Expand organizations'}

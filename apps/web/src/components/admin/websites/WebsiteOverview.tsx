@@ -117,7 +117,7 @@ export function WebsiteOverview({ website, onTriggerRebuild, onDelete, rebuildin
       </div>
 
       <div className="flex gap-3 pt-6 border-t border-gray-200">
-        <button
+        <button type="button"
           onClick={onTriggerRebuild}
           disabled={rebuilding || !canRebuild}
           title={!canRebuild ? 'No permission to rebuild websites' : ''}
@@ -128,7 +128,7 @@ export function WebsiteOverview({ website, onTriggerRebuild, onDelete, rebuildin
           {rebuilding ? 'Rebuilding...' : 'Trigger Rebuild'}
         </button>
 
-        <button
+        <button type="button"
           onClick={onDelete}
           disabled={!canDelete}
           title={!canDelete ? 'No permission to delete websites' : ''}

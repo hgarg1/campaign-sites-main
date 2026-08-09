@@ -143,7 +143,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
     <nav className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-40">
       <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
         {/* Hamburger — mobile only */}
-        <button
+        <button type="button"
           onClick={onMenuClick}
           className="lg:hidden p-2 -ml-1 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors flex-shrink-0"
           aria-label="Open menu"
@@ -165,7 +165,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
         <div className="flex items-center gap-2">
           {/* Bell */}
           <div className="relative" ref={notifRef}>
-            <button
+            <button type="button"
               onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) fetchNotifs(); }}
               className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
               aria-label="Notifications"
@@ -188,7 +188,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
                   <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-900">Notifications</span>
                     {unreadCount > 0 && (
-                      <button
+                      <button type="button"
                         className="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
                         disabled={markingRead}
                         onClick={async () => {
@@ -230,7 +230,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
 
           {/* User Menu */}
           <div className="relative">
-            <button
+            <button type="button"
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
             >

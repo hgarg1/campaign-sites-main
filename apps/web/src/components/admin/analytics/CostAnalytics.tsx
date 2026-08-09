@@ -52,7 +52,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
       {/* Period Selection */}
       <div className="flex flex-wrap gap-2">
         {(['day', 'week', 'month', 'year'] as const).map((period) => (
-          <button
+          <button type="button"
             key={period}
             onClick={() => onPeriodChange(period)}
             className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
@@ -111,7 +111,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
       {/* Breakdown Selection */}
       <div className="flex flex-wrap gap-2">
         {(['organization', 'user', 'website', 'provider'] as const).map((type) => (
-          <button
+          <button type="button"
             key={type}
             onClick={() => setSelectedBreakdown(type)}
             className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${

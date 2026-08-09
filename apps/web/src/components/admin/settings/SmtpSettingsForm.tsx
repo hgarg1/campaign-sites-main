@@ -75,8 +75,8 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
       <div className="space-y-6">
         {/* Host */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">SMTP Server Host</label>
-          <input
+          <label htmlFor="ff02d78" className="block text-sm font-medium text-gray-700 mb-2">SMTP Server Host</label>
+          <input id="ff02d78"
             type="text"
             value={formData.host || ''}
             onChange={(e) => handleChange('host', e.target.value)}
@@ -88,8 +88,8 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
         {/* Port */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Port</label>
-            <input
+            <label htmlFor="ff02d91" className="block text-sm font-medium text-gray-700 mb-2">Port</label>
+            <input id="ff02d91"
               type="number"
               value={formData.port || ''}
               onChange={(e) => handleChange('port', parseInt(e.target.value))}
@@ -100,8 +100,8 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
 
           {/* From Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">From Email</label>
-            <input
+            <label htmlFor="ff02d103" className="block text-sm font-medium text-gray-700 mb-2">From Email</label>
+            <input id="ff02d103"
               type="email"
               value={formData.fromEmail || ''}
               onChange={(e) => handleChange('fromEmail', e.target.value)}
@@ -113,8 +113,8 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
 
         {/* Username */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-          <input
+          <label htmlFor="ff02d116" className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+          <input id="ff02d116"
             type="text"
             value={formData.username || ''}
             onChange={(e) => handleChange('username', e.target.value)}
@@ -125,8 +125,8 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
 
         {/* Password */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-          <input
+          <label htmlFor="ff02d128" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+          <input id="ff02d128"
             type="password"
             value={formData.password || ''}
             onChange={(e) => handleChange('password', e.target.value)}
@@ -138,10 +138,10 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
 
         {/* Security Options */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700">Security Options</label>
+          <label htmlFor="ff02d141" className="block text-sm font-medium text-gray-700">Security Options</label>
           <div className="space-y-2">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
+              <input id="ff02d141"
                 type="checkbox"
                 checked={formData.tls || false}
                 onChange={(e) => handleChange('tls', e.target.checked)}
@@ -163,16 +163,16 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
 
         {/* Test Email */}
         <div className="pt-4 border-t border-gray-200">
-          <label className="block text-sm font-medium text-gray-700 mb-3">Test Configuration</label>
+          <label htmlFor="ff02d166" className="block text-sm font-medium text-gray-700 mb-3">Test Configuration</label>
           <div className="flex gap-3">
-            <input
+            <input id="ff02d166"
               type="email"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
               placeholder="test@example.com"
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <button
+            <button type="button"
               onClick={handleTest}
               disabled={testing || !testEmail}
               className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
@@ -184,7 +184,7 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
 
         {/* Actions */}
         <div className="pt-4 border-t border-gray-200 flex justify-end">
-          <button
+          <button type="button"
             onClick={handleSave}
             disabled={saving}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"

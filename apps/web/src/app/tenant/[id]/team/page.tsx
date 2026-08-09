@@ -327,7 +327,7 @@ export default function TeamPage() {
       {/* Policy Restrictions panel */}
       {restrictions.rules.some(r => !r.allow) && (
         <div className="mb-4 border border-amber-200 rounded-xl overflow-hidden">
-          <button
+          <button type="button"
             onClick={() => setRestrictionsExpanded(v => !v)}
             className="w-full flex items-center justify-between px-4 py-3 bg-amber-50 text-left"
           >
@@ -397,7 +397,7 @@ export default function TeamPage() {
       {/* Tab Bar */}
       <div className="flex items-center justify-between border-b border-gray-200 mb-6">
         <div className="flex">
-          <button
+          <button type="button"
             onClick={() => setActiveTab('members')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'members'
@@ -407,7 +407,7 @@ export default function TeamPage() {
           >
             Members ({data.length})
           </button>
-          <button
+          <button type="button"
             onClick={() => setActiveTab('invites')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'invites'
@@ -417,7 +417,7 @@ export default function TeamPage() {
           >
             Pending Invites ({pendingCount})
           </button>
-          <button
+          <button type="button"
             onClick={() => setActiveTab('activity')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'activity'
@@ -464,13 +464,13 @@ export default function TeamPage() {
               {selected.size > 0 && (
                 <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <span className="text-sm font-medium text-blue-700">{selected.size} selected</span>
-                  <button
+                  <button type="button"
                     onClick={() => setBulkConfirm(true)}
                     className="text-xs font-medium px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
                   >
                     Remove {selected.size} member{selected.size !== 1 ? 's' : ''}
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => setSelected(new Set())}
                     className="text-xs text-gray-500 hover:text-gray-700 ml-auto"
                   >
@@ -571,7 +571,7 @@ export default function TeamPage() {
                           >
                             🎭
                           </button>
-                          <button
+                          <button type="button"
                             onClick={() => {
                               setSelected(new Set([member.id]));
                               setBulkConfirm(true);
@@ -641,7 +641,7 @@ export default function TeamPage() {
                         </td>
                         <td className="px-4 py-3">
                           {invite.status === 'PENDING' && (
-                            <button
+                            <button type="button"
                               onClick={() => copyInviteLink(invite.token)}
                               className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                               title={`/join/${invite.token}`}
@@ -653,14 +653,14 @@ export default function TeamPage() {
                         <td className="px-4 py-3">
                           {invite.status === 'PENDING' && (
                             <div className="flex items-center gap-2">
-                              <button
+                              <button type="button"
                                 onClick={() => handleRevoke(invite.id)}
                                 disabled={inviteAction === invite.id}
                                 className="text-xs text-red-600 hover:text-red-700 font-medium px-2 py-1 rounded border border-red-200 hover:bg-red-50 disabled:opacity-50"
                               >
                                 Revoke
                               </button>
-                              <button
+                              <button type="button"
                                 onClick={() => handleResend(invite.id)}
                                 disabled={inviteAction === invite.id}
                                 className="text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 disabled:opacity-50"
@@ -741,14 +741,14 @@ export default function TeamPage() {
               </div>
             )}
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={handleRoleConfirm}
                 disabled={updatingRole}
                 className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {updatingRole ? 'Updating…' : 'Confirm'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setRoleConfirm(null)}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -778,14 +778,14 @@ export default function TeamPage() {
               ))}
             </ul>
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={handleBulkRemove}
                 disabled={bulkRemoving}
                 className="bg-red-600 text-white hover:bg-red-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {bulkRemoving ? 'Removing…' : `Remove ${selectedMembers.length}`}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setBulkConfirm(false)}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -817,14 +817,14 @@ export default function TeamPage() {
               ))}
             </select>
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={handleAssignRole}
                 disabled={assigning}
                 className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {assigning ? 'Saving…' : 'Save'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setAssignModal(null)}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -848,7 +848,7 @@ export default function TeamPage() {
             {/* Drawer header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-bold text-gray-900">Member Permissions</h3>
-              <button
+              <button type="button"
                 onClick={() => setPermDrawer(null)}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"
               >

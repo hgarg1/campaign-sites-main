@@ -270,7 +270,7 @@ export default function ChildOrgPage() {
               <>
                 <OrgStatusBadge status={childOrg.effectiveStatus} />
                 {childOrg.ownStatus === 'ACTIVE' ? (
-                  <button
+                  <button type="button"
                     onClick={handleSuspend}
                     disabled={actionLoading === 'suspend'}
                     className="bg-red-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"
@@ -278,7 +278,7 @@ export default function ChildOrgPage() {
                     {actionLoading === 'suspend' ? 'Suspending...' : 'Suspend'}
                   </button>
                 ) : childOrg.ownStatus === 'SUSPENDED' ? (
-                  <button
+                  <button type="button"
                     onClick={handleReactivate}
                     disabled={actionLoading === 'reactivate'}
                     className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
@@ -361,7 +361,7 @@ export default function ChildOrgPage() {
             </p>
           </div>
           {!policyEdit && (
-            <button
+            <button type="button"
               onClick={() => { setPolicyEdit(true); if (!policy) { setEditRules([]); setEditNote(''); } }}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
@@ -410,11 +410,11 @@ export default function ChildOrgPage() {
                   <option value="deny">Deny</option>
                   <option value="allow">Allow</option>
                 </select>
-                <button onClick={() => removeRule(i)} className="text-red-500 hover:text-red-700 text-lg font-bold leading-none px-1">×</button>
+                <button type="button" onClick={() => removeRule(i)} className="text-red-500 hover:text-red-700 text-lg font-bold leading-none px-1">×</button>
               </div>
             ))}
 
-            <button
+            <button type="button"
               onClick={addRule}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium border border-dashed border-blue-300 rounded-lg px-4 py-2 w-full"
             >
@@ -433,21 +433,21 @@ export default function ChildOrgPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
+              <button type="button"
                 onClick={savePolicy}
                 disabled={policySaving}
                 className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
               >
                 {policySaving ? 'Saving…' : 'Save Restrictions'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => { setPolicyEdit(false); if (policy) { setEditRules(policy.rules); setEditNote(policy.note ?? ''); } }}
                 className="text-sm text-gray-600 hover:text-gray-700 font-medium"
               >
                 Cancel
               </button>
               {policy && (
-                <button
+                <button type="button"
                   onClick={removePolicy}
                   disabled={policySaving}
                   className="ml-auto text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"

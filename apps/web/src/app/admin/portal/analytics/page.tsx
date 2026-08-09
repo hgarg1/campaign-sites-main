@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
       <div className="mb-6 border-b border-gray-200 overflow-x-auto">
         <nav className="-mb-px flex gap-6 sm:gap-8">
           {tabs.map((tab) => (
-            <button
+            <button type="button"
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${

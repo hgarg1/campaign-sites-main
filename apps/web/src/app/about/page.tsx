@@ -298,7 +298,7 @@ export default function AboutPage() {
                     </span>
                   ))}
                 </div>
-                <p className="text-gray-600 mb-4 italic">"{item.quote}"</p>
+                <p className="text-gray-600 mb-4 italic">&quot;{item.quote}&quot;</p>
                 <div>
                   <p className="font-semibold text-gray-900">{item.author}</p>
                   <p className="text-sm text-gray-500">{item.role}</p>

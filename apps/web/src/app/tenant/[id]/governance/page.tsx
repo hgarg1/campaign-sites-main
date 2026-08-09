@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
 import { QuorumProgress, type ProposalProgress } from '@/components/governance/QuorumProgress';
 import { TieBreakPanel } from '@/components/governance/TieBreakPanel';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import {
   StakeAllocationEditor,
   type OwnerRow,
@@ -209,6 +210,7 @@ function ProposalDetailSlideOver({
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">Proposal Details</h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
           >
@@ -343,12 +345,14 @@ function ProposalDetailSlideOver({
                 {voteState.decision === null ? (
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => setVoteState((s) => ({ ...s, decision: 'APPROVE' }))}
                       className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm"
                     >
                       ✓ Approve
                     </button>
                     <button
+                      type="button"
                       onClick={() => setVoteState((s) => ({ ...s, decision: 'REJECT' }))}
                       className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm"
                     >
@@ -366,6 +370,7 @@ function ProposalDetailSlideOver({
                     />
                     <div className="flex gap-2">
                       <button
+                        type="button"
                         onClick={submitVote}
                         disabled={voteState.submitting}
                         className={`flex-1 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50 ${voteState.decision === 'APPROVE' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
@@ -375,6 +380,7 @@ function ProposalDetailSlideOver({
                           : `Confirm ${voteState.decision === 'APPROVE' ? 'Approve' : 'Reject'}`}
                       </button>
                       <button
+                        type="button"
                         onClick={() => setVoteState((s) => ({ ...s, decision: null, comment: '' }))}
                         className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
                       >
@@ -583,8 +589,11 @@ function NewProposalSlideOver({
     if (actionType === 'SET_GOVERNANCE_RULE')
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Governance rule</label>
+          <label htmlFor="f4df7586" className="block text-sm font-medium text-gray-700 mb-1">
+            Governance rule
+          </label>
           <textarea
+            id="f4df7586"
             className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
             rows={6}
             placeholder={
@@ -604,10 +613,11 @@ function NewProposalSlideOver({
     if (actionType === 'SET_CHILD_POLICY')
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="f4df7607" className="block text-sm font-medium text-gray-700 mb-1">
             Policy rules to impose on the child
           </label>
           <textarea
+            id="f4df7607"
             className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
             rows={5}
             placeholder={
@@ -625,8 +635,11 @@ function NewProposalSlideOver({
     if (['UPDATE_SETTINGS', 'UPDATE_BRANDING'].includes(actionType))
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Settings JSON</label>
+          <label htmlFor="f4df7628" className="block text-sm font-medium text-gray-700 mb-1">
+            Settings JSON
+          </label>
           <textarea
+            id="f4df7628"
             className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
             rows={4}
             value={payloadJson}
@@ -638,8 +651,11 @@ function NewProposalSlideOver({
       return (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Member ID</label>
+            <label htmlFor="f4df7641" className="block text-sm font-medium text-gray-700 mb-1">
+              Member ID
+            </label>
             <input
+              id="f4df7641"
               className="w-full border rounded-lg px-3 py-2 text-sm"
               value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
@@ -647,8 +663,11 @@ function NewProposalSlideOver({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">New Role</label>
+            <label htmlFor="f4df7650" className="block text-sm font-medium text-gray-700 mb-1">
+              New Role
+            </label>
             <select
+              id="f4df7650"
               className="w-full border rounded-lg px-3 py-2 text-sm"
               value={newRole}
               onChange={(e) => setNewRole(e.target.value)}
@@ -664,8 +683,11 @@ function NewProposalSlideOver({
     if (actionType === 'ADD_PARENT' || actionType === 'REMOVE_PARENT')
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Parent Org ID</label>
+          <label htmlFor="f4df7667" className="block text-sm font-medium text-gray-700 mb-1">
+            Parent Org ID
+          </label>
           <input
+            id="f4df7667"
             className="w-full border rounded-lg px-3 py-2 text-sm"
             value={parentOrgId}
             onChange={(e) => setParentOrgId(e.target.value)}
@@ -675,8 +697,11 @@ function NewProposalSlideOver({
     if (actionType === 'ADD_CHILD')
       return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Child Org ID</label>
+          <label htmlFor="f4df7678" className="block text-sm font-medium text-gray-700 mb-1">
+            Child Org ID
+          </label>
           <input
+            id="f4df7678"
             className="w-full border rounded-lg px-3 py-2 text-sm"
             value={childPayloadOrgId}
             onChange={(e) => setChildPayloadOrgId(e.target.value)}
@@ -687,16 +712,22 @@ function NewProposalSlideOver({
       return (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Integration ID</label>
+            <label htmlFor="f4df7690" className="block text-sm font-medium text-gray-700 mb-1">
+              Integration ID
+            </label>
             <input
+              id="f4df7690"
               className="w-full border rounded-lg px-3 py-2 text-sm"
               value={integrationId}
               onChange={(e) => setIntegrationId(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Config JSON</label>
+            <label htmlFor="f4df7698" className="block text-sm font-medium text-gray-700 mb-1">
+              Config JSON
+            </label>
             <textarea
+              id="f4df7698"
               className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
               rows={4}
               value={integrationConfigJson}
@@ -715,6 +746,7 @@ function NewProposalSlideOver({
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">New Proposal</h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
           >
@@ -723,11 +755,14 @@ function NewProposalSlideOver({
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Child Org *</label>
+            <label htmlFor="f4df7726" className="block text-sm font-medium text-gray-700 mb-1">
+              Child Org *
+            </label>
             {childOrgsLoading ? (
               <div className="animate-pulse bg-gray-200 rounded h-9 w-full" />
             ) : childOrgsFetchFailed ? (
               <input
+                id="f4df7726"
                 required
                 className="w-full border rounded-lg px-3 py-2 text-sm"
                 placeholder="Paste child org ID…"
@@ -759,8 +794,11 @@ function NewProposalSlideOver({
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Action Type *</label>
+            <label htmlFor="f4df7762" className="block text-sm font-medium text-gray-700 mb-1">
+              Action Type *
+            </label>
             <select
+              id="f4df7762"
               required
               className="w-full border rounded-lg px-3 py-2 text-sm"
               value={actionType}
@@ -916,6 +954,7 @@ function PendingVoteTab({
       <div className="text-center py-12">
         <p className="text-red-600 mb-3">Failed to load pending votes.</p>
         <button
+          type="button"
           onClick={load}
           className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
         >
@@ -961,6 +1000,7 @@ function PendingVoteTab({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
+                  type="button"
                   onClick={() => onViewDetail(p.id)}
                   className="text-blue-600 hover:text-blue-800 text-xs font-medium border border-blue-200 rounded px-2 py-1"
                 >
@@ -1006,12 +1046,14 @@ function PendingVoteTab({
             {!voteState || voteState.decision === null ? (
               <div className="flex gap-2 mt-4">
                 <button
+                  type="button"
                   onClick={() => startVote(p.id, 'APPROVE')}
                   className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm"
                 >
                   ✓ Approve
                 </button>
                 <button
+                  type="button"
                   onClick={() => startVote(p.id, 'REJECT')}
                   className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm"
                 >
@@ -1039,6 +1081,7 @@ function PendingVoteTab({
                 )}
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => submitVote(p)}
                     disabled={voteState.submitting}
                     className={`flex-1 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50 ${voteState.decision === 'APPROVE' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
@@ -1048,6 +1091,7 @@ function PendingVoteTab({
                       : `Confirm ${voteState.decision === 'APPROVE' ? 'Approve' : 'Reject'}`}
                   </button>
                   <button
+                    type="button"
                     onClick={() =>
                       setVoting((prev) => {
                         const next = { ...prev };
@@ -1080,6 +1124,7 @@ function MyProposalsTab({
   onViewDetail: (id: string) => void;
   onRefresh: () => void;
 }) {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelError, setCancelError] = useState('');
@@ -1098,12 +1143,29 @@ function MyProposalsTab({
   }, [load]);
 
   async function cancelProp(p: Proposal) {
-    if (
-      !window.confirm(
-        `Cancel proposal for "${ACTION_LABELS[p.actionType] ?? p.actionType}" on "${p.childOrg?.name}"?`
-      )
-    )
-      return;
+    const votesCast = p.votes?.length ?? 0;
+    const ok = await confirm({
+      title: 'Cancel this proposal?',
+      destructive: true,
+      confirmLabel: 'Cancel proposal',
+      cancelLabel: 'Keep it open',
+      body: (
+        <>
+          <p>
+            This withdraws <strong>{ACTION_LABELS[p.actionType] ?? p.actionType}</strong> on{' '}
+            <strong>{p.childOrg?.name}</strong>. It cannot be reopened — a new proposal would have
+            to be raised.
+          </p>
+          {votesCast > 0 && (
+            <p className="mt-2">
+              {votesCast} {votesCast === 1 ? 'owner has' : 'owners have'} already voted on it.
+            </p>
+          )}
+        </>
+      ),
+    });
+    if (ok === null) return;
+
     setCancelError('');
     setCancelling(p.id);
     const res = await fetch(`/api/tenant/${orgId}/governance/${p.id}?action=cancel`, {
@@ -1139,8 +1201,12 @@ function MyProposalsTab({
 
   return (
     <div className="overflow-x-auto">
+      {confirmDialog}
       {cancelError && (
-        <div className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">
+        <div
+          role="alert"
+          className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm"
+        >
           {cancelError}
         </div>
       )}
@@ -1149,6 +1215,7 @@ function MyProposalsTab({
           <tr>
             <th colSpan={8} className="px-4 py-2 text-right">
               <button
+                type="button"
                 onClick={load}
                 className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1"
               >
@@ -1203,6 +1270,7 @@ function MyProposalsTab({
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => onViewDetail(p.id)}
                       className="text-blue-600 hover:text-blue-800 text-xs font-medium"
                     >
@@ -1210,6 +1278,7 @@ function MyProposalsTab({
                     </button>
                     {p.status === 'PENDING_VOTES' && (
                       <button
+                        type="button"
                         onClick={() => cancelProp(p)}
                         disabled={cancelling === p.id}
                         className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50"
@@ -1271,6 +1340,7 @@ function IncomingTab({
       <div className="text-center py-12">
         <p className="text-red-600 mb-3">Failed to load incoming proposals.</p>
         <button
+          type="button"
           onClick={load}
           className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
         >
@@ -1289,6 +1359,7 @@ function IncomingTab({
     <div className="overflow-x-auto">
       <div className="mb-3 flex justify-end">
         <button
+          type="button"
           onClick={load}
           className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1"
         >
@@ -1398,6 +1469,7 @@ function HistoryTab({
       <div className="text-center py-12">
         <p className="text-red-600 mb-3">Failed to load history.</p>
         <button
+          type="button"
           onClick={load}
           className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
         >
@@ -1431,6 +1503,7 @@ function HistoryTab({
           </select>
         </div>
         <button
+          type="button"
           onClick={load}
           className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1"
         >
@@ -1555,6 +1628,7 @@ export default function GovernancePage() {
           <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
             {tabs.map((t) => (
               <button
+                type="button"
                 key={t.key}
                 onClick={() => switchTab(t.key)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -1575,6 +1649,7 @@ export default function GovernancePage() {
             ))}
           </div>
           <button
+            type="button"
             onClick={() => setShowNewProposal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-2"
           >

@@ -97,7 +97,7 @@ export default function AdminHierarchyPage() {
                 subordinates, who inherit permissions cascading down the hierarchy.
               </p>
             </div>
-            <button
+            <button type="button"
               onClick={fetchHierarchy}
               className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
             >
@@ -125,7 +125,7 @@ export default function AdminHierarchyPage() {
             <p className="text-sm text-red-900">
               <strong>Error:</strong> {error}
             </p>
-            <button
+            <button type="button"
               onClick={fetchHierarchy}
               className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium rounded transition-colors"
             >

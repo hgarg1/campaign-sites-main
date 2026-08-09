@@ -160,7 +160,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
         <div className="flex items-center gap-2">
         {/* Notification Bell */}
         <div className="relative">
-          <button
+          <button type="button"
             onClick={() => { setNotifOpen(!notifOpen); if (!notifOpen) fetchNotifs(); }}
             className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
@@ -182,7 +182,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-900">Governance Notifications</span>
                   {unreadCount > 0 && (
-                    <button
+                    <button type="button"
                       onClick={async () => {
                         setMarkingRead(true);
                         try {
@@ -246,7 +246,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
 
         {/* User Menu */}
         <div className="relative">
-          <button
+          <button type="button"
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
           >

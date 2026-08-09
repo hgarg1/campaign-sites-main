@@ -68,7 +68,7 @@ export default function PermissionOverridesPage() {
       <AdminLayout title="Error" subtitle="Something went wrong">
         <div className="p-8 text-center">
           <p className="text-red-600 font-medium">{error}</p>
-          <button
+          <button type="button"
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
           >
@@ -101,7 +101,7 @@ export default function PermissionOverridesPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <button
+          <button type="button"
             onClick={() => router.back()}
             className="mb-4 text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
           >
@@ -125,7 +125,7 @@ export default function PermissionOverridesPage() {
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {admins.map((admin) => (
-              <button
+              <button type="button"
                 key={admin.id}
                 onClick={() => setSelectedAdminId(admin.id)}
                 className={`p-4 rounded-lg border-2 transition-all text-left ${

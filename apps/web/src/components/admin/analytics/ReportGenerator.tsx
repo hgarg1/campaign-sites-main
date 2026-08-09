@@ -84,7 +84,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
         
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {(['daily', 'weekly', 'monthly', 'quarterly', 'custom'] as const).map((type) => (
-            <button
+            <button type="button"
               key={type}
               onClick={() => setReportType(type)}
               className={`py-2 px-3 rounded-lg border-2 font-medium text-sm text-center transition-all ${
@@ -136,7 +136,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Metrics</h3>
         <div className="grid grid-cols-2 gap-2">
           {metrics.map((metric) => (
-            <button
+            <button type="button"
               key={metric.id}
               onClick={() => toggleMetric(metric.id)}
               className={`p-3 rounded-lg border-2 text-center transition-all ${
@@ -157,7 +157,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Dimensions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {dimensions.map((dimension) => (
-            <button
+            <button type="button"
               key={dimension.id}
               onClick={() => toggleDimension(dimension.id)}
               className={`p-3 rounded-lg border-2 text-center transition-all ${
@@ -178,7 +178,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
         <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Format</h3>
         <div className="grid grid-cols-2 gap-2">
           {(['pdf', 'csv'] as const).map((f) => (
-            <button
+            <button type="button"
               key={f}
               onClick={() => setFormat(f)}
               className={`py-2 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
@@ -195,7 +195,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
 
       {/* Generate Button */}
       <div className="p-5">
-        <button
+        <button type="button"
           onClick={handleGenerate}
           disabled={loading}
           className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"

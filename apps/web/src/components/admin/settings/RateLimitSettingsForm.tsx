@@ -51,8 +51,8 @@ export function RateLimitSettingsForm({ settings, loading, onUpdate }: RateLimit
           <h4 className="font-semibold text-blue-900 mb-4">Global Rate Limit</h4>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 min-w-fit">Requests:</label>
-              <input
+              <label htmlFor="fe8f254" className="text-sm font-medium text-gray-700 min-w-fit">Requests:</label>
+              <input id="fe8f254"
                 type="number"
                 min="100"
                 value={formData.globalLimit || 10000}
@@ -62,8 +62,8 @@ export function RateLimitSettingsForm({ settings, loading, onUpdate }: RateLimit
               <span className="text-sm text-gray-600">per window</span>
             </div>
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 min-w-fit">Window:</label>
-              <input
+              <label htmlFor="fe8f265" className="text-sm font-medium text-gray-700 min-w-fit">Window:</label>
+              <input id="fe8f265"
                 type="number"
                 min="1"
                 value={formData.globalWindow || 60}
@@ -80,8 +80,8 @@ export function RateLimitSettingsForm({ settings, loading, onUpdate }: RateLimit
           <h4 className="font-semibold text-purple-900 mb-4">Per-Organization Rate Limit</h4>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 min-w-fit">Requests:</label>
-              <input
+              <label htmlFor="fe8f283" className="text-sm font-medium text-gray-700 min-w-fit">Requests:</label>
+              <input id="fe8f283"
                 type="number"
                 min="10"
                 value={formData.perOrgLimit || 5000}
@@ -91,8 +91,8 @@ export function RateLimitSettingsForm({ settings, loading, onUpdate }: RateLimit
               <span className="text-sm text-gray-600">per window</span>
             </div>
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 min-w-fit">Window:</label>
-              <input
+              <label htmlFor="fe8f294" className="text-sm font-medium text-gray-700 min-w-fit">Window:</label>
+              <input id="fe8f294"
                 type="number"
                 min="1"
                 value={formData.perOrgWindow || 60}
@@ -109,8 +109,8 @@ export function RateLimitSettingsForm({ settings, loading, onUpdate }: RateLimit
           <h4 className="font-semibold text-green-900 mb-4">Per-User Rate Limit</h4>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 min-w-fit">Requests:</label>
-              <input
+              <label htmlFor="fe8f2112" className="text-sm font-medium text-gray-700 min-w-fit">Requests:</label>
+              <input id="fe8f2112"
                 type="number"
                 min="1"
                 value={formData.perUserLimit || 1000}
@@ -120,8 +120,8 @@ export function RateLimitSettingsForm({ settings, loading, onUpdate }: RateLimit
               <span className="text-sm text-gray-600">per window</span>
             </div>
             <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 min-w-fit">Window:</label>
-              <input
+              <label htmlFor="fe8f2123" className="text-sm font-medium text-gray-700 min-w-fit">Window:</label>
+              <input id="fe8f2123"
                 type="number"
                 min="1"
                 value={formData.perUserWindow || 60}
@@ -135,7 +135,7 @@ export function RateLimitSettingsForm({ settings, loading, onUpdate }: RateLimit
 
         {/* Save Button */}
         <div className="pt-4 border-t border-gray-200 flex justify-end">
-          <button
+          <button type="button"
             onClick={handleSave}
             disabled={saving}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"

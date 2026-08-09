@@ -31,9 +31,19 @@ function parsePagination(searchParams: URLSearchParams) {
   };
 }
 
+/**
+ * Placeholder monitoring data.
+ *
+ * These uptime and latency figures are constants, not measurements. They are
+ * flagged with `sample: true` so the UI can label them rather than presenting
+ * an invented 99.9% as something that was observed — an operator has no way to
+ * tell a real number from a hard-coded one, which invites a decision based on
+ * a figure nobody measured.
+ */
 function getMonitoringHealth(snapshot: AdminSnapshot) {
   const now = new Date().toISOString();
   return {
+    sample: true,
     data: [
       {
         name: 'API Gateway',
@@ -64,6 +74,7 @@ function getMonitoringHealth(snapshot: AdminSnapshot) {
   };
 }
 
+/** Placeholder series — see getMonitoringHealth. */
 function getMonitoringMetrics() {
   const now = Date.now();
   const points = Array.from({ length: 12 }).map((_, index) => {
@@ -78,7 +89,7 @@ function getMonitoringMetrics() {
       redisMemory: 48 + index,
     };
   });
-  return { data: points };
+  return { sample: true, data: points };
 }
 
 function getMonitoringPerformance(snapshot: AdminSnapshot) {
@@ -204,6 +215,10 @@ async function getAnalyticsEngagement() {
   ];
 }
 
+/**
+ * Placeholder settings. Every value below is invented, including the SMTP
+ * host and the API key. Marked so the UI can say so.
+ */
 function getSettingsDefaults() {
   const now = new Date().toISOString();
   return {

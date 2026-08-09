@@ -307,7 +307,7 @@ function PasskeySection({ requirePasskey }: { requirePasskey: boolean }) {
       {error && (
         <div className="flex items-center justify-between px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-2 text-red-400 hover:text-red-600">×</button>
+          <button type="button" onClick={() => setError(null)} className="ml-2 text-red-400 hover:text-red-600">×</button>
         </div>
       )}
 
@@ -323,7 +323,7 @@ function PasskeySection({ requirePasskey }: { requirePasskey: boolean }) {
             className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={registering}
           />
-          <button
+          <button type="button"
             onClick={handleRegister}
             disabled={registering}
             className="sm:whitespace-nowrap px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
@@ -362,7 +362,7 @@ function PasskeySection({ requirePasskey }: { requirePasskey: boolean }) {
                     <p className="text-xs text-gray-400 capitalize">{c.transports.join(', ')}</p>
                   )}
                 </div>
-                <button
+                <button type="button"
                   onClick={() => handleRevoke(c.id)}
                   disabled={revoking === c.id}
                   className="flex-shrink-0 px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"

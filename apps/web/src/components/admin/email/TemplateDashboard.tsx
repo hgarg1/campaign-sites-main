@@ -151,7 +151,7 @@ export function TemplateDashboard() {
       >
         <h3 className="text-red-900 font-semibold mb-2">Error</h3>
         <p className="text-red-700 text-sm">{error}</p>
-        <button
+        <button type="button"
           onClick={handleRefresh}
           className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
@@ -170,7 +170,7 @@ export function TemplateDashboard() {
       {/* Header with Refresh Button */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Email Template Dashboard</h1>
-        <button
+        <button type="button"
           onClick={handleRefresh}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
@@ -306,7 +306,7 @@ export function TemplateDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right">
-                      <button
+                      <button type="button"
                         onClick={() => handleToggleTemplate(template.key, template.isActive)}
                         className="px-3 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 underline"
                       >

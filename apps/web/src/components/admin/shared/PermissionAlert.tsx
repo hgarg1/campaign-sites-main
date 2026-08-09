@@ -60,7 +60,7 @@ export function PermissionErrorPage({
         <div className="text-6xl mb-4">🔐</div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Access Denied</h1>
         <p className="text-gray-600 mb-4">
-          You don't have permission to view the {pageTitle} page.
+          You don&apos;t have permission to view the {pageTitle} page.
         </p>
         <div className="bg-gray-100 rounded-lg p-4 text-left mb-4">
           <p className="text-xs text-gray-500 mb-1">Required permission:</p>

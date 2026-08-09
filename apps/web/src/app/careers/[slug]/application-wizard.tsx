@@ -163,7 +163,7 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
           <p className="text-gray-600 mb-5">
             Start the 3-step application process. Resume and CV uploads are required.
           </p>
-          <button
+          <button type="button"
             onClick={() => setIsOpen(true)}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg transition-all hover:scale-105 active:scale-95"
           >
@@ -201,28 +201,28 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
         {step === 1 && (
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
+              <label htmlFor="fbe68204" className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+              <input id="fbe68204" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
+              <label htmlFor="fbe68208" className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <input id="fbe68208" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
+              <label htmlFor="fbe68212" className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+              <input id="fbe68212" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
+              <label htmlFor="fbe68216" className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <input id="fbe68216" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
-              <input value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="https://linkedin.com/in/..." />
+              <label htmlFor="fbe68220" className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+              <input id="fbe68220" value={linkedInUrl} onChange={(e) => setLinkedInUrl(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="https://linkedin.com/in/..." />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio URL</label>
-              <input value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="https://..." />
+              <label htmlFor="fbe68224" className="block text-sm font-medium text-gray-700 mb-1">Portfolio URL</label>
+              <input id="fbe68224" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="https://..." />
             </div>
           </div>
         )}
@@ -230,18 +230,18 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Resume (PDF/DOC/DOCX, max 5MB) *</label>
-              <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setResume(e.target.files?.[0] ?? null)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
+              <label htmlFor="fbe68233" className="block text-sm font-medium text-gray-700 mb-1">Resume (PDF/DOC/DOCX, max 5MB) *</label>
+              <input id="fbe68233" type="file" accept=".pdf,.doc,.docx" onChange={(e) => setResume(e.target.files?.[0] ?? null)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
               {resume && <p className="text-xs text-gray-500 mt-1">Selected: {resume.name}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">CV (PDF/DOC/DOCX, max 5MB) *</label>
-              <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setCv(e.target.files?.[0] ?? null)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
+              <label htmlFor="fbe68238" className="block text-sm font-medium text-gray-700 mb-1">CV (PDF/DOC/DOCX, max 5MB) *</label>
+              <input id="fbe68238" type="file" accept=".pdf,.doc,.docx" onChange={(e) => setCv(e.target.files?.[0] ?? null)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" required />
               {cv && <p className="text-xs text-gray-500 mt-1">Selected: {cv.name}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cover Letter</label>
-              <textarea value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} rows={6} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="Tell us why you're a great fit..." />
+              <label htmlFor="fbe68243" className="block text-sm font-medium text-gray-700 mb-1">Cover Letter</label>
+              <textarea id="fbe68243" value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} rows={6} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="Tell us why you're a great fit..." />
             </div>
           </div>
         )}
@@ -249,32 +249,32 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
         {step === 3 && (
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
-              <input type="number" min={0} value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
+              <label htmlFor="fbe68252" className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
+              <input id="fbe68252" type="number" min={0} value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Company</label>
-              <input value={currentCompany} onChange={(e) => setCurrentCompany(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
+              <label htmlFor="fbe68256" className="block text-sm font-medium text-gray-700 mb-1">Current Company</label>
+              <input id="fbe68256" value={currentCompany} onChange={(e) => setCurrentCompany(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Title</label>
-              <input value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
+              <label htmlFor="fbe68260" className="block text-sm font-medium text-gray-700 mb-1">Current Title</label>
+              <input id="fbe68260" value={currentTitle} onChange={(e) => setCurrentTitle(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Expected Salary</label>
-              <input value={expectedSalary} onChange={(e) => setExpectedSalary(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
+              <label htmlFor="fbe68264" className="block text-sm font-medium text-gray-700 mb-1">Expected Salary</label>
+              <input id="fbe68264" value={expectedSalary} onChange={(e) => setExpectedSalary(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Earliest Start Date</label>
-              <input value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="e.g. 2 weeks" />
+              <label htmlFor="fbe68268" className="block text-sm font-medium text-gray-700 mb-1">Earliest Start Date</label>
+              <input id="fbe68268" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="e.g. 2 weeks" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Work Authorization</label>
-              <input value={workAuthorization} onChange={(e) => setWorkAuthorization(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="e.g. US Citizen, Visa" />
+              <label htmlFor="fbe68272" className="block text-sm font-medium text-gray-700 mb-1">Work Authorization</label>
+              <input id="fbe68272" value={workAuthorization} onChange={(e) => setWorkAuthorization(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" placeholder="e.g. US Citizen, Visa" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Additional Information</label>
-              <textarea value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} rows={4} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
+              <label htmlFor="fbe68276" className="block text-sm font-medium text-gray-700 mb-1">Additional Information</label>
+              <textarea id="fbe68276" value={additionalInfo} onChange={(e) => setAdditionalInfo(e.target.value)} rows={4} className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:outline-none" />
             </div>
           </div>
         )}

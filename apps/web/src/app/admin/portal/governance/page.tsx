@@ -1,5 +1,7 @@
 'use client';
 
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+
 import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/admin/shared';
 
@@ -61,9 +63,24 @@ interface GovernanceStats {
 
 type TabType = 'config' | 'rules' | 'proposals';
 
-const VOTING_MODES = ['UNANIMOUS', 'QUORUM'] as const;
-const REJECT_MODES = ['SINGLE_VETO', 'MAJORITY_VETO'] as const;
-const PROPOSAL_STATUSES = ['', 'PENDING_VOTES', 'APPROVED', 'REJECTED', 'EXPIRED', 'CANCELLED'] as const;
+const VOTING_MODES = [
+  'UNANIMOUS',
+  'QUORUM',
+  'SIMPLE_MAJORITY',
+  'SUPERMAJORITY',
+  'WEIGHTED',
+  'DEAL_MAKER',
+] as const;
+const REJECT_MODES = ['SINGLE_VETO', 'MAJORITY_VETO', 'WEIGHTED_VETO', 'DERIVED', 'NONE'] as const;
+const PROPOSAL_STATUSES = [
+  '',
+  'PENDING_VOTES',
+  'PENDING_TIEBREAK',
+  'APPROVED',
+  'REJECTED',
+  'EXPIRED',
+  'CANCELLED',
+] as const;
 
 const ACTION_TYPE_LABELS: Record<string, string> = {
   SUSPEND: 'Suspend Org',
@@ -76,6 +93,10 @@ const ACTION_TYPE_LABELS: Record<string, string> = {
   ADD_PARENT: 'Add Parent',
   REMOVE_PARENT: 'Remove Parent',
   ADD_CHILD: 'Add Child Org',
+  SET_CHILD_POLICY: 'Restrict Child Org',
+  REMOVE_CHILD_POLICY: 'Remove Child Restriction',
+  SET_OWNERSHIP_STAKES: 'Reallocate Voting Stakes',
+  SET_GOVERNANCE_RULE: 'Change Governance Rule',
 };
 
 function actionLabel(raw: string) {
@@ -109,14 +130,18 @@ function StatsPanel() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const cards = [
     {
       icon: '🗳️',
       label: 'Pending Proposals',
       value: stats?.pending ?? 0,
-      color: stats?.pending ? 'bg-yellow-50 border-yellow-200 text-yellow-700' : 'bg-gray-50 border-gray-200 text-gray-500',
+      color: stats?.pending
+        ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
+        : 'bg-gray-50 border-gray-200 text-gray-500',
     },
     {
       icon: '✅',
@@ -147,10 +172,7 @@ function StatsPanel() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
       {cards.map((card) => (
-        <div
-          key={card.label}
-          className={`border rounded-xl p-4 flex flex-col gap-1 ${card.color}`}
-        >
+        <div key={card.label} className={`border rounded-xl p-4 flex flex-col gap-1 ${card.color}`}>
           <div className="text-2xl">{card.icon}</div>
           {loading ? (
             <div className="animate-pulse bg-gray-200 rounded h-6 w-12" />
@@ -162,6 +184,7 @@ function StatsPanel() {
       ))}
       <div className="col-span-2 lg:col-span-5 flex justify-end">
         <button
+          type="button"
           onClick={load}
           disabled={loading}
           className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1 disabled:opacity-50"
@@ -262,19 +285,22 @@ function ConfigTab() {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="mt-1 text-xs text-gray-500">
-            Maximum number of parent organizations that can co-own a single child org. Changing this does not automatically remove existing co-parent relationships.
+            Maximum number of parent organizations that can co-own a single child org. Changing this
+            does not automatically remove existing co-parent relationships.
           </p>
           {maxCoParents < originalMaxCoParents && (
             <div className="mt-2 p-2 bg-yellow-50 border border-yellow-300 rounded text-yellow-800 text-xs">
-              ⚠️ Lowering this limit won&apos;t remove existing co-parent relationships — you must manage those manually.
+              ⚠️ Lowering this limit won&apos;t remove existing co-parent relationships — you must
+              manage those manually.
             </div>
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="f4df7274" className="block text-sm font-medium text-gray-700 mb-1">
             Default Proposal TTL (days)
           </label>
           <input
+            id="f4df7274"
             type="number"
             min={1}
             max={90}
@@ -283,12 +309,14 @@ function ConfigTab() {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="mt-1 text-xs text-gray-500">
-            How long a proposal stays open for voting before it automatically expires. Individual action types can override this.
+            How long a proposal stays open for voting before it automatically expires. Individual
+            action types can override this.
           </p>
         </div>
       </div>
 
       <button
+        type="button"
         onClick={handleSave}
         disabled={saving}
         className="mt-6 px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
@@ -329,7 +357,9 @@ function RulesTab() {
     }
   }, []);
 
-  useEffect(() => { loadRules(); }, [loadRules]);
+  useEffect(() => {
+    loadRules();
+  }, [loadRules]);
 
   const startEdit = (rule: GovernanceRule) => {
     setEditingId(rule.id);
@@ -379,7 +409,10 @@ function RulesTab() {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ votingMode: bulkVotingMode, rejectMode: bulkRejectMode }),
-          }).then((res) => { if (!res.ok) throw new Error(`${r.actionType}: HTTP ${res.status}`); return res; })
+          }).then((res) => {
+            if (!res.ok) throw new Error(`${r.actionType}: HTTP ${res.status}`);
+            return res;
+          })
         )
       );
       const failed = results.filter((r) => r.status === 'rejected');
@@ -414,7 +447,9 @@ function RulesTab() {
           className="border border-gray-300 rounded px-2 py-1 text-sm"
           disabled={bulkApplying}
         >
-          {VOTING_MODES.map((m) => <option key={m}>{m}</option>)}
+          {VOTING_MODES.map((m) => (
+            <option key={m}>{m}</option>
+          ))}
         </select>
         <select
           value={bulkRejectMode}
@@ -422,9 +457,12 @@ function RulesTab() {
           className="border border-gray-300 rounded px-2 py-1 text-sm"
           disabled={bulkApplying}
         >
-          {REJECT_MODES.map((m) => <option key={m}>{m}</option>)}
+          {REJECT_MODES.map((m) => (
+            <option key={m}>{m}</option>
+          ))}
         </select>
         <button
+          type="button"
           onClick={handleBulkApply}
           disabled={bulkApplying}
           className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
@@ -434,17 +472,23 @@ function RulesTab() {
               <span className="animate-spin inline-block w-3 h-3 border border-white border-t-transparent rounded-full" />
               Applying…
             </>
-          ) : 'Apply to All Active Rules'}
+          ) : (
+            'Apply to All Active Rules'
+          )}
         </button>
-        {bulkSuccess && (
-          <span className="text-green-600 text-sm font-medium">✓ Applied!</span>
-        )}
+        {bulkSuccess && <span className="text-green-600 text-sm font-medium">✓ Applied!</span>}
       </div>
 
       {error && (
         <div className="mx-6 my-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between gap-2">
           <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 font-bold text-base leading-none flex-shrink-0">×</button>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-600 font-bold text-base leading-none flex-shrink-0"
+          >
+            ×
+          </button>
         </div>
       )}
 
@@ -452,8 +496,19 @@ function RulesTab() {
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {['Action Type', 'Voting Mode', 'Quorum %', 'Reject Mode', 'TTL (days)', 'Active', ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {[
+                'Action Type',
+                'Voting Mode',
+                'Quorum %',
+                'Reject Mode',
+                'TTL (days)',
+                'Active',
+                '',
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   {h}
                 </th>
               ))}
@@ -464,7 +519,9 @@ function RulesTab() {
               editingId === rule.id ? (
                 <tr key={rule.id} className="bg-blue-50">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-800 text-sm">{actionLabel(rule.actionType)}</div>
+                    <div className="font-medium text-gray-800 text-sm">
+                      {actionLabel(rule.actionType)}
+                    </div>
                     <div className="font-mono text-xs text-gray-400">{rule.actionType}</div>
                   </td>
                   <td className="px-4 py-3">
@@ -473,7 +530,9 @@ function RulesTab() {
                       onChange={(e) => setEditState((s) => ({ ...s, votingMode: e.target.value }))}
                       className="border border-gray-300 rounded px-2 py-1 text-sm"
                     >
-                      {VOTING_MODES.map((m) => <option key={m}>{m}</option>)}
+                      {VOTING_MODES.map((m) => (
+                        <option key={m}>{m}</option>
+                      ))}
                     </select>
                   </td>
                   <td className="px-4 py-3">
@@ -483,7 +542,9 @@ function RulesTab() {
                         min={1}
                         max={100}
                         value={editState.quorumPercent ?? ''}
-                        onChange={(e) => setEditState((s) => ({ ...s, quorumPercent: Number(e.target.value) }))}
+                        onChange={(e) =>
+                          setEditState((s) => ({ ...s, quorumPercent: Number(e.target.value) }))
+                        }
                         className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
                       />
                     ) : (
@@ -496,7 +557,9 @@ function RulesTab() {
                       onChange={(e) => setEditState((s) => ({ ...s, rejectMode: e.target.value }))}
                       className="border border-gray-300 rounded px-2 py-1 text-sm"
                     >
-                      {REJECT_MODES.map((m) => <option key={m}>{m}</option>)}
+                      {REJECT_MODES.map((m) => (
+                        <option key={m}>{m}</option>
+                      ))}
                     </select>
                   </td>
                   <td className="px-4 py-3">
@@ -504,7 +567,9 @@ function RulesTab() {
                       type="number"
                       min={1}
                       value={editState.ttlDays ?? rule.ttlDays}
-                      onChange={(e) => setEditState((s) => ({ ...s, ttlDays: Number(e.target.value) }))}
+                      onChange={(e) =>
+                        setEditState((s) => ({ ...s, ttlDays: Number(e.target.value) }))
+                      }
                       className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
                     />
                   </td>
@@ -518,6 +583,7 @@ function RulesTab() {
                   </td>
                   <td className="px-4 py-3 flex gap-2">
                     <button
+                      type="button"
                       onClick={() => saveEdit(rule.id)}
                       disabled={saving}
                       className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50"
@@ -525,6 +591,7 @@ function RulesTab() {
                       Save
                     </button>
                     <button
+                      type="button"
                       onClick={cancelEdit}
                       className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300"
                     >
@@ -535,7 +602,9 @@ function RulesTab() {
               ) : (
                 <tr key={rule.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-800 text-sm">{actionLabel(rule.actionType)}</div>
+                    <div className="font-medium text-gray-800 text-sm">
+                      {actionLabel(rule.actionType)}
+                    </div>
                     <div className="font-mono text-xs text-gray-400">{rule.actionType}</div>
                   </td>
                   <td className="px-4 py-3">
@@ -549,10 +618,13 @@ function RulesTab() {
                   <td className="px-4 py-3 text-gray-600 text-xs">{rule.rejectMode}</td>
                   <td className="px-4 py-3 text-gray-600">{rule.ttlDays}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block w-2 h-2 rounded-full ${rule.isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full ${rule.isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <button
+                      type="button"
                       onClick={() => startEdit(rule)}
                       className="text-gray-400 hover:text-blue-600 transition-colors"
                       title="Edit rule"
@@ -589,7 +661,10 @@ function ProposalSlideOver({ proposalId, onClose }: ProposalSlideOverProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!proposalId) { setDetail(null); return; }
+    if (!proposalId) {
+      setDetail(null);
+      return;
+    }
     setLoading(true);
     fetch(`/api/admin/governance/proposals/${proposalId}`)
       .then((r) => r.json())
@@ -611,15 +686,13 @@ function ProposalSlideOver({ proposalId, onClose }: ProposalSlideOverProps) {
   return (
     <>
       {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black/30 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
       {/* Panel */}
       <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 overflow-y-auto flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
           <h2 className="text-lg font-semibold text-gray-900">Proposal Details</h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-xl font-bold"
             aria-label="Close"
@@ -639,31 +712,47 @@ function ProposalSlideOver({ proposalId, onClose }: ProposalSlideOverProps) {
               <div>
                 <div className="text-xs text-gray-400 font-mono mb-1">{detail.id}</div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColors[detail.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                  <span
+                    className={`px-2 py-0.5 rounded text-xs font-medium ${statusColors[detail.status] ?? 'bg-gray-100 text-gray-600'}`}
+                  >
                     {detail.status}
                   </span>
-                  <span className="text-xs text-gray-500">Created {new Date(detail.createdAt).toLocaleString()}</span>
+                  <span className="text-xs text-gray-500">
+                    Created {new Date(detail.createdAt).toLocaleString()}
+                  </span>
                 </div>
                 {detail.expiresAt && (
-                  <div className="text-xs text-gray-500 mt-1">Expires {new Date(detail.expiresAt).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Expires {new Date(detail.expiresAt).toLocaleString()}
+                  </div>
                 )}
                 {detail.resolvedAt && (
-                  <div className="text-xs text-gray-500 mt-1">Resolved {new Date(detail.resolvedAt).toLocaleString()}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Resolved {new Date(detail.resolvedAt).toLocaleString()}
+                  </div>
                 )}
               </div>
 
               {/* Orgs & Action */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="text-xs text-gray-400 uppercase font-medium mb-0.5">Child Org</div>
+                  <div className="text-xs text-gray-400 uppercase font-medium mb-0.5">
+                    Child Org
+                  </div>
                   <div className="text-gray-800 font-medium">{detail.childOrg?.name ?? '—'}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase font-medium mb-0.5">Initiator Org</div>
-                  <div className="text-gray-800 font-medium">{detail.initiatorOrg?.name ?? '—'}</div>
+                  <div className="text-xs text-gray-400 uppercase font-medium mb-0.5">
+                    Initiator Org
+                  </div>
+                  <div className="text-gray-800 font-medium">
+                    {detail.initiatorOrg?.name ?? '—'}
+                  </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-xs text-gray-400 uppercase font-medium mb-0.5">Action Type</div>
+                  <div className="text-xs text-gray-400 uppercase font-medium mb-0.5">
+                    Action Type
+                  </div>
                   <div className="text-gray-800 font-medium">{actionLabel(detail.actionType)}</div>
                   <div className="text-xs text-gray-400 font-mono">{detail.actionType}</div>
                 </div>
@@ -672,7 +761,9 @@ function ProposalSlideOver({ proposalId, onClose }: ProposalSlideOverProps) {
               {/* Action Payload */}
               {detail.actionPayload !== undefined && detail.actionPayload !== null && (
                 <div>
-                  <div className="text-xs text-gray-400 uppercase font-medium mb-1">Action Payload</div>
+                  <div className="text-xs text-gray-400 uppercase font-medium mb-1">
+                    Action Payload
+                  </div>
                   <pre className="bg-gray-50 p-3 rounded text-xs overflow-auto border border-gray-100 max-h-40">
                     {JSON.stringify(detail.actionPayload, null, 2)}
                   </pre>
@@ -689,14 +780,25 @@ function ProposalSlideOver({ proposalId, onClose }: ProposalSlideOverProps) {
                 ) : (
                   <div className="space-y-2">
                     {detail.votes.map((v) => (
-                      <div key={v.id} className="flex items-start gap-2 text-sm border border-gray-100 rounded p-2">
-                        <span className={`px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 ${v.decision === 'APPROVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <div
+                        key={v.id}
+                        className="flex items-start gap-2 text-sm border border-gray-100 rounded p-2"
+                      >
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-xs font-bold flex-shrink-0 ${v.decision === 'APPROVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                        >
                           {v.decision === 'APPROVE' ? '✓ APPROVE' : '✗ REJECT'}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs text-gray-500 font-mono truncate">{v.voterOrgId.slice(0, 12)}…</div>
-                          {v.comment && <div className="text-xs text-gray-600 italic mt-0.5">{v.comment}</div>}
-                          <div className="text-xs text-gray-400 mt-0.5">{new Date(v.votedAt).toLocaleString()}</div>
+                          <div className="text-xs text-gray-500 font-mono truncate">
+                            {v.voterOrgId.slice(0, 12)}…
+                          </div>
+                          {v.comment && (
+                            <div className="text-xs text-gray-600 italic mt-0.5">{v.comment}</div>
+                          )}
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            {new Date(v.votedAt).toLocaleString()}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -714,6 +816,7 @@ function ProposalSlideOver({ proposalId, onClose }: ProposalSlideOverProps) {
 // ─── Proposals Tab ────────────────────────────────────────────────────────────
 
 function ProposalsTab() {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [proposals, setProposals] = useState<GovernanceProposal[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -751,8 +854,27 @@ function ProposalsTab() {
   }, [statusFilter, page, loadProposals]);
 
   const forceResolve = async (id: string, decision: 'APPROVED' | 'REJECTED') => {
-    const confirmed = window.confirm(`Force ${decision} this proposal? This cannot be undone.`);
-    if (!confirmed) return;
+    // Force-resolving overrides a tenant vote in progress, so the reason is
+    // required rather than optional — it is recorded against the proposal and
+    // visible to every co-owner.
+    const reason = await confirm({
+      title:
+        decision === 'APPROVED' ? 'Force approve this proposal?' : 'Force reject this proposal?',
+      destructive: true,
+      requireReason: true,
+      reasonLabel: 'Reason (recorded on the proposal and shown to all co-owners)',
+      confirmLabel: decision === 'APPROVED' ? 'Force approve' : 'Force reject',
+      body: (
+        <>
+          <p>
+            This overrides the co-owners&apos; vote and resolves the proposal immediately.
+            {decision === 'APPROVED' && ' The action will execute right away.'}
+          </p>
+          <p className="mt-2">It cannot be undone.</p>
+        </>
+      ),
+    });
+    if (reason === null) return;
     try {
       setResolving(id);
       setError(null);
@@ -760,7 +882,7 @@ function ProposalsTab() {
       const res = await fetch(`/api/admin/governance/proposals/${id}/force-resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision, reason: 'Force-resolved by admin' }),
+        body: JSON.stringify({ decision, reason }),
       });
       if (!res.ok) throw new Error(`Force resolve failed: ${res.status}`);
       await loadProposals(statusFilter, page);
@@ -776,13 +898,16 @@ function ProposalsTab() {
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
       PENDING_VOTES: 'bg-yellow-100 text-yellow-700',
+      PENDING_TIEBREAK: 'bg-amber-100 text-amber-800',
       APPROVED: 'bg-green-100 text-green-700',
       REJECTED: 'bg-red-100 text-red-700',
       EXPIRED: 'bg-gray-100 text-gray-600',
       CANCELLED: 'bg-gray-100 text-gray-500',
     };
     return (
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-600'}`}>
+      <span
+        className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-600'}`}
+      >
         {status}
       </span>
     );
@@ -797,14 +922,16 @@ function ProposalsTab() {
 
   // Client-side org name filter
   const filtered = orgSearch
-    ? proposals.filter((p) =>
-        (p.childOrg?.name ?? '').toLowerCase().includes(orgSearch.toLowerCase()) ||
-        (p.initiatorOrg?.name ?? '').toLowerCase().includes(orgSearch.toLowerCase())
+    ? proposals.filter(
+        (p) =>
+          (p.childOrg?.name ?? '').toLowerCase().includes(orgSearch.toLowerCase()) ||
+          (p.initiatorOrg?.name ?? '').toLowerCase().includes(orgSearch.toLowerCase())
       )
     : proposals;
 
   return (
     <>
+      {confirmDialog}
       <ProposalSlideOver
         proposalId={selectedProposalId}
         onClose={() => setSelectedProposalId(null)}
@@ -813,7 +940,8 @@ function ProposalsTab() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
           <h3 className="text-lg font-semibold text-gray-900">
-            Proposals {!loading && <span className="text-sm text-gray-500 font-normal">({total} total)</span>}
+            Proposals{' '}
+            {!loading && <span className="text-sm text-gray-500 font-normal">({total} total)</span>}
           </h3>
           <div className="flex flex-wrap items-center gap-3">
             <input
@@ -826,14 +954,20 @@ function ProposalsTab() {
             />
             <select
               value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {PROPOSAL_STATUSES.map((s) => (
-                <option key={s} value={s}>{s || 'All Statuses'}</option>
+                <option key={s} value={s}>
+                  {s || 'All Statuses'}
+                </option>
               ))}
             </select>
             <button
+              type="button"
               onClick={() => loadProposals(statusFilter, page)}
               className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
             >
@@ -851,19 +985,40 @@ function ProposalsTab() {
         {error && (
           <div className="mx-6 my-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm flex items-center justify-between gap-2">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 font-bold text-base leading-none flex-shrink-0">×</button>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-600 font-bold text-base leading-none flex-shrink-0"
+            >
+              ×
+            </button>
           </div>
         )}
 
         {loading ? (
-          <div className="p-6"><Skeleton /></div>
+          <div className="p-6">
+            <Skeleton />
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  {['ID', 'Child Org', 'Action', 'Initiator', 'Created', 'Status', 'Expires', 'Votes (✓/✗)', 'Actions'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {[
+                    'ID',
+                    'Child Org',
+                    'Action',
+                    'Initiator',
+                    'Created',
+                    'Status',
+                    'Expires',
+                    'Votes (✓/✗)',
+                    'Actions',
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       {h}
                     </th>
                   ))}
@@ -873,10 +1028,12 @@ function ProposalsTab() {
                 {filtered.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                      {p.id.slice(0, 8)}…
+                      <span title={p.id}>{p.id.slice(0, 8)}…</span>
                     </td>
                     <td className="px-4 py-3 text-gray-700">{p.childOrg?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-gray-600">{actionLabel(p.actionType)}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-gray-600">
+                      {actionLabel(p.actionType)}
+                    </td>
                     <td className="px-4 py-3 text-gray-700">{p.initiatorOrg?.name ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       {p.createdAt ? formatDate(p.createdAt) : '—'}
@@ -884,7 +1041,9 @@ function ProposalsTab() {
                     <td className="px-4 py-3">
                       {statusBadge(p.status)}
                       {p.status !== 'PENDING_VOTES' && p.resolvedReason && (
-                        <div className="text-xs text-gray-400 italic mt-0.5">{p.resolvedReason}</div>
+                        <div className="text-xs text-gray-400 italic mt-0.5">
+                          {p.resolvedReason}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
@@ -896,6 +1055,7 @@ function ProposalsTab() {
                     <td className="px-4 py-3">
                       <div className="flex gap-1 flex-wrap">
                         <button
+                          type="button"
                           onClick={() => setSelectedProposalId(p.id)}
                           className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium hover:bg-gray-200"
                           title="View details"
@@ -905,6 +1065,7 @@ function ProposalsTab() {
                         {p.status === 'PENDING_VOTES' && (
                           <>
                             <button
+                              type="button"
                               onClick={() => forceResolve(p.id, 'APPROVED')}
                               disabled={resolving === p.id}
                               className="px-2 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 disabled:opacity-50"
@@ -912,6 +1073,7 @@ function ProposalsTab() {
                               ✓
                             </button>
                             <button
+                              type="button"
                               onClick={() => forceResolve(p.id, 'REJECTED')}
                               disabled={resolving === p.id}
                               className="px-2 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 disabled:opacity-50"
@@ -940,14 +1102,18 @@ function ProposalsTab() {
         {total > pageSize && (
           <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
             <button
+              type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
               className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40"
             >
               ← Prev
             </button>
-            <span>Page {page} of {totalPages}</span>
+            <span>
+              Page {page} of {totalPages}
+            </span>
             <button
+              type="button"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
               className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40"
@@ -989,6 +1155,7 @@ export default function GovernancePage() {
         <nav className="-mb-px flex gap-6 sm:gap-8">
           {tabs.map((tab) => (
             <button
+              type="button"
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${

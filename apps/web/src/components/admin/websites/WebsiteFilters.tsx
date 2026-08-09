@@ -61,10 +61,10 @@ export function WebsiteFilters({ onFilterChange, organizations = [] }: WebsiteFi
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Search */}
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="f9a7364" className="block text-sm font-medium text-gray-700 mb-2">
             Search
           </label>
-          <input
+          <input id="f9a7364"
             type="text"
             placeholder="Search by name, slug, or domain..."
             value={search}
@@ -75,7 +75,7 @@ export function WebsiteFilters({ onFilterChange, organizations = [] }: WebsiteFi
 
         {/* Advanced Filters Toggle */}
         <div className="flex items-end">
-          <button
+          <button type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
             className="px-6 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
           >
@@ -86,7 +86,7 @@ export function WebsiteFilters({ onFilterChange, organizations = [] }: WebsiteFi
         {/* Clear Filters */}
         {hasActiveFilters && (
           <div className="flex items-end">
-            <button
+            <button type="button"
               onClick={clearFilters}
               className="px-6 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
@@ -107,10 +107,10 @@ export function WebsiteFilters({ onFilterChange, organizations = [] }: WebsiteFi
         >
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="f9a73110" className="block text-sm font-medium text-gray-700 mb-2">
               Status
             </label>
-            <select
+            <select id="f9a73110"
               value={status}
               onChange={(e) => handleStatusChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -128,10 +128,10 @@ export function WebsiteFilters({ onFilterChange, organizations = [] }: WebsiteFi
           {/* Organization Filter */}
           {organizations.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="f9a73131" className="block text-sm font-medium text-gray-700 mb-2">
                 Organization
               </label>
-              <select
+              <select id="f9a73131"
                 value={organizationId}
                 onChange={(e) => handleOrganizationChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

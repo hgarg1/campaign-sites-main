@@ -130,7 +130,7 @@ export function RoleAssignmentPanel({
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">System Admin Roles</h3>
-        <button
+        <button type="button"
           onClick={() => {
             setShowAssignModal(true);
             setJustification('');
@@ -151,7 +151,7 @@ export function RoleAssignmentPanel({
             <p className="font-medium text-gray-900">{assignedRole.name}</p>
             <p className="text-sm text-gray-600">{assignedRole.description}</p>
           </div>
-          <button
+          <button type="button"
             onClick={() => {
               setRevokeTargetId(assignedRole.id);
               setShowRevokeModal(true);

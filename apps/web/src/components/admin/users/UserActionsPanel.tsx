@@ -39,7 +39,7 @@ export function UserActionsPanel({
 
       <div className="space-y-3">
         {/* Reset Password */}
-        <button
+        <button type="button"
           disabled={loadingAction === 'resetPassword'}
           onClick={async () => {
             if (confirm('Send password reset email to this user?')) {
@@ -62,7 +62,7 @@ export function UserActionsPanel({
         </button>
 
         {/* Impersonate */}
-        <button
+        <button type="button"
           disabled={loadingAction === 'impersonate'}
           onClick={async () => {
             if (confirm('Impersonate this user? You will be logged in as them.')) {
@@ -85,7 +85,7 @@ export function UserActionsPanel({
 
         {/* Suspend/Unsuspend */}
         {userStatus === 'active' ? (
-          <button
+          <button type="button"
             disabled={loadingAction === 'suspend'}
             onClick={() => setShowSuspendModal(true)}
             className="w-full px-4 py-3 text-left font-medium text-yellow-700 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors border border-yellow-200 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -94,7 +94,7 @@ export function UserActionsPanel({
             Suspend User
           </button>
         ) : (
-          <button
+          <button type="button"
             disabled={loadingAction === 'unsuspend'}
             onClick={async () => {
               if (confirm('Unsuspend this user?')) {
@@ -118,7 +118,7 @@ export function UserActionsPanel({
         )}
 
         {/* Delete */}
-        <button
+        <button type="button"
           disabled={loadingAction === 'delete' || !canDelete}
           onClick={() => setShowDeleteConfirm(true)}
           title={!canDelete ? 'No permission to delete users' : ''}
@@ -156,14 +156,14 @@ export function UserActionsPanel({
             />
 
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={() => setShowSuspendModal(false)}
                 disabled={loadingAction === 'suspend'}
                 className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={async () => {
                   setLoadingAction('suspend');
                   try {
@@ -209,14 +209,14 @@ export function UserActionsPanel({
             </p>
 
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={loadingAction === 'delete'}
                 className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={async () => {
                   setLoadingAction('delete');
                   try {

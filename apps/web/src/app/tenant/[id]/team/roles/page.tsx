@@ -212,7 +212,7 @@ export default function RolesPage() {
         <h2 className="text-lg font-semibold text-gray-900">
           {loading ? '…' : `${roles.length} role${roles.length !== 1 ? 's' : ''}`}
         </h2>
-        <button
+        <button type="button"
           onClick={openCreate}
           className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium"
         >
@@ -247,13 +247,13 @@ export default function RolesPage() {
                     <h3 className="font-semibold text-gray-900 truncate">{role.name}</h3>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                    <button
+                    <button type="button"
                       onClick={() => openEdit(role)}
                       className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50"
                     >
                       Edit
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => setDeleteTarget(role)}
                       className="text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50"
                     >
@@ -296,7 +296,7 @@ export default function RolesPage() {
               <h3 className="text-lg font-bold text-gray-900">
                 {editingRole ? 'Edit Role' : 'Create Role'}
               </h3>
-              <button
+              <button type="button"
                 onClick={() => setModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"
               >
@@ -423,14 +423,14 @@ export default function RolesPage() {
 
             {/* Modal footer */}
             <div className="flex gap-3 px-6 py-4 border-t border-gray-200">
-              <button
+              <button type="button"
                 onClick={handleSave}
                 disabled={saving || !formName.trim()}
                 className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save Role'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setModalOpen(false)}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
@@ -452,14 +452,14 @@ export default function RolesPage() {
               role will lose their custom permissions.
             </p>
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={handleDelete}
                 disabled={deleting}
                 className="bg-red-600 text-white hover:bg-red-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {deleting ? 'Deleting…' : 'Delete Role'}
               </button>
-              <button
+              <button type="button"
                 onClick={() => setDeleteTarget(null)}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >

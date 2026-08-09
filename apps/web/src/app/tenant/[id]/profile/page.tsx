@@ -140,12 +140,12 @@ export default function ProfilePage() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">Personal Information</h2>
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Your full name" />
+              <label htmlFor="f4df7143" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <input id="f4df7143" type="text" value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Your full name" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} />
+              <label htmlFor="f4df7147" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <input id="f4df7147" type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} />
             </div>
             {profileMsg && (
               <p className={`text-sm ${profileMsg.includes('success') ? 'text-green-700' : 'text-red-600'}`}>{profileMsg}</p>
@@ -161,17 +161,17 @@ export default function ProfilePage() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">Change Password</h2>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-              <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={inputClass} required />
+              <label htmlFor="f4df7164" className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+              <input id="f4df7164" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={inputClass} required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputClass} required minLength={8} />
+              <label htmlFor="f4df7168" className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <input id="f4df7168" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputClass} required minLength={8} />
               <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputClass} required />
+              <label htmlFor="f4df7173" className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+              <input id="f4df7173" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputClass} required />
             </div>
             {passwordMsg && (
               <p className={`text-sm ${passwordMsg.includes('success') ? 'text-green-700' : 'text-red-600'}`}>{passwordMsg}</p>

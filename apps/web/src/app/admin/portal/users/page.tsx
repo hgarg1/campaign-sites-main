@@ -225,7 +225,7 @@ export default function UsersPage() {
     >
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-lg font-semibold text-gray-900">Users</h2>
-        <button
+        <button type="button"
           onClick={handleOpenCreateModal}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -431,10 +431,10 @@ export default function UsersPage() {
                   className="space-y-4"
                 >
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="f4df7434" className="block text-sm font-medium text-gray-700 mb-2">
                       Reason for Creating This Account *
                     </label>
-                    <textarea
+                    <textarea id="f4df7434"
                       value={formData.justification}
                       onChange={(e) =>
                         setFormData({ ...formData, justification: e.target.value })
@@ -492,7 +492,7 @@ export default function UsersPage() {
                       <div className="bg-white border border-yellow-200 rounded p-3 font-mono text-sm break-all">
                         {createdUser.tempPassword}
                       </div>
-                      <button
+                      <button type="button"
                         onClick={() => {
                           navigator.clipboard.writeText(createdUser.tempPassword);
                           alert('Password copied to clipboard');
@@ -536,7 +536,7 @@ export default function UsersPage() {
               <div className={`flex gap-3 ${wizardStep === 4 ? 'mt-6 pt-4 border-t border-gray-200' : 'mt-8'}`}>
                 {wizardStep !== 4 && (
                   <>
-                    <button
+                    <button type="button"
                       onClick={handleCloseCreateModal}
                       disabled={isSubmitting}
                       className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -545,7 +545,7 @@ export default function UsersPage() {
                     </button>
 
                     {wizardStep > 1 && (
-                      <button
+                      <button type="button"
                         onClick={() => setWizardStep(wizardStep - 1)}
                         disabled={isSubmitting}
                         className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -555,7 +555,7 @@ export default function UsersPage() {
                     )}
 
                     {wizardStep < 3 && (
-                      <button
+                      <button type="button"
                         onClick={() => setWizardStep(wizardStep + 1)}
                         disabled={!validateStep(wizardStep) || isSubmitting}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
@@ -565,7 +565,7 @@ export default function UsersPage() {
                     )}
 
                     {wizardStep === 3 && (
-                      <button
+                      <button type="button"
                         onClick={handleCreateUser}
                         disabled={!validateStep(3) || isSubmitting}
                         className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
@@ -578,7 +578,7 @@ export default function UsersPage() {
 
                 {wizardStep === 4 && (
                   <>
-                    <button
+                    <button type="button"
                       onClick={() => {
                         router.push(`/admin/portal/users/${createdUser.data.id}`);
                         handleCloseCreateModal();
@@ -587,7 +587,7 @@ export default function UsersPage() {
                     >
                       👁️ View User Details
                     </button>
-                    <button
+                    <button type="button"
                       onClick={handleCloseCreateModal}
                       className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     >

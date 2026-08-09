@@ -103,7 +103,7 @@ export function OrganizationMembers({ members, loading, onUpdateRole, onRemoveMe
                 {member.role}
               </span>
 
-              <button
+              <button type="button"
                 onClick={() => handleRemove(member.id, member.user.name || member.user.email)}
                 disabled={processingId === member.id}
                 className={`text-red-600 hover:text-red-700 text-sm font-medium ${

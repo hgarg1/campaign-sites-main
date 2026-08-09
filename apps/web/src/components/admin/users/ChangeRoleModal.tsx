@@ -130,7 +130,7 @@ export function ChangeRoleModal({
                   <h2 className="text-2xl font-bold text-gray-900">Change User Role</h2>
                   <p className="text-sm text-gray-600 mt-1">{userName}</p>
                 </div>
-                <button
+                <button type="button"
                   onClick={onClose}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                   aria-label="Close"
@@ -204,10 +204,10 @@ export function ChangeRoleModal({
 
               {/* Justification */}
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="ffb8e207" className="block text-sm font-semibold text-gray-900 mb-2">
                   Reason for Role Change *
                 </label>
-                <textarea
+                <textarea id="ffb8e207"
                   value={justification}
                   onChange={(e) => setJustification(e.target.value)}
                   placeholder="Explain why this role change is necessary. Include any relevant approvals or business context."
@@ -233,14 +233,14 @@ export function ChangeRoleModal({
 
             {/* Footer */}
             <div className="flex-shrink-0 border-t border-gray-200 p-6 bg-gray-50 rounded-b-lg flex gap-3">
-              <button
+              <button type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
                 className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={handleSubmit}
                 disabled={!selectedRole || justification.trim().length < 10 || isSubmitting}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"

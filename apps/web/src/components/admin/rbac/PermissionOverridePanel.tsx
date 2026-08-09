@@ -88,7 +88,7 @@ export function PermissionOverridePanel({
         <h3 className="text-lg font-semibold text-gray-900">
           Permission Overrides
         </h3>
-        <button
+        <button type="button"
           onClick={() => setShowAddModal(true)}
           className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
         >
@@ -137,7 +137,7 @@ export function PermissionOverridePanel({
                   </p>
                 )}
               </div>
-              <button
+              <button type="button"
                 onClick={() => setDeleteTargetId(override.id)}
                 className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium rounded transition-colors ml-3"
               >
@@ -174,7 +174,7 @@ export function PermissionOverridePanel({
             <p className="text-sm text-gray-600 mb-4">
               Advanced feature: Grant or revoke specific permissions. Use with caution.
             </p>
-            <button
+            <button type="button"
               onClick={() => setShowAddModal(false)}
               className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
             >

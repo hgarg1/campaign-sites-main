@@ -69,7 +69,7 @@ export default function CareersPage() {
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">Why Join CampaignSites</h2>
             <p className="text-xl text-gray-600">
-              We're building the most critical infrastructure for modern campaigns.
+              We&apos;re building the most critical infrastructure for modern campaigns.
             </p>
           </div>
 
@@ -176,12 +176,12 @@ export default function CareersPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">All Open Positions</h2>
-            <p className="text-gray-600">We're hiring talented people across all functions.</p>
+            <p className="text-gray-600">We&apos;re hiring talented people across all functions.</p>
           </div>
 
           {/* Department Filter */}
           <div className="mb-12 flex flex-wrap items-center gap-3">
-            <button
+            <button type="button"
               onClick={() => setSelectedDepartment(null)}
               className={`px-4 py-2 rounded-full font-medium transition-all ${
                 selectedDepartment === null
@@ -192,7 +192,7 @@ export default function CareersPage() {
               All Departments
             </button>
             {departments.map((dept) => (
-              <button
+              <button type="button"
                 key={dept}
                 onClick={() => setSelectedDepartment(dept)}
                 className={`px-4 py-2 rounded-full font-medium transition-all ${
@@ -333,10 +333,10 @@ export default function CareersPage() {
       <section id="content-section" className="px-6 py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center rounded-3xl border border-green-100 bg-gradient-to-br from-green-50 via-emerald-50 to-green-50 p-12 md:p-16 shadow-xl">
           <h2 className="text-4xl md:text-5xl font-bold mb-5 bg-gradient-to-r from-green-700 to-emerald-700 bg-clip-text text-transparent">
-            Don't see your fit?
+            Don&apos;t see your fit?
           </h2>
           <p className="text-xl text-gray-600 mb-10">
-            We're always looking for talented people. Send us your resume and tell us what you're interested in.
+            We&apos;re always looking for talented people. Send us your resume and tell us what you&apos;re interested in.
           </p>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link

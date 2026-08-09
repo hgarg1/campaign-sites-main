@@ -143,8 +143,8 @@ export default function NotificationsPage() {
           <p className="text-sm text-gray-500 mb-4">Send event payloads to your own endpoint via HTTP POST.</p>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
-            <input
+            <label htmlFor="f4df7146" className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+            <input id="f4df7146"
               type="url"
               value={webhookUrl}
               onChange={e => {
@@ -159,7 +159,7 @@ export default function NotificationsPage() {
 
           {/* Test webhook */}
           <div className="flex items-center gap-3">
-            <button
+            <button type="button"
               onClick={handleTestWebhook}
               disabled={!canTest || !webhookUrl}
               className="text-sm font-medium px-3 py-2 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
@@ -220,7 +220,7 @@ export default function NotificationsPage() {
           <div className={`text-sm px-3 py-2 rounded ${msgError ? 'text-red-700 bg-red-50' : 'text-green-700 bg-green-50'}`}>{msg}</div>
         )}
 
-        <button
+        <button type="button"
           onClick={handleSave}
           disabled={saving || !!webhookUrlError}
           className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"

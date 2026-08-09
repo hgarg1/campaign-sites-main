@@ -95,7 +95,7 @@ export function LLMLogsViewer({ logs, loading }: LLMLogsViewerProps) {
                 <p className="text-xs text-gray-500 font-mono">{log.id}</p>
               </div>
 
-              <button
+              <button type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedLog(log);
@@ -166,7 +166,7 @@ export function LLMLogsViewer({ logs, loading }: LLMLogsViewerProps) {
                     </h3>
                     <p className="text-sm text-gray-500 font-mono mt-1">{selectedLog.id}</p>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => setSelectedLog(null)}
                     className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
                   >

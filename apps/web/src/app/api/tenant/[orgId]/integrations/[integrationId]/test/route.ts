@@ -20,7 +20,6 @@ export async function POST(
 
   try {
     const { prisma } = await import('@/lib/database');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const integration = await (prisma as any).organizationIntegration.findUnique({
       where: { id: params.integrationId },
     });

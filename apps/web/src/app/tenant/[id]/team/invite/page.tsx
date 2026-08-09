@@ -90,15 +90,15 @@ export default function InviteMemberPage() {
               {result.status !== 'ACCEPTED' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Invite Link</label>
+                    <label htmlFor="f4df793" className="block text-sm font-medium text-gray-700 mb-1">Invite Link</label>
                     <div className="flex gap-2">
-                      <input
+                      <input id="f4df793"
                         type="text"
                         readOnly
                         value={inviteLink}
                         className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-50 text-gray-700 select-all"
                       />
-                      <button
+                      <button type="button"
                         onClick={copyLink}
                         className="px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap"
                       >
@@ -114,7 +114,7 @@ export default function InviteMemberPage() {
               )}
 
               <div className="flex gap-3 pt-2">
-                <button
+                <button type="button"
                   onClick={handleSendAnother}
                   className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium"
                 >
@@ -131,8 +131,8 @@ export default function InviteMemberPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
-                <input
+                <label htmlFor="f4df7134" className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                <input id="f4df7134"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
@@ -142,8 +142,8 @@ export default function InviteMemberPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select value={role} onChange={e => setRole(e.target.value as 'MEMBER' | 'ADMIN' | 'OWNER')} className={inputClass}>
+                <label htmlFor="f4df7145" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select id="f4df7145" value={role} onChange={e => setRole(e.target.value as 'MEMBER' | 'ADMIN' | 'OWNER')} className={inputClass}>
                   <option value="MEMBER">Member — Can view and edit websites</option>
                   <option value="ADMIN">Admin — Can manage team and settings</option>
                   <option value="OWNER">Owner — Full access</option>

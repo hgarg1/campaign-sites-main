@@ -13,9 +13,11 @@ interface NavItem {
 
 interface TenantNavigationProps {
   orgId: string;
+  /** Closes the mobile drawer after a link is followed. */
+  onNavigate?: () => void;
 }
 
-export function TenantNavigation({ orgId }: TenantNavigationProps) {
+export function TenantNavigation({ orgId, onNavigate }: TenantNavigationProps) {
   const pathname = usePathname();
   const [govUnread, setGovUnread] = useState(0);
 
@@ -96,6 +98,7 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
             >
               <Link
                 href={item.href}
+                onClick={onNavigate}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                   isActive
                     ? 'text-white shadow-lg'
@@ -103,7 +106,9 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
                 }`}
                 style={isActive ? { backgroundColor: 'var(--t-primary)' } : undefined}
               >
-                <span className="text-lg">{item.icon}</span>
+                <span className="text-lg" aria-hidden="true">
+                  {item.icon}
+                </span>
                 <span className="font-medium">{item.label}</span>
                 {item.label === 'Governance' && govUnread > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">

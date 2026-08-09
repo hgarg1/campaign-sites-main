@@ -49,7 +49,7 @@ export function PricingModal({ plan, isOpen, onClose }: PricingModalProps) {
             className="relative w-full max-w-2xl max-h-[calc(100vh-32px)] rounded-3xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden flex flex-col"
           >
             {/* Close button */}
-            <button
+            <button type="button"
               onClick={onClose}
               className="absolute top-6 right-6 z-10 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
               aria-label="Close modal"
@@ -90,7 +90,7 @@ export function PricingModal({ plan, isOpen, onClose }: PricingModalProps) {
 
               {/* What's Included */}
               <div className="mb-8">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">What's included</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">What&apos;s included</h3>
                 <ul className="space-y-3">
                   {plan.details.includes.map((item) => (
                     <li key={item} className="flex items-start gap-3">
@@ -121,7 +121,7 @@ export function PricingModal({ plan, isOpen, onClose }: PricingModalProps) {
               >
                 {plan.name === 'Enterprise' ? 'Schedule a Call' : 'Get Started'}
               </Link>
-              <button
+              <button type="button"
                 onClick={onClose}
                 className="flex-1 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-6 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >

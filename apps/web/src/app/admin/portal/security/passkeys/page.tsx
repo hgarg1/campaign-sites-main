@@ -101,7 +101,7 @@ export default function PasskeysPage() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">My Passkeys</h1>
         <p className="text-sm text-gray-500 mb-6">
-          Passkeys use your device's biometrics or PIN to sign in — no password needed.
+          Passkeys use your device&apos;s biometrics or PIN to sign in — no password needed.
         </p>
 
         {success && (
@@ -112,7 +112,7 @@ export default function PasskeysPage() {
         {error && (
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-center justify-between">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="ml-2 text-red-400 hover:text-red-600">×</button>
+            <button type="button" onClick={() => setError(null)} className="ml-2 text-red-400 hover:text-red-600">×</button>
           </div>
         )}
 
@@ -128,7 +128,7 @@ export default function PasskeysPage() {
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={registering}
             />
-            <button
+            <button type="button"
               onClick={handleRegister}
               disabled={registering}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
@@ -165,7 +165,7 @@ export default function PasskeysPage() {
                       <p className="text-xs text-gray-400">{c.transports.join(', ')}</p>
                     )}
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => handleRevoke(c.id)}
                     disabled={revoking === c.id}
                     className="ml-4 px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"

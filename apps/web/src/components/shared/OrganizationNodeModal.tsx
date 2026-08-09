@@ -121,7 +121,7 @@ export function OrganizationNodeModal({ isOpen, org, onClose }: OrganizationNode
                 transition={{ delay: 0.2 }}
                 className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end"
               >
-                <button
+                <button type="button"
                   onClick={onClose}
                   className="px-5 py-2.5 rounded-lg font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
                 >

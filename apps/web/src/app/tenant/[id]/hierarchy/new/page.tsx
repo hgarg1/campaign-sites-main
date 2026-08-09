@@ -116,8 +116,8 @@ export default function NewChildOrgPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name <span className="text-red-500">*</span></label>
-              <input
+              <label htmlFor="f4df7119" className="block text-sm font-medium text-gray-700 mb-1">Organization Name <span className="text-red-500">*</span></label>
+              <input id="f4df7119"
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -128,8 +128,8 @@ export default function NewChildOrgPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug <span className="text-red-500">*</span></label>
-              <input
+              <label htmlFor="f4df7131" className="block text-sm font-medium text-gray-700 mb-1">Slug <span className="text-red-500">*</span></label>
+              <input id="f4df7131"
                 type="text"
                 value={slug}
                 onChange={e => handleSlugChange(e.target.value)}
@@ -142,8 +142,8 @@ export default function NewChildOrgPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-gray-400 font-normal">(optional)</span></label>
-              <textarea
+              <label htmlFor="f4df7145" className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-gray-400 font-normal">(optional)</span></label>
+              <textarea id="f4df7145"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={3}

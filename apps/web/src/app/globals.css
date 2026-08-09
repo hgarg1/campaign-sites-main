@@ -10,6 +10,33 @@
 	body {
 		@apply text-gray-900 dark:text-gray-100 dark:bg-gray-950;
 	}
+
+	/*
+	 * A single visible focus ring for keyboard users.
+	 *
+	 * Nothing defined focus styling anywhere, so keyboard navigation relied on
+	 * browser defaults — which several components removed via `outline-none`
+	 * without providing a replacement, leaving no way to see where focus was.
+	 * `:focus-visible` shows it for keyboard and programmatic focus without
+	 * putting a ring around every mouse click.
+	 */
+	:focus-visible {
+		outline: 2px solid #2563eb;
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+
+	/* Respect a user's reduced-motion preference across the whole app. */
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
 }
 
 @layer utilities {

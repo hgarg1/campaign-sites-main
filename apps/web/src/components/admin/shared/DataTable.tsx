@@ -206,7 +206,7 @@ export function DataTable<T extends Record<string, any>>({
             {pagination.total} results
           </p>
           <div className="flex gap-2">
-            <button
+            <button type="button"
               onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
               disabled={pagination.currentPage === 1}
               className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
@@ -216,7 +216,7 @@ export function DataTable<T extends Record<string, any>>({
             <span className="px-3 py-1 text-sm text-gray-600">
               Page {pagination.currentPage}
             </span>
-            <button
+            <button type="button"
               onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
               disabled={pagination.currentPage * pagination.pageSize >= pagination.total}
               className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"

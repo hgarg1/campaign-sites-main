@@ -287,7 +287,7 @@ export function TemplateList({ onSelectTemplate, selectedKey }: TemplateListProp
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 ml-auto flex-shrink-0">
-                    <button
+                    <button type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleActive(template.key, template.isActive);
@@ -303,7 +303,7 @@ export function TemplateList({ onSelectTemplate, selectedKey }: TemplateListProp
                     </button>
 
                     {!template.isArchived && (
-                      <button
+                      <button type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleArchive(template.key);

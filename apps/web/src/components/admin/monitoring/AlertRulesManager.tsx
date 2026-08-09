@@ -80,7 +80,7 @@ export function AlertRulesManager({ rules, loading, onToggleRule }: AlertRulesMa
             >
               <div className="flex items-start gap-4">
                 {/* Toggle Switch */}
-                <button
+                <button type="button"
                   onClick={() => handleToggle(rule.id, rule.enabled)}
                   disabled={isProcessing}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 ${

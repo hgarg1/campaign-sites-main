@@ -109,7 +109,7 @@ export default function PermissionsPage() {
             ))}
           </select>
 
-          <button
+          <button type="button"
             onClick={() => {
               setSearchQuery('');
               setFilterCategory('');
@@ -154,7 +154,7 @@ export default function PermissionsPage() {
         ) : (
           <div className="col-span-full text-center py-12">
             <p className="text-gray-500 text-lg">No permissions match your filters</p>
-            <button
+            <button type="button"
               onClick={() => {
                 setSearchQuery('');
                 setFilterCategory('');

@@ -142,7 +142,7 @@ function CoOwnersSection({
     <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-lg font-bold text-gray-900">🔗 Co-Parent Owners</h2>
-        <button
+        <button type="button"
           onClick={() => { setShowAddForm(!showAddForm); setAddError(null); }}
           className="bg-blue-600 text-white rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-blue-700"
         >
@@ -159,16 +159,16 @@ function CoOwnersSection({
 
       {showAddForm && (
         <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Parent Org ID</label>
+          <label htmlFor="f4df7162" className="block text-sm font-medium text-gray-700 mb-1">Parent Org ID</label>
           <div className="flex gap-2">
-            <input
+            <input id="f4df7162"
               type="text"
               value={newParentOrgId}
               onChange={(e) => setNewParentOrgId(e.target.value)}
               placeholder="Enter parent org ID"
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button
+            <button type="button"
               onClick={handleAdd}
               disabled={addLoading || !newParentOrgId.trim()}
               className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
@@ -200,7 +200,7 @@ function CoOwnersSection({
               </div>
               <OwnershipStatusBadge status={owner.status} />
               {activeOwnerships.length > 1 && owner.status === 'ACTIVE' && (
-                <button
+                <button type="button"
                   onClick={() => handleRemove(owner.parentOrg.id)}
                   disabled={removeLoading === owner.parentOrg.id}
                   className="text-red-500 hover:text-red-700 disabled:opacity-50 ml-2 text-lg"
@@ -344,7 +344,7 @@ export default function HierarchyPage() {
         <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
           <span className="mt-0.5">ℹ️</span>
           <span className="flex-1">{governanceMessage}</span>
-          <button
+          <button type="button"
             onClick={() => setGovernanceMessage(null)}
             className="text-blue-600 hover:text-blue-800 font-bold text-base leading-none ml-2"
             aria-label="Dismiss"
@@ -440,7 +440,7 @@ export default function HierarchyPage() {
                   Manage
                 </Link>
                 {child.ownStatus === 'ACTIVE' ? (
-                  <button
+                  <button type="button"
                     onClick={() => handleSuspend(child.id)}
                     disabled={actionLoading === child.id + '-suspend'}
                     className="bg-red-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"
@@ -448,7 +448,7 @@ export default function HierarchyPage() {
                     {actionLoading === child.id + '-suspend' ? '...' : 'Suspend'}
                   </button>
                 ) : child.ownStatus === 'SUSPENDED' ? (
-                  <button
+                  <button type="button"
                     onClick={() => handleReactivate(child.id)}
                     disabled={actionLoading === child.id + '-reactivate'}
                     className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"

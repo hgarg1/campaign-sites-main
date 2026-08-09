@@ -113,7 +113,7 @@ export function AdminHierarchyGraph({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
         >
-          <button
+          <button type="button"
             onClick={() => {
               setNodes(initialNodes);
               setEdges(initialEdges);
@@ -123,7 +123,7 @@ export function AdminHierarchyGraph({
           >
             Discard Changes
           </button>
-          <button
+          <button type="button"
             disabled={!canSaveHierarchy}
             onClick={() => setShowSaveModal(true)}
             title={!canSaveHierarchy ? 'No permission to modify admin hierarchy' : ''}

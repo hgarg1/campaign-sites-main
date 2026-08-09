@@ -87,7 +87,7 @@ export function BulkActionsToolbar({
             <span className="text-sm font-semibold text-blue-900">
               {selectedCount} selected
             </span>
-            <button
+            <button type="button"
               onClick={onClearSelection}
               className="text-xs text-blue-600 hover:text-blue-700 underline"
             >
@@ -98,7 +98,7 @@ export function BulkActionsToolbar({
 
         <div className="flex items-center gap-2">
           {/* Suspend */}
-          <button
+          <button type="button"
             disabled={loadingAction !== null}
             onClick={() => handleSuspend(selectedUserIds)}
             className="px-4 py-2 text-sm font-medium text-yellow-700 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors border border-yellow-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -108,7 +108,7 @@ export function BulkActionsToolbar({
           </button>
 
           {/* Unsuspend */}
-          <button
+          <button type="button"
             disabled={loadingAction !== null}
             onClick={() => handleUnsuspend(selectedUserIds)}
             className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -118,7 +118,7 @@ export function BulkActionsToolbar({
           </button>
 
           {/* Export */}
-          <button
+          <button type="button"
             disabled={loadingAction !== null}
             onClick={() => {
               onExport?.(selectedUserIds);
@@ -131,7 +131,7 @@ export function BulkActionsToolbar({
           </button>
 
           {/* Delete */}
-          <button
+          <button type="button"
             disabled={loadingAction !== null || !canDelete}
             onClick={() => setShowDeleteConfirm(true)}
             title={!canDelete ? 'No permission to delete users' : ''}
@@ -164,14 +164,14 @@ export function BulkActionsToolbar({
             </p>
 
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={loadingAction === 'delete'}
                 className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={() => handleDelete(selectedUserIds)}
                 disabled={loadingAction === 'delete'}
                 className="flex-1 px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

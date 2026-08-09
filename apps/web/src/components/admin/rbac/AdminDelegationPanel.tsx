@@ -26,7 +26,7 @@ export function AdminDelegationPanel({
         <h3 className="text-lg font-semibold text-gray-900">
           Admin Hierarchy Delegation
         </h3>
-        <button
+        <button type="button"
           onClick={() => setShowInfo(!showInfo)}
           className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium rounded-lg transition-colors"
         >
@@ -42,7 +42,7 @@ export function AdminDelegationPanel({
           </p>
           <ul className="list-disc list-inside space-y-2 ml-2 text-xs">
             <li>
-              Make this admin subordinate to another admin (they inherit that admin's
+              Make this admin subordinate to another admin (they inherit that admin&apos;s
               permissions)
             </li>
             <li>Promote other admins as subordinates to this one</li>

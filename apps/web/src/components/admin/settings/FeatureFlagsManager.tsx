@@ -112,7 +112,7 @@ export function FeatureFlagsManager({
                   </div>
 
                   {/* Toggle Switch */}
-                  <button
+                  <button type="button"
                     onClick={() => handleToggle(flag.id, flag.enabled)}
                     disabled={isTogglingThis}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 ${
@@ -163,7 +163,7 @@ export function FeatureFlagsManager({
                         />
                         <span className="text-sm text-gray-600 w-5">%</span>
                         {isModified && (
-                          <button
+                          <button type="button"
                             onClick={() => handleUpdateRollout(flag.id)}
                             className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors"
                           >

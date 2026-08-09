@@ -71,7 +71,7 @@ export function BatchActionsToolbar({
 
         <div className="flex items-center gap-2">
           {onSuspend && (
-            <button
+            <button type="button"
               onClick={() => setModalState({ action: 'suspend' })}
               disabled={isLoading || !canSuspend}
               title={!canSuspend ? 'No permission to suspend organizations' : ''}
@@ -82,7 +82,7 @@ export function BatchActionsToolbar({
           )}
 
           {onDelete && (
-            <button
+            <button type="button"
               onClick={() => setModalState({ action: 'delete' })}
               disabled={isLoading || !canDelete}
               title={!canDelete ? 'No permission to delete organizations' : ''}

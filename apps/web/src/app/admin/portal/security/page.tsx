@@ -124,7 +124,7 @@ export default function AdminPasskeyManagementPage() {
         {error && (
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between">
             <span>{error}</span>
-            <button onClick={() => setError(null)}>×</button>
+            <button type="button" onClick={() => setError(null)}>×</button>
           </div>
         )}
 
@@ -154,7 +154,7 @@ export default function AdminPasskeyManagementPage() {
                     <span className={`text-sm font-semibold ${user.passkeyCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
                       {user.passkeyCount} {user.passkeyCount === 1 ? 'key' : 'keys'}
                     </span>
-                    <button
+                    <button type="button"
                       onClick={() => handleToggleRequire(user.id, user.requirePasskey)}
                       disabled={toggling === user.id || !canManagePasskeys}
                       className={`relative inline-flex h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
@@ -168,7 +168,7 @@ export default function AdminPasskeyManagementPage() {
                         }`}
                       />
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => toggleExpand(user.id)}
                       className="text-xs text-blue-600 hover:underline"
                     >
@@ -192,7 +192,7 @@ export default function AdminPasskeyManagementPage() {
                                 {c.revokedAt && <span className="ml-2 text-red-400">(revoked {formatDate(c.revokedAt)})</span>}
                               </span>
                               {!c.revokedAt && (
-                                <button
+                                <button type="button"
                                   onClick={() => handleRevoke(user.id, c.id)}
                                   disabled={revoking === c.id || !canManagePasskeys}
                                   className="ml-4 px-2 py-1 text-red-600 border border-red-200 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed" title={!canManagePasskeys ? 'No permission to manage passkeys' : ''}

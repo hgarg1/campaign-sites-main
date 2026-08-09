@@ -167,7 +167,7 @@ export default function BrandingPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Palette</h2>
               {partyAffiliation && PARTY_THEMES[partyAffiliation] && (
-                <button
+                <button type="button"
                   onClick={handleResetToParty}
                   className="text-xs text-indigo-600 hover:text-indigo-800 border border-indigo-200 bg-indigo-50 rounded px-2 py-1 font-medium"
                 >
@@ -195,8 +195,8 @@ export default function BrandingPage() {
             <h2 className="text-lg font-bold text-gray-900">Assets</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
-              <input type="url" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} className={inputClass} placeholder="https://cdn.example.com/logo.png" />
+              <label htmlFor="f4df7198" className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+              <input id="f4df7198" type="url" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} className={inputClass} placeholder="https://cdn.example.com/logo.png" />
               {logoUrl && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <img src={logoUrl} alt="Logo preview" className="h-12 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
@@ -205,8 +205,8 @@ export default function BrandingPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Favicon URL</label>
-              <input type="url" value={faviconUrl} onChange={e => setFaviconUrl(e.target.value)} className={inputClass} placeholder="https://cdn.example.com/favicon.ico" />
+              <label htmlFor="f4df7208" className="block text-sm font-medium text-gray-700 mb-1">Favicon URL</label>
+              <input id="f4df7208" type="url" value={faviconUrl} onChange={e => setFaviconUrl(e.target.value)} className={inputClass} placeholder="https://cdn.example.com/favicon.ico" />
               {faviconUrl && (
                 <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
                   <img src={faviconUrl} alt="Favicon preview" className="h-8 w-8 object-contain" onError={e => (e.currentTarget.style.display = 'none')} />
@@ -222,7 +222,7 @@ export default function BrandingPage() {
             </div>
           )}
 
-          <button
+          <button type="button"
             onClick={handleSave}
             disabled={saving}
             className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"

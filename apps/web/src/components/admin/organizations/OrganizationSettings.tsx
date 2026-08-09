@@ -131,7 +131,7 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
                 : 'Organization is currently suspended'}
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={handleToggleStatus}
             disabled={updating}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -154,7 +154,7 @@ export function OrganizationSettings({ organization, onUpdate }: OrganizationSet
                 : 'Standard CampaignSites branding'}
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={handleToggleWhiteLabel}
             disabled={updating}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${

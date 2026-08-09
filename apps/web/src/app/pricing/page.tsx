@@ -146,7 +146,7 @@ export default function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <button
+                  <button type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedPlan(plan.name);

@@ -77,7 +77,7 @@ export default function WebsiteDetailPage() {
       <AdminLayout title="Not Found" subtitle="">
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <p className="text-gray-600">Website not found</p>
-          <button
+          <button type="button"
             onClick={() => router.push('/admin/portal/websites')}
             className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
           >
@@ -94,7 +94,7 @@ export default function WebsiteDetailPage() {
       subtitle={`Website Details - ${website.slug}`}
     >
       {/* Back Button */}
-      <button
+      <button type="button"
         onClick={() => router.push('/admin/portal/websites')}
         className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
       >

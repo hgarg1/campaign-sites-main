@@ -168,7 +168,7 @@ export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: Alerts
                       {/* Actions */}
                       <div className="flex gap-2">
                         {alert.status === 'NEW' && (
-                          <button
+                          <button type="button"
                             onClick={() => handleAcknowledgeClick(alert.id)}
                             disabled={isProcessing || !canManageAlerts}
                             title={!canManageAlerts ? 'No permission to manage alerts' : ''}
@@ -178,7 +178,7 @@ export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: Alerts
                           </button>
                         )}
                         {alert.status !== 'RESOLVED' && (
-                          <button
+                          <button type="button"
                             onClick={() => handleResolveClick(alert.id)}
                             disabled={isProcessing || !canManageAlerts}
                             title={!canManageAlerts ? 'No permission to manage alerts' : ''}
@@ -188,7 +188,7 @@ export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: Alerts
                           </button>
                         )}
                         {alert.metadata && (
-                          <button
+                          <button type="button"
                             onClick={() => setExpandedId(isExpanded ? null : alert.id)}
                             className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                           >

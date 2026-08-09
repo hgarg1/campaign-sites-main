@@ -205,7 +205,7 @@ export default function MasterTenantsPage() {
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-700">
           <p className="font-medium mb-2">{error}</p>
-          <button onClick={fetchTenants} className="text-sm underline">Retry</button>
+          <button type="button" onClick={fetchTenants} className="text-sm underline">Retry</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -270,7 +270,7 @@ export default function MasterTenantsPage() {
                       >
                         View org \u2192
                       </Link>
-                      <button
+                      <button type="button"
                         onClick={() => openEdit(party)}
                         className="text-xs bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-1.5 hover:bg-gray-50 font-medium"
                       >
@@ -278,7 +278,7 @@ export default function MasterTenantsPage() {
                       </button>
                     </>
                   ) : (
-                    <button
+                    <button type="button"
                       onClick={() => openEdit(party)}
                       className={`w-full text-xs font-medium rounded-lg px-3 py-1.5 ${meta.bg} ${meta.color} border ${meta.border} hover:opacity-80 transition-opacity`}
                     >
@@ -306,7 +306,7 @@ export default function MasterTenantsPage() {
                 </h3>
                 <p className="text-xs text-gray-500">{PARTY_META[editingParty].label} Party</p>
               </div>
-              <button
+              <button type="button"
                 onClick={() => setEditingParty(null)}
                 className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-black/10 transition-colors"
                 aria-label="Close"
@@ -350,7 +350,7 @@ export default function MasterTenantsPage() {
                     const isSelected = selectedOrgId === o.id;
                     const orgStatus = STATUS_META[o.ownStatus] ?? STATUS_META.ACTIVE;
                     return (
-                      <button
+                      <button type="button"
                         key={o.id}
                         onClick={() => setSelectedOrgId(o.id)}
                         className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-0 flex items-center gap-3 transition-colors ${
@@ -378,7 +378,7 @@ export default function MasterTenantsPage() {
 
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-3">
               {tenantMap.has(editingParty) ? (
-                <button
+                <button type="button"
                   onClick={() => clearTenant(editingParty)}
                   disabled={clearing}
                   className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
@@ -389,13 +389,13 @@ export default function MasterTenantsPage() {
                 <span />
               )}
               <div className="flex items-center gap-2">
-                <button
+                <button type="button"
                   onClick={() => setEditingParty(null)}
                   className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100"
                 >
                   Cancel
                 </button>
-                <button
+                <button type="button"
                   onClick={saveTenant}
                   disabled={!selectedOrgId || saving}
                   className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50"

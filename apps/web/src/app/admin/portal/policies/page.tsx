@@ -109,7 +109,7 @@ function RuleRow({
           </div>
         </div>
       </div>
-      <button
+      <button type="button"
         onClick={onRemove}
         className="mt-1 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors text-base"
         title="Remove rule"
@@ -171,7 +171,7 @@ function PolicyModal({
               {initial ? 'Update policy name, description, and rules.' : 'Define what tenant admins can and cannot do.'}
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xl"
           >
@@ -266,13 +266,13 @@ function PolicyModal({
         <div className="px-7 py-4 border-t border-gray-100 flex items-center justify-between flex-shrink-0 bg-gray-50 rounded-b-2xl">
           <p className="text-xs text-gray-400">Rules are evaluated top-to-bottom. First match wins.</p>
           <div className="flex gap-2.5">
-            <button
+            <button type="button"
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
-            <button
+            <button type="button"
               onClick={handleSave}
               disabled={saving}
               className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
@@ -336,7 +336,7 @@ export default function PoliciesPage() {
               Define what tenant org admins can and cannot do. Assign policies to specific orgs.
             </p>
           </div>
-          <button
+          <button type="button"
             onClick={() => setModal('create')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
           >
@@ -350,7 +350,7 @@ export default function PoliciesPage() {
         {error && (
           <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex justify-between">
             <span>{error}</span>
-            <button onClick={() => setError(null)}>×</button>
+            <button type="button" onClick={() => setError(null)}>×</button>
           </div>
         )}
 
@@ -361,7 +361,7 @@ export default function PoliciesPage() {
         ) : policies.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
             <p className="text-gray-400 text-sm mb-3">No permission policies yet.</p>
-            <button
+            <button type="button"
               onClick={() => setModal('create')}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
             >
@@ -403,13 +403,13 @@ export default function PoliciesPage() {
                   </div>
                   <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                     <span className="text-xs text-gray-400">{policy._count?.assignments ?? 0} orgs</span>
-                    <button
+                    <button type="button"
                       onClick={() => setModal(policy)}
                       className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50"
                     >
                       Edit
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => handleDelete(policy.id)}
                       disabled={deleting === policy.id || (policy._count?.assignments ?? 0) > 0}
                       className="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-40"

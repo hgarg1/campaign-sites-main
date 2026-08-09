@@ -63,7 +63,7 @@ export function FilterBar({
 
         {/* Filter Toggle */}
         {filters.length > 0 && (
-          <button
+          <button type="button"
             onClick={() => setShowFilters(!showFilters)}
             className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${
               showFilters || activeFilterCount > 0
@@ -83,7 +83,7 @@ export function FilterBar({
 
         {/* Clear Filters */}
         {activeFilterCount > 0 && (
-          <button
+          <button type="button"
             onClick={() => {
               setActiveFilters({});
               onFilterChange?.({});

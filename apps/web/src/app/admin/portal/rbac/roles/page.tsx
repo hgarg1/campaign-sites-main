@@ -39,7 +39,7 @@ function PermissionCategory({
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       {/* Category Header */}
-      <button
+      <button type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full bg-gray-50 hover:bg-gray-100 px-4 py-3 flex items-center justify-between transition-colors"
       >
@@ -292,7 +292,7 @@ export default function RolesPage() {
         >
           <div className="flex items-start justify-between">
             <p className="text-red-700">{error}</p>
-            <button
+            <button type="button"
               onClick={() => setError(null)}
               className="text-red-600 hover:text-red-800 font-medium text-sm"
             >
@@ -306,7 +306,7 @@ export default function RolesPage() {
         <div>
           <p className="text-gray-600">Total roles: {roles.length}</p>
         </div>
-        <button
+        <button type="button"
           onClick={openCreateModal}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -339,7 +339,7 @@ export default function RolesPage() {
               </div>
 
               <div className="flex gap-2">
-                <button
+                <button type="button"
                   onClick={() => openPermissionsModal(role)}
                   className="px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
                 >
@@ -347,13 +347,13 @@ export default function RolesPage() {
                 </button>
                 {!role.isBuiltIn && (
                   <>
-                    <button
+                    <button type="button"
                       onClick={() => openEditModal(role)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
                     >
                       Edit
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => handleDeleteRole(role)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                     >
@@ -411,14 +411,14 @@ export default function RolesPage() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button
+                <button type="button"
                   onClick={() => setShowCreateModal(false)}
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
-                <button
+                <button type="button"
                   onClick={handleCreateRole}
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
@@ -452,8 +452,8 @@ export default function RolesPage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Role Name *</label>
-                  <input
+                  <label htmlFor="f4df7455" className="block text-sm font-medium text-gray-700 mb-2">Role Name *</label>
+                  <input id="f4df7455"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -463,8 +463,8 @@ export default function RolesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
+                  <label htmlFor="f4df7466" className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea id="f4df7466"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     disabled={selectedRole.isBuiltIn}
@@ -475,14 +475,14 @@ export default function RolesPage() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button
+                <button type="button"
                   onClick={() => setShowEditModal(false)}
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
-                <button
+                <button type="button"
                   onClick={handleUpdateRole}
                   disabled={isSubmitting || selectedRole.isBuiltIn}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
@@ -521,7 +521,7 @@ export default function RolesPage() {
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">{selectedPermissions.length} selected</p>
                   </div>
-                  <button
+                  <button type="button"
                     onClick={() => setShowPermissionsModal(false)}
                     className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
                     aria-label="Close modal"
@@ -591,14 +591,14 @@ export default function RolesPage() {
 
               {/* Fixed Footer */}
               <div className="flex-shrink-0 border-t border-gray-200 p-6 bg-gray-50 rounded-b-lg flex gap-3">
-                <button
+                <button type="button"
                   onClick={() => setShowPermissionsModal(false)}
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
-                <button
+                <button type="button"
                   onClick={handleUpdatePermissions}
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"

@@ -80,7 +80,7 @@ export default function BillingPage() {
                     </li>
                   ))}
                 </ul>
-                <button
+                <button type="button"
                   disabled={plan.current}
                   className={`w-full rounded-lg px-4 py-2 text-sm font-medium ${plan.current ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                 >
@@ -102,7 +102,7 @@ export default function BillingPage() {
                 <p className="text-sm text-gray-500">Expires 12/2027</p>
               </div>
             </div>
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">Update</button>
+            <button type="button" className="text-blue-600 hover:text-blue-700 text-sm font-medium">Update</button>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export default function BillingPage() {
                 <div className="flex items-center gap-4">
                   <span className="font-medium text-gray-900">{inv.amount}</span>
                   <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">{inv.status}</span>
-                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">Download</button>
+                  <button type="button" className="text-blue-600 hover:text-blue-700 text-sm font-medium">Download</button>
                 </div>
               </div>
             ))}
@@ -132,7 +132,7 @@ export default function BillingPage() {
         <div className="bg-white rounded-xl border border-red-200 p-6">
           <h2 className="text-lg font-semibold text-red-700 mb-2">Cancel Subscription</h2>
           <p className="text-sm text-gray-600 mb-4">Your account will remain active until the end of the billing period.</p>
-          <button className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
+          <button type="button" className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
             Cancel Subscription
           </button>
         </div>

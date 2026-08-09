@@ -218,7 +218,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
             {ancestors.map((a, i) => (
               <span key={a.id} className="flex items-center gap-1">
                 {i > 0 && <span className="text-gray-300">→</span>}
-                <button
+                <button type="button"
                   onClick={() => router.push(`/admin/portal/organizations/${a.id}`)}
                   className="text-blue-600 hover:underline font-medium"
                 >
@@ -247,7 +247,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
           <div>
             <span className="text-gray-500 block mb-1">Parent Organization</span>
             {parent ? (
-              <button
+              <button type="button"
                 onClick={() => router.push(`/admin/portal/organizations/${parent.id}`)}
                 className="font-medium text-blue-600 hover:underline"
               >
@@ -535,7 +535,7 @@ function PoliciesTab({ orgId }: { orgId: string }) {
                   <span className="font-medium text-gray-900 text-sm">{p.name}</span>
                   {p.description && <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>}
                 </div>
-                <button
+                <button type="button"
                   onClick={() => unassign(p.id)}
                   disabled={removing === p.id}
                   className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
@@ -560,7 +560,7 @@ function PoliciesTab({ orgId }: { orgId: string }) {
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            <button
+            <button type="button"
               onClick={assign}
               disabled={!selectedPolicyId || assigning}
               className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
@@ -691,7 +691,7 @@ export default function OrganizationDetailPage() {
       <AdminLayout title="Not Found" subtitle="">
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <p className="text-gray-600">Organization not found</p>
-          <button
+          <button type="button"
             onClick={() => router.push('/admin/portal/organizations')}
             className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
           >
@@ -714,7 +714,7 @@ export default function OrganizationDetailPage() {
       subtitle={`Organization Details - ${organization.slug}`}
     >
       {/* Back Button */}
-      <button
+      <button type="button"
         onClick={() => router.push('/admin/portal/organizations')}
         className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
       >
@@ -724,7 +724,7 @@ export default function OrganizationDetailPage() {
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
         {TABS.map((tab) => (
-          <button
+          <button type="button"
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
