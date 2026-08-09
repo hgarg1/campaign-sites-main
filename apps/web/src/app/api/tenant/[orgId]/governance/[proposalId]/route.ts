@@ -9,6 +9,7 @@ import {
 } from '@/app/api/tenant/auth-utils';
 import { castVote, cancelProposal, castTieBreak } from '@/lib/governance';
 import { resolveProxyForVote } from '@/lib/governance-proxy';
+import { buildProposalProgress } from '@/lib/governance-view';
 import { VoteDecision, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,18 @@ export async function GET(
 
   if (!ownership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  return NextResponse.json(proposal);
+  // Everything the UI needs to state how far this is from resolving — the rule
+  // in force, the threshold, who has yet to vote — rather than a bare tally.
+  const progress = await buildProposalProgress(proposal);
+
+  // Whether the caller is the assigned tie-breaker, so the UI can offer the
+  // casting decision without the client having to infer it.
+  const canBreakTie =
+    proposal.status === 'PENDING_TIEBREAK' &&
+    proposal.tieBreakOrgId === orgId &&
+    Boolean(await verifyOrgOwner(userId, orgId));
+
+  return NextResponse.json({ ...proposal, progress, canBreakTie });
 }
 
 export async function POST(

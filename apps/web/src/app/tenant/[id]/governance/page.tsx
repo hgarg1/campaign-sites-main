@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
+import { QuorumProgress, type ProposalProgress } from '@/components/governance/QuorumProgress';
+import { TieBreakPanel } from '@/components/governance/TieBreakPanel';
+import {
+  StakeAllocationEditor,
+  type OwnerRow,
+} from '@/components/governance/StakeAllocationEditor';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -35,6 +41,9 @@ interface Proposal {
   resolvedAt: string | null;
   resolvedReason: string | null;
   votes: Vote[];
+  /** Absent on proposals created before detailed vote tracking existed. */
+  progress?: ProposalProgress;
+  canBreakTie?: boolean;
 }
 
 interface TabCounts {
@@ -67,6 +76,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING_VOTES: 'bg-yellow-100 text-yellow-800',
+  PENDING_TIEBREAK: 'bg-amber-100 text-amber-900',
   APPROVED: 'bg-green-100 text-green-800',
   REJECTED: 'bg-red-100 text-red-800',
   EXPIRED: 'bg-gray-100 text-gray-600',
@@ -273,28 +283,49 @@ function ProposalDetailSlideOver({
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                Votes ({proposal.votes.length} / {proposal.requiredVoterCount})
-              </h3>
-              {proposal.votes.length === 0 ? (
-                <p className="text-sm text-gray-500">No votes cast yet.</p>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Progress</h3>
+              {proposal.progress ? (
+                <QuorumProgress progress={proposal.progress} status={proposal.status} />
               ) : (
-                <ul className="space-y-2">
-                  {proposal.votes.map((v) => (
-                    <li key={v.id} className="flex items-start gap-3 text-sm border rounded p-2">
-                      <VoteBadge decision={v.decision} />
-                      <div>
-                        <div className="font-medium font-mono">{v.voterOrgId.slice(0, 8)}…</div>
-                        {v.comment && <div className="text-gray-500 mt-0.5">{v.comment}</div>}
-                        {v.votedAt && (
-                          <div className="text-xs text-gray-400">{formatDate(v.votedAt)}</div>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-sm text-gray-500">
+                  This proposal predates detailed vote tracking, so only the raw tally is available:{' '}
+                  {proposal.votes.length} of {proposal.requiredVoterCount} cast.
+                </p>
               )}
             </div>
+
+            {proposal.canBreakTie && (
+              <TieBreakPanel
+                orgId={orgId}
+                proposalId={proposal.id}
+                tieBreakExpiresAt={proposal.progress?.tieBreak.expiresAt ?? null}
+                onResolved={() => {
+                  fetchProposal();
+                  onVoted?.();
+                }}
+              />
+            )}
+
+            {proposal.votes.some((v) => v.comment) && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Comments</h3>
+                <ul className="space-y-2">
+                  {proposal.votes
+                    .filter((v) => v.comment)
+                    .map((v) => (
+                      <li key={v.id} className="flex items-start gap-3 rounded border p-2 text-sm">
+                        <VoteBadge decision={v.decision} />
+                        <div className="min-w-0">
+                          <div className="text-gray-700">{v.comment}</div>
+                          {v.votedAt && (
+                            <div className="text-xs text-gray-400">{formatDate(v.votedAt)}</div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
 
             {proposal.status === 'PENDING_VOTES' && (
               <div className="border-t pt-4">
@@ -387,6 +418,8 @@ function NewProposalSlideOver({
   const [childOrgs, setChildOrgs] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [childOrgsLoading, setChildOrgsLoading] = useState(true);
   const [childOrgsFetchFailed, setChildOrgsFetchFailed] = useState(false);
+  const [stakeRows, setStakeRows] = useState<OwnerRow[]>([]);
+  const [stakes, setStakes] = useState<Array<{ parentOrgId: string; stakeBps: number }>>([]);
 
   useEffect(() => {
     fetch(`/api/tenant/${orgId}/governance?tab=children`)
@@ -398,6 +431,42 @@ function NewProposalSlideOver({
       .catch(() => setChildOrgsFetchFailed(true))
       .finally(() => setChildOrgsLoading(false));
   }, [orgId]);
+
+  // Load the chosen child's current owners so stake can be edited as a list of
+  // names and percentages rather than hand-written JSON.
+  useEffect(() => {
+    if (actionType !== 'SET_OWNERSHIP_STAKES' || !childOrgId) {
+      setStakeRows([]);
+      setStakes([]);
+      return;
+    }
+    fetch(`/api/tenant/${childOrgId}/owners`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('failed'))))
+      .then(
+        (data: {
+          data: Array<{
+            parentOrgId: string;
+            status: string;
+            stakeBps: number;
+            parentOrg: { name: string };
+          }>;
+        }) => {
+          const rows = (data.data ?? [])
+            .filter((o) => o.status === 'ACTIVE')
+            .map((o) => ({
+              parentOrgId: o.parentOrgId,
+              orgName: o.parentOrg.name,
+              stakeBps: o.stakeBps,
+            }));
+          setStakeRows(rows);
+          setStakes(rows.map((r) => ({ parentOrgId: r.parentOrgId, stakeBps: r.stakeBps })));
+        }
+      )
+      .catch(() => {
+        setStakeRows([]);
+        setStakes([]);
+      });
+  }, [actionType, childOrgId]);
 
   /**
    * Builds the action payload, or reports why it could not be built.
@@ -447,19 +516,16 @@ function NewProposalSlideOver({
       return { payload: { childOrgId } };
     }
     if (actionType === 'SET_OWNERSHIP_STAKES') {
-      const parsed = parseJson(payloadJson, 'Stake allocation');
-      if ('error' in parsed) return parsed;
-      if (!Array.isArray(parsed.value)) {
-        return { error: 'Stake allocation must be an array of { parentOrgId, stakeBps }' };
+      if (stakeRows.length === 0) {
+        return { error: 'Choose a child organization first, so its owners can be listed' };
       }
-      const stakes = parsed.value as Array<{ stakeBps?: number }>;
-      const total = stakes.reduce((sum, s) => sum + (Number(s.stakeBps) || 0), 0);
+      const total = stakes.reduce((sum, s) => sum + s.stakeBps, 0);
       if (total !== 10000) {
         return {
-          error: `Stakes must total 10000 basis points (100%), got ${total} — currently ${(total / 100).toFixed(2)}%`,
+          error: `Stakes must total 100% — currently ${(total / 100).toFixed(2)}%`,
         };
       }
-      return { payload: { stakes: parsed.value } };
+      return { payload: { stakes } };
     }
     if (actionType === 'SET_GOVERNANCE_RULE') {
       const parsed = parseJson(payloadJson, 'Governance rule');
@@ -506,25 +572,12 @@ function NewProposalSlideOver({
       return null;
 
     if (actionType === 'SET_OWNERSHIP_STAKES')
-      return (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Stake allocation (basis points, must total 10000)
-          </label>
-          <textarea
-            className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
-            rows={5}
-            placeholder={
-              '[\n  { "parentOrgId": "org_a", "stakeBps": 6000 },\n  { "parentOrgId": "org_b", "stakeBps": 4000 }\n]'
-            }
-            value={payloadJson}
-            onChange={(e) => setPayloadJson(e.target.value)}
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            List every current co-owner. 10000 basis points = 100%, so 6000 is 60%. This normally
-            requires unanimous approval, since it changes how much every owner&apos;s vote counts.
-          </p>
-        </div>
+      return stakeRows.length === 0 ? (
+        <p className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
+          Choose a child organization above and its current owners will be listed here.
+        </p>
+      ) : (
+        <StakeAllocationEditor owners={stakeRows} onChange={setStakes} />
       );
 
     if (actionType === 'SET_GOVERNANCE_RULE')

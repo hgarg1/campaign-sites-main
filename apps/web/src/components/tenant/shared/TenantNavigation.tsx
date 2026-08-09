@@ -39,6 +39,7 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
     { label: 'Dashboard', href: `/tenant/${orgId}`, icon: '📊' },
     { label: 'Websites', href: `/tenant/${orgId}/websites`, icon: '🌐' },
     { label: 'Hierarchy', href: `/tenant/${orgId}/hierarchy`, icon: '🌳' },
+    { label: 'Ownership', href: `/tenant/${orgId}/ownership`, icon: '🤝' },
     { label: 'Governance', href: `/tenant/${orgId}/governance`, icon: '⚖️' },
     { label: 'Team', href: `/tenant/${orgId}/team`, icon: '👥' },
     { label: 'Integrations', href: `/tenant/${orgId}/integrations`, icon: '🔌' },
@@ -51,7 +52,9 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
   return (
     <aside
       className="sticky top-0 h-screen w-64 text-white border-r border-slate-700 flex flex-col overflow-hidden"
-      style={{ background: 'linear-gradient(to bottom, var(--t-sidebar-from), var(--t-sidebar-to))' }}
+      style={{
+        background: 'linear-gradient(to bottom, var(--t-sidebar-from), var(--t-sidebar-to))',
+      }}
     >
       {/* Logo Section */}
       <motion.div
@@ -129,9 +132,7 @@ export function TenantNavigation({ orgId }: TenantNavigationProps) {
         transition={{ duration: 0.5, delay: 0.3 }}
         className="flex-shrink-0 p-4 border-t border-slate-700 bg-slate-900"
       >
-        <p className="text-xs text-slate-500 text-center">
-          Tenant Portal v1.0
-        </p>
+        <p className="text-xs text-slate-500 text-center">Tenant Portal v1.0</p>
       </motion.div>
     </aside>
   );
