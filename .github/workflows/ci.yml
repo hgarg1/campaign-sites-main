@@ -19,9 +19,9 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup pnpm
+        # Version comes from "packageManager" in the root package.json —
+        # action-setup@v4 errors if it is also given a `version` input.
         uses: pnpm/action-setup@v4
-        with:
-          version: 8
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
