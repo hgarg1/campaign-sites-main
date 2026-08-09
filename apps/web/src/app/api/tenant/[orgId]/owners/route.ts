@@ -110,8 +110,21 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
 
   const isPrimary = activeCount === 0 && !thisOrg?.parentId;
 
-  const ownership = await prisma.organizationOwnership.create({
-    data: {
+  // Upsert, not create: the [parentOrgId, childOrgId] row is reused rather than
+  // versioned, so re-admitting a previously REMOVED parent would throw P2002.
+  const ownership = await prisma.organizationOwnership.upsert({
+    where: {
+      parentOrgId_childOrgId: { parentOrgId, childOrgId: params.orgId },
+    },
+    update: {
+      isPrimary,
+      status: 'ACTIVE' as OwnershipStatus,
+      addedAt: new Date(),
+      addedByUserId: userId,
+      removedAt: null,
+      removedByUserId: null,
+    },
+    create: {
       parentOrgId,
       childOrgId: params.orgId,
       isPrimary,

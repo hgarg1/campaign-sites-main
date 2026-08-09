@@ -88,6 +88,7 @@ model Organization {
   initiatedProposals  GovernanceProposal[]   @relation("ProposalInitiator")
   childProposals      GovernanceProposal[]   @relation("ProposalChild")
   governanceVotes     GovernanceVote[]       @relation("VoteVoter")
+  proposalBallots     GovernanceProposalVoter[] @relation("ProposalVoter")
   governanceNotifs    GovernanceNotification[] @relation("NotifRecipient")
 
   // System permission policies assigned by system admins
@@ -476,6 +477,17 @@ model OrganizationOwnership {
   removedAt       DateTime?
   removedByUserId String?
 
+  /// Relative voting weight on this edge, in basis points (10000 = 100%).
+  /// Treated as a RELATIVE weight normalised at read time, not a percentage
+  /// that must sum to 10000 — so removing an owner renormalises the electorate
+  /// with no writes. 0 means a non-voting owner: it still counts for headcount
+  /// unanimity and quorum, but contributes nothing to a weighted tally.
+  /// When every owner is 0 the tally degrades to one-org-one-vote, which is
+  /// what makes this column safe to add with no backfill.
+  stakeBps             Int       @default(0)
+  stakeUpdatedAt       DateTime?
+  stakeUpdatedByUserId String?
+
   parentOrg       Organization       @relation("OwnershipParent", fields: [parentOrgId], references: [id], onDelete: Cascade)
   childOrg        Organization       @relation("OwnershipChild", fields: [childOrgId], references: [id], onDelete: Cascade)
 
@@ -488,6 +500,25 @@ model OrganizationOwnership {
 enum OwnershipStatus {
   ACTIVE
   REMOVED
+}
+
+/// Append-only history of voting-weight changes.
+/// OrganizationOwnership rows are keyed [parentOrgId, childOrgId] and reused
+/// rather than versioned, so the edge itself cannot carry its own history.
+model OwnershipStakeChange {
+  id              String   @id @default(cuid())
+  parentOrgId     String
+  childOrgId      String
+  fromStakeBps    Int? // null = the edge row did not exist (initial grant / re-admission)
+  toStakeBps      Int
+  reason          String // INITIAL | PROPOSAL | READMISSION | ADMIN
+  proposalId      String?
+  changedByUserId String
+  changedAt       DateTime @default(now())
+
+  @@index([childOrgId, changedAt])
+  @@index([parentOrgId, childOrgId])
+  @@map("ownership_stake_changes")
 }
 
 // System-wide key-value config store (admin-managed)
@@ -533,16 +564,47 @@ model GovernanceProposal {
   resolvedAt          DateTime?
   resolvedReason      String?
 
+  /// Non-null once the electorate has been frozen into GovernanceProposalVoter.
+  /// NULL marks a proposal created before weighted voting existed, which is the
+  /// signal to evaluate it against the live owner set as before. "No voter
+  /// rows" is NOT a usable signal — it is ambiguous with "all withdrawn".
+  electorateSnapshotAt DateTime?
+
   childOrg            Organization         @relation("ProposalChild", fields: [childOrgId], references: [id], onDelete: Cascade)
   initiatorOrg        Organization         @relation("ProposalInitiator", fields: [initiatorOrgId], references: [id], onDelete: Cascade)
 
   votes               GovernanceVote[]
+  voters              GovernanceProposalVoter[]
   notifications       GovernanceNotification[]
 
   @@index([childOrgId])
   @@index([initiatorOrgId])
   @@index([status])
   @@map("governance_proposals")
+}
+
+/// The electorate for a proposal, frozen at creation.
+///
+/// Weights must be frozen or a co-parent could change stakes mid-vote to swing
+/// an outcome. Withdrawal is modelled explicitly so that removing an owner
+/// shrinks both numerator and denominator — without it, a hard snapshot would
+/// make unanimity permanently unreachable after any owner removal.
+/// Rows are only ever withdrawn, never added: letting a new co-parent join an
+/// in-flight vote would turn ADD_PARENT into a denial of service on every
+/// pending proposal.
+model GovernanceProposalVoter {
+  proposalId      String
+  voterOrgId      String
+  stakeBps        Int       @default(0) // frozen copy of the ownership edge weight
+  withdrawnAt     DateTime?
+  withdrawnReason String? // OWNERSHIP_REMOVED | ORG_DEACTIVATED | ADMIN
+
+  proposal        GovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  voterOrg        Organization       @relation("ProposalVoter", fields: [voterOrgId], references: [id], onDelete: Cascade)
+
+  @@id([proposalId, voterOrgId])
+  @@index([voterOrgId])
+  @@map("governance_proposal_voters")
 }
 
 // One vote per parent org per proposal

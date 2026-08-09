@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/database';
 import { insertAncestry, removeAncestry, getDescendantIds } from '@/lib/ancestry';
 import {
+  Prisma,
   GovernanceProposal,
   GovernanceActionType,
   MemberRole,
@@ -12,6 +13,7 @@ import {
   OwnershipStatus,
 } from '@prisma/client';
 import { logSystemAdminAction } from '@/lib/audit-log';
+import { tally as tallyBallots, type Ballot, type BallotDecision } from '@/lib/governance-math';
 
 /** Roles a governance UPDATE_RBAC action may assign. */
 const ALLOWED_MEMBER_ROLES: MemberRole[] = ['MEMBER', 'ADMIN', 'OWNER'];
@@ -53,11 +55,117 @@ export async function getSystemConfigValue(key: string, defaultValue: number): P
 
 // ─── Ownership helpers ────────────────────────────────────────────────────────
 
-export async function getActiveOwners(childOrgId: string): Promise<Array<{ parentOrgId: string }>> {
+export async function getActiveOwners(
+  childOrgId: string
+): Promise<Array<{ parentOrgId: string; stakeBps: number }>> {
   return prisma.organizationOwnership.findMany({
     where: { childOrgId, status: 'ACTIVE' as OwnershipStatus },
-    select: { parentOrgId: true },
+    select: { parentOrgId: true, stakeBps: true },
+    // Stable order so an even split's remainder basis point always lands on the
+    // same (earliest) owner rather than moving between calls.
+    orderBy: { addedAt: 'asc' },
   });
+}
+
+// ─── Electorate ───────────────────────────────────────────────────────────────
+
+/**
+ * Brings a proposal's frozen electorate back in line with reality, then returns
+ * the ballots to tally.
+ *
+ * Withdraws snapshot rows whose ownership is no longer ACTIVE, or whose org has
+ * been DEACTIVATED. Never adds rows.
+ *
+ * A SUSPENDED co-owner deliberately keeps its vote. Suspension is reversible,
+ * so dropping suspended orgs from the electorate would make "suspend the
+ * co-owner who disagrees with you, then pass what you want" a single move. The
+ * cost is that a proposal can stall until its TTL, which admin force-resolve
+ * covers.
+ *
+ * Proposals created before weighted voting have `electorateSnapshotAt` NULL and
+ * fall back to the live owner set, preserving their original semantics.
+ */
+export async function reconcileElectorate(
+  proposal: Pick<GovernanceProposal, 'id' | 'childOrgId' | 'electorateSnapshotAt'>
+): Promise<Ballot[]> {
+  const votes = await prisma.governanceVote.findMany({
+    where: { proposalId: proposal.id },
+    select: { voterOrgId: true, decision: true },
+  });
+  const decisionByOrg = new Map(votes.map((v) => [v.voterOrgId, v.decision]));
+
+  // Legacy path: no snapshot, so evaluate against live owners as before.
+  if (!proposal.electorateSnapshotAt) {
+    const owners = await getActiveOwners(proposal.childOrgId);
+    return owners.map((o) => ({
+      voterOrgId: o.parentOrgId,
+      stakeBps: o.stakeBps,
+      decision: (decisionByOrg.get(o.parentOrgId) ?? null) as BallotDecision,
+    }));
+  }
+
+  const snapshot = await prisma.governanceProposalVoter.findMany({
+    where: { proposalId: proposal.id },
+  });
+
+  const stillActive = new Set(
+    (
+      await prisma.organizationOwnership.findMany({
+        where: {
+          childOrgId: proposal.childOrgId,
+          status: 'ACTIVE' as OwnershipStatus,
+          parentOrgId: { in: snapshot.map((s) => s.voterOrgId) },
+        },
+        select: { parentOrgId: true },
+      })
+    ).map((o) => o.parentOrgId)
+  );
+
+  const deactivated = new Set(
+    (
+      await prisma.organization.findMany({
+        where: {
+          id: { in: snapshot.map((s) => s.voterOrgId) },
+          ownStatus: 'DEACTIVATED',
+        },
+        select: { id: true },
+      })
+    ).map((o) => o.id)
+  );
+
+  const toWithdraw: Array<{ voterOrgId: string; reason: string }> = [];
+  for (const row of snapshot) {
+    if (row.withdrawnAt) continue;
+    if (!stillActive.has(row.voterOrgId)) {
+      toWithdraw.push({ voterOrgId: row.voterOrgId, reason: 'OWNERSHIP_REMOVED' });
+    } else if (deactivated.has(row.voterOrgId)) {
+      toWithdraw.push({ voterOrgId: row.voterOrgId, reason: 'ORG_DEACTIVATED' });
+    }
+  }
+
+  if (toWithdraw.length > 0) {
+    const now = new Date();
+    await Promise.all(
+      toWithdraw.map((w) =>
+        prisma.governanceProposalVoter.update({
+          where: {
+            proposalId_voterOrgId: { proposalId: proposal.id, voterOrgId: w.voterOrgId },
+          },
+          data: { withdrawnAt: now, withdrawnReason: w.reason },
+        })
+      )
+    );
+  }
+
+  const withdrawn = new Set(toWithdraw.map((w) => w.voterOrgId));
+
+  return snapshot
+    .filter((row) => !row.withdrawnAt && !withdrawn.has(row.voterOrgId))
+    .map((row) => ({
+      voterOrgId: row.voterOrgId,
+      stakeBps: row.stakeBps,
+      decision: (decisionByOrg.get(row.voterOrgId) ?? null) as BallotDecision,
+    }));
 }
 
 // ─── Private helper ───────────────────────────────────────────────────────────
@@ -136,6 +244,14 @@ export async function createProposal(params: {
         expiresAt: now,
         resolvedAt: now,
         resolvedReason: 'Auto-approved: sole owner',
+        electorateSnapshotAt: now,
+        // Recorded even though no vote was needed, so every proposal has a
+        // consistent electorate for the history view to render.
+        voters: {
+          createMany: {
+            data: owners.map((o) => ({ voterOrgId: o.parentOrgId, stakeBps: o.stakeBps })),
+          },
+        },
       },
     });
 
@@ -160,6 +276,14 @@ export async function createProposal(params: {
       rejectMode,
       requiredVoterCount,
       expiresAt,
+      electorateSnapshotAt: new Date(),
+      // Freeze who may vote and how much each weighs. Without this, a co-parent
+      // could reallocate stakes mid-vote to change an outcome already underway.
+      voters: {
+        createMany: {
+          data: owners.map((o) => ({ voterOrgId: o.parentOrgId, stakeBps: o.stakeBps })),
+        },
+      },
     },
   });
 
@@ -187,18 +311,21 @@ export async function castVote(params: {
     throw new Error(`Proposal ${proposalId} is not open for voting (status: ${proposal.status})`);
   }
 
-  // Check expiry before accepting a vote
+  // Check expiry before accepting a vote. Guarded so concurrent late votes
+  // cannot each emit an expiry notification.
   if (proposal.expiresAt < new Date()) {
-    const expired = await prisma.governanceProposal.update({
-      where: { id: proposalId },
+    const { count } = await prisma.governanceProposal.updateMany({
+      where: { id: proposalId, status: 'PENDING_VOTES' as ProposalStatus },
       data: {
         status: 'EXPIRED' as ProposalStatus,
         resolvedAt: new Date(),
         resolvedReason: 'Proposal expired',
       },
     });
-    await notifyOwners(proposalId, proposal.childOrgId, 'PROPOSAL_EXPIRED');
-    return expired;
+    if (count > 0) {
+      await notifyOwners(proposalId, proposal.childOrgId, 'PROPOSAL_EXPIRED');
+    }
+    return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposalId } });
   }
 
   // Validate voter is an ACTIVE owner
@@ -213,17 +340,20 @@ export async function castVote(params: {
     throw new Error(`Organization ${voterOrgId} is not an active owner of ${proposal.childOrgId}`);
   }
 
-  // Guard duplicate vote (the unique constraint will also catch this at the DB level)
-  const existingVote = await prisma.governanceVote.findFirst({
-    where: { proposalId, voterOrgId },
-  });
-  if (existingVote) {
-    throw new Error(`Organization ${voterOrgId} has already voted on proposal ${proposalId}`);
+  // Duplicate votes are prevented by the @@unique([proposalId, voterOrgId])
+  // constraint rather than a read-then-write check, which two concurrent
+  // requests can both pass. P2002 is the expected, non-exceptional outcome of a
+  // double submit.
+  try {
+    await prisma.governanceVote.create({
+      data: { proposalId, voterOrgId, voterUserId, decision, comment },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw new Error(`Organization ${voterOrgId} has already voted on proposal ${proposalId}`);
+    }
+    throw error;
   }
-
-  await prisma.governanceVote.create({
-    data: { proposalId, voterOrgId, voterUserId, decision, comment },
-  });
 
   await notifyOwners(proposalId, proposal.childOrgId, 'VOTE_CAST', voterOrgId);
 
@@ -236,21 +366,34 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
   const proposal = await prisma.governanceProposal.findUniqueOrThrow({
     where: { id: proposalId },
   });
-  const votes = await prisma.governanceVote.findMany({ where: { proposalId } });
+  // The electorate is the proposal's frozen voter set, reconciled against
+  // current ownership. Ballots from withdrawn voters are excluded from both the
+  // numerator and the denominator, so removing an owner keeps unanimity
+  // reachable rather than stranding the proposal.
+  const ballots = await reconcileElectorate(proposal);
+  const t = tallyBallots(ballots);
 
-  // Evaluate against the CURRENT owner set, not the count snapshotted at
-  // creation. If an owner is removed mid-vote, the stored count makes unanimity
-  // unreachable; if one is added, the stored count lets a proposal pass without
-  // them. Votes from orgs that are no longer active owners are discarded.
-  const activeOwners = await getActiveOwners(proposal.childOrgId);
-  const activeOwnerIds = new Set(activeOwners.map((o) => o.parentOrgId));
-  const countingVotes = votes.filter((v) => activeOwnerIds.has(v.voterOrgId));
+  // An electorate that has emptied out cannot decide anything. Resolving it as
+  // expired is honest; treating 0-of-0 as unanimous would silently execute an
+  // action nobody voted for.
+  if (t.n === 0) {
+    const { count } = await prisma.governanceProposal.updateMany({
+      where: { id: proposalId, status: 'PENDING_VOTES' as ProposalStatus },
+      data: {
+        status: 'EXPIRED' as ProposalStatus,
+        resolvedAt: new Date(),
+        resolvedReason: 'Electorate empty',
+      },
+    });
+    if (count > 0) {
+      await notifyOwners(proposalId, proposal.childOrgId, 'PROPOSAL_EXPIRED');
+    }
+    return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposalId } });
+  }
 
-  const approveCount = countingVotes.filter(
-    (v) => v.decision === ('APPROVE' as VoteDecision)
-  ).length;
-  const rejectCount = countingVotes.filter((v) => v.decision === ('REJECT' as VoteDecision)).length;
-  const required = Math.max(activeOwners.length, 1);
+  const approveCount = t.ah;
+  const rejectCount = t.rh;
+  const required = t.n;
 
   let outcome: 'APPROVED' | 'REJECTED' | null = null;
   let resolvedReason: string | undefined;
@@ -292,13 +435,27 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
     return proposal;
   }
 
-  const resolved = await prisma.governanceProposal.update({
-    where: { id: proposalId },
+  // Guarded transition. Two concurrent votes can both compute an outcome from
+  // the same pre-write state; only the caller that actually moves the row out
+  // of PENDING_VOTES may execute the action or notify. Without this the status
+  // could flip APPROVED→REJECTED and executeAction could run for a proposal
+  // that ends up rejected.
+  const { count } = await prisma.governanceProposal.updateMany({
+    where: { id: proposalId, status: 'PENDING_VOTES' as ProposalStatus },
     data: {
       status: outcome as ProposalStatus,
       resolvedAt: new Date(),
       resolvedReason: resolvedReason ?? null,
     },
+  });
+
+  if (count === 0) {
+    // Someone else resolved it first — return their outcome, do nothing else.
+    return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposalId } });
+  }
+
+  const resolved = await prisma.governanceProposal.findUniqueOrThrow({
+    where: { id: proposalId },
   });
 
   if (outcome === 'APPROVED') {
@@ -480,8 +637,21 @@ async function performAction(proposal: GovernanceProposal): Promise<void> {
       if (!payload.parentOrgId) {
         throw new Error('ADD_PARENT action requires payload.parentOrgId');
       }
-      await prisma.organizationOwnership.create({
-        data: {
+      // Ownership rows are keyed [parentOrgId, childOrgId] and reused rather
+      // than versioned, so a previously REMOVED parent already has a row.
+      // `.create()` would throw P2002 on re-admission.
+      await prisma.organizationOwnership.upsert({
+        where: {
+          parentOrgId_childOrgId: { parentOrgId: payload.parentOrgId, childOrgId },
+        },
+        update: {
+          status: 'ACTIVE' as OwnershipStatus,
+          addedAt: new Date(),
+          addedByUserId: payload.addedByUserId ?? proposal.initiatorUserId,
+          removedAt: null,
+          removedByUserId: null,
+        },
+        create: {
           parentOrgId: payload.parentOrgId,
           childOrgId,
           isPrimary: false,
@@ -583,8 +753,24 @@ async function performAction(proposal: GovernanceProposal): Promise<void> {
         where: { id: payload.childOrgId },
         data: { parentId: proposal.initiatorOrgId },
       });
-      await prisma.organizationOwnership.create({
-        data: {
+      // Upsert for the same reason as ADD_PARENT: the edge row may already
+      // exist in REMOVED state from a prior relationship.
+      await prisma.organizationOwnership.upsert({
+        where: {
+          parentOrgId_childOrgId: {
+            parentOrgId: proposal.initiatorOrgId,
+            childOrgId: payload.childOrgId,
+          },
+        },
+        update: {
+          isPrimary: true,
+          status: 'ACTIVE' as OwnershipStatus,
+          addedAt: new Date(),
+          addedByUserId: proposal.initiatorUserId,
+          removedAt: null,
+          removedByUserId: null,
+        },
+        create: {
           parentOrgId: proposal.initiatorOrgId,
           childOrgId: payload.childOrgId,
           isPrimary: true,

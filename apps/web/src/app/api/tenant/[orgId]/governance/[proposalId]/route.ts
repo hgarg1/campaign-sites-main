@@ -7,10 +7,12 @@ import {
   writeAuditLog,
 } from '@/app/api/tenant/auth-utils';
 import { castVote, cancelProposal } from '@/lib/governance';
-import { VoteDecision } from '@prisma/client';
+import { VoteDecision, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
+// `satisfies` makes an unknown field a compile error — see the note in
+// ../route.ts; this shape previously selected a nonexistent `createdAt`.
 const proposalInclude = {
   childOrg: { select: { id: true, name: true } },
   initiatorOrg: { select: { id: true, name: true } },
@@ -21,10 +23,10 @@ const proposalInclude = {
       voterUserId: true,
       decision: true,
       comment: true,
-      createdAt: true,
+      votedAt: true,
     },
   },
-};
+} satisfies Prisma.GovernanceProposalInclude;
 
 export async function GET(
   _req: NextRequest,

@@ -8,7 +8,7 @@ import {
   writeAuditLog,
 } from '@/app/api/tenant/auth-utils';
 import { createProposal } from '@/lib/governance';
-import { GovernanceActionType } from '@prisma/client';
+import { GovernanceActionType, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,11 +28,15 @@ const PROPOSABLE_ACTIONS: GovernanceActionType[] = [
   'REMOVE_CHILD_POLICY',
 ];
 
+// Typed as Prisma.GovernanceProposalInclude so a field that does not exist on
+// the model is a compile error. Untyped, this object silently shipped a select
+// for `createdAt` — which GovernanceVote does not have (it is `votedAt`) — and
+// every query using it threw PrismaClientValidationError at runtime.
 const proposalInclude = {
   childOrg: { select: { id: true, name: true } },
   initiatorOrg: { select: { id: true, name: true } },
-  votes: { select: { id: true, voterOrgId: true, decision: true, comment: true, createdAt: true } },
-};
+  votes: { select: { id: true, voterOrgId: true, decision: true, comment: true, votedAt: true } },
+} satisfies Prisma.GovernanceProposalInclude;
 
 export async function GET(req: NextRequest, { params }: { params: { orgId: string } }) {
   const userId = await getAuthUserId();

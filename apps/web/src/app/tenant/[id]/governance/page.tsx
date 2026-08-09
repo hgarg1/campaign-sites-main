@@ -6,7 +6,10 @@ import { TenantLayout } from '@/components/tenant/shared';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-interface OrgRef { id: string; name: string }
+interface OrgRef {
+  id: string;
+  name: string;
+}
 
 interface Vote {
   id: string;
@@ -14,7 +17,7 @@ interface Vote {
   voterUserId?: string;
   decision: 'APPROVE' | 'REJECT';
   comment?: string | null;
-  createdAt?: string;
+  votedAt?: string;
 }
 
 interface Proposal {
@@ -70,7 +73,9 @@ const ALL_ACTION_TYPES = Object.keys(ACTION_LABELS);
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-600'}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-600'}`}
+    >
       {status.replace(/_/g, ' ')}
     </span>
   );
@@ -78,7 +83,9 @@ function StatusBadge({ status }: { status: string }) {
 
 function VoteBadge({ decision }: { decision: string }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${decision === 'APPROVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${decision === 'APPROVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+    >
       {decision === 'APPROVE' ? '✓ Approve' : '✗ Reject'}
     </span>
   );
@@ -86,7 +93,11 @@ function VoteBadge({ decision }: { decision: string }) {
 
 function formatDate(iso: string | null | undefined) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function isExpiringSoon(expiresAt: string | null) {
@@ -100,8 +111,10 @@ function timeUntil(iso: string | null): { text: string; color: string } | null {
   if (ms <= 0) return null;
   const hours = Math.floor(ms / (1000 * 60 * 60));
   const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  if (hours < 24) return { text: `Expires in ${hours}h ${minutes}m`, color: 'text-red-600 font-medium' };
-  if (hours < 48) return { text: `Expires in ${hours}h ${minutes}m`, color: 'text-orange-500 font-medium' };
+  if (hours < 24)
+    return { text: `Expires in ${hours}h ${minutes}m`, color: 'text-red-600 font-medium' };
+  if (hours < 48)
+    return { text: `Expires in ${hours}h ${minutes}m`, color: 'text-orange-500 font-medium' };
   return null;
 }
 
@@ -120,8 +133,18 @@ function ProposalDetailSlideOver({
 }) {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [loading, setLoading] = useState(true);
-  const [voteState, setVoteState] = useState<{ decision: 'APPROVE' | 'REJECT' | null; comment: string; submitting: boolean; error: string; success: boolean }>({
-    decision: null, comment: '', submitting: false, error: '', success: false,
+  const [voteState, setVoteState] = useState<{
+    decision: 'APPROVE' | 'REJECT' | null;
+    comment: string;
+    submitting: boolean;
+    error: string;
+    success: boolean;
+  }>({
+    decision: null,
+    comment: '',
+    submitting: false,
+    error: '',
+    success: false,
   });
 
   const fetchProposal = useCallback(() => {
@@ -132,7 +155,9 @@ function ProposalDetailSlideOver({
       .finally(() => setLoading(false));
   }, [orgId, proposalId]);
 
-  useEffect(() => { fetchProposal(); }, [fetchProposal]);
+  useEffect(() => {
+    fetchProposal();
+  }, [fetchProposal]);
 
   async function submitVote() {
     if (!voteState.decision) return;
@@ -145,7 +170,11 @@ function ProposalDetailSlideOver({
       });
       const data = await res.json();
       if (!res.ok) {
-        setVoteState((s) => ({ ...s, submitting: false, error: data.error ?? 'Failed to cast vote' }));
+        setVoteState((s) => ({
+          ...s,
+          submitting: false,
+          error: data.error ?? 'Failed to cast vote',
+        }));
         return;
       }
       setVoteState({ decision: null, comment: '', submitting: false, error: '', success: true });
@@ -163,26 +192,71 @@ function ProposalDetailSlideOver({
       <div className="relative w-full max-w-xl bg-white shadow-xl flex flex-col overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">Proposal Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
         </div>
 
         {loading ? (
           <div className="p-6 space-y-3">
-            {[1, 2, 3].map((i) => <div key={i} className="animate-pulse bg-gray-200 rounded h-4 w-full" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse bg-gray-200 rounded h-4 w-full" />
+            ))}
           </div>
         ) : !proposal ? (
           <div className="p-6 text-red-600">Failed to load proposal.</div>
         ) : (
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><span className="text-gray-500">Action</span><div className="font-medium">{ACTION_LABELS[proposal.actionType] ?? proposal.actionType}</div></div>
-              <div><span className="text-gray-500">Status</span><div><StatusBadge status={proposal.status} /></div></div>
-              <div><span className="text-gray-500">Child Org</span><div className="font-medium">{proposal.childOrg?.name ?? proposal.childOrgId}</div></div>
-              <div><span className="text-gray-500">Initiated By</span><div className="font-medium">{proposal.initiatorOrg?.name ?? proposal.initiatorOrgId}</div></div>
-              <div><span className="text-gray-500">Created</span><div>{formatDate(proposal.createdAt)}</div></div>
-              <div><span className="text-gray-500">Expires</span><div className={isExpiringSoon(proposal.expiresAt) ? 'text-red-600 font-medium' : ''}>{formatDate(proposal.expiresAt)}</div></div>
-              {proposal.resolvedAt && <div><span className="text-gray-500">Resolved</span><div>{formatDate(proposal.resolvedAt)}</div></div>}
-              {proposal.resolvedReason && <div className="col-span-2"><span className="text-gray-500">Reason</span><div>{proposal.resolvedReason}</div></div>}
+              <div>
+                <span className="text-gray-500">Action</span>
+                <div className="font-medium">
+                  {ACTION_LABELS[proposal.actionType] ?? proposal.actionType}
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-500">Status</span>
+                <div>
+                  <StatusBadge status={proposal.status} />
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-500">Child Org</span>
+                <div className="font-medium">{proposal.childOrg?.name ?? proposal.childOrgId}</div>
+              </div>
+              <div>
+                <span className="text-gray-500">Initiated By</span>
+                <div className="font-medium">
+                  {proposal.initiatorOrg?.name ?? proposal.initiatorOrgId}
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-500">Created</span>
+                <div>{formatDate(proposal.createdAt)}</div>
+              </div>
+              <div>
+                <span className="text-gray-500">Expires</span>
+                <div
+                  className={isExpiringSoon(proposal.expiresAt) ? 'text-red-600 font-medium' : ''}
+                >
+                  {formatDate(proposal.expiresAt)}
+                </div>
+              </div>
+              {proposal.resolvedAt && (
+                <div>
+                  <span className="text-gray-500">Resolved</span>
+                  <div>{formatDate(proposal.resolvedAt)}</div>
+                </div>
+              )}
+              {proposal.resolvedReason && (
+                <div className="col-span-2">
+                  <span className="text-gray-500">Reason</span>
+                  <div>{proposal.resolvedReason}</div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -206,7 +280,9 @@ function ProposalDetailSlideOver({
                       <div>
                         <div className="font-medium font-mono">{v.voterOrgId.slice(0, 8)}…</div>
                         {v.comment && <div className="text-gray-500 mt-0.5">{v.comment}</div>}
-                        {v.createdAt && <div className="text-xs text-gray-400">{formatDate(v.createdAt)}</div>}
+                        {v.votedAt && (
+                          <div className="text-xs text-gray-400">{formatDate(v.votedAt)}</div>
+                        )}
                       </div>
                     </li>
                   ))}
@@ -229,8 +305,18 @@ function ProposalDetailSlideOver({
                 )}
                 {voteState.decision === null ? (
                   <div className="flex gap-2">
-                    <button onClick={() => setVoteState((s) => ({ ...s, decision: 'APPROVE' }))} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm">✓ Approve</button>
-                    <button onClick={() => setVoteState((s) => ({ ...s, decision: 'REJECT' }))} className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm">✗ Reject</button>
+                    <button
+                      onClick={() => setVoteState((s) => ({ ...s, decision: 'APPROVE' }))}
+                      className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm"
+                    >
+                      ✓ Approve
+                    </button>
+                    <button
+                      onClick={() => setVoteState((s) => ({ ...s, decision: 'REJECT' }))}
+                      className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm"
+                    >
+                      ✗ Reject
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -247,9 +333,16 @@ function ProposalDetailSlideOver({
                         disabled={voteState.submitting}
                         className={`flex-1 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50 ${voteState.decision === 'APPROVE' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
                       >
-                        {voteState.submitting ? 'Submitting…' : `Confirm ${voteState.decision === 'APPROVE' ? 'Approve' : 'Reject'}`}
+                        {voteState.submitting
+                          ? 'Submitting…'
+                          : `Confirm ${voteState.decision === 'APPROVE' ? 'Approve' : 'Reject'}`}
                       </button>
-                      <button onClick={() => setVoteState((s) => ({ ...s, decision: null, comment: '' }))} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Back</button>
+                      <button
+                        onClick={() => setVoteState((s) => ({ ...s, decision: null, comment: '' }))}
+                        className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+                      >
+                        Back
+                      </button>
                     </div>
                   </div>
                 )}
@@ -305,7 +398,11 @@ function NewProposalSlideOver({
       return {};
     }
     if (['UPDATE_SETTINGS', 'UPDATE_BRANDING'].includes(actionType)) {
-      try { return { settings: JSON.parse(payloadJson) }; } catch { return {}; }
+      try {
+        return { settings: JSON.parse(payloadJson) };
+      } catch {
+        return {};
+      }
     }
     if (actionType === 'UPDATE_RBAC') {
       return { memberId, newRole };
@@ -317,7 +414,11 @@ function NewProposalSlideOver({
       return { childOrgId: childPayloadOrgId };
     }
     if (actionType === 'UPDATE_INTEGRATIONS') {
-      try { return { integrationId, integrationConfig: JSON.parse(integrationConfigJson) }; } catch { return {}; }
+      try {
+        return { integrationId, integrationConfig: JSON.parse(integrationConfigJson) };
+      } catch {
+        return {};
+      }
     }
     return {};
   }
@@ -333,7 +434,10 @@ function NewProposalSlideOver({
         body: JSON.stringify({ childOrgId, actionType, payload: buildPayload(), description }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Failed to create proposal'); return; }
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to create proposal');
+        return;
+      }
       const msg = data.autoExecuted
         ? 'Action executed immediately (sole owner).'
         : 'Proposal created — co-owners have been notified.';
@@ -347,53 +451,89 @@ function NewProposalSlideOver({
 
   function renderPayloadFields() {
     if (['SUSPEND', 'REACTIVATE', 'DEACTIVATE'].includes(actionType)) return null;
-    if (['UPDATE_SETTINGS', 'UPDATE_BRANDING'].includes(actionType)) return (
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Settings JSON</label>
-        <textarea className="w-full border rounded-lg px-3 py-2 text-sm font-mono" rows={4} value={payloadJson} onChange={(e) => setPayloadJson(e.target.value)} />
-      </div>
-    );
-    if (actionType === 'UPDATE_RBAC') return (
-      <>
+    if (['UPDATE_SETTINGS', 'UPDATE_BRANDING'].includes(actionType))
+      return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Member ID</label>
-          <input className="w-full border rounded-lg px-3 py-2 text-sm" value={memberId} onChange={(e) => setMemberId(e.target.value)} placeholder="Member's user ID" />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Settings JSON</label>
+          <textarea
+            className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
+            rows={4}
+            value={payloadJson}
+            onChange={(e) => setPayloadJson(e.target.value)}
+          />
         </div>
+      );
+    if (actionType === 'UPDATE_RBAC')
+      return (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Member ID</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+              value={memberId}
+              onChange={(e) => setMemberId(e.target.value)}
+              placeholder="Member's user ID"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">New Role</label>
+            <select
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value)}
+            >
+              <option value="">Select a role…</option>
+              <option value="OWNER">Owner</option>
+              <option value="ADMIN">Admin</option>
+              <option value="MEMBER">Member</option>
+            </select>
+          </div>
+        </>
+      );
+    if (actionType === 'ADD_PARENT' || actionType === 'REMOVE_PARENT')
+      return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">New Role</label>
-          <select className="w-full border rounded-lg px-3 py-2 text-sm" value={newRole} onChange={(e) => setNewRole(e.target.value)}>
-            <option value="">Select a role…</option>
-            <option value="OWNER">Owner</option>
-            <option value="ADMIN">Admin</option>
-            <option value="MEMBER">Member</option>
-          </select>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Parent Org ID</label>
+          <input
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            value={parentOrgId}
+            onChange={(e) => setParentOrgId(e.target.value)}
+          />
         </div>
-      </>
-    );
-    if (actionType === 'ADD_PARENT' || actionType === 'REMOVE_PARENT') return (
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Parent Org ID</label>
-        <input className="w-full border rounded-lg px-3 py-2 text-sm" value={parentOrgId} onChange={(e) => setParentOrgId(e.target.value)} />
-      </div>
-    );
-    if (actionType === 'ADD_CHILD') return (
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Child Org ID</label>
-        <input className="w-full border rounded-lg px-3 py-2 text-sm" value={childPayloadOrgId} onChange={(e) => setChildPayloadOrgId(e.target.value)} />
-      </div>
-    );
-    if (actionType === 'UPDATE_INTEGRATIONS') return (
-      <>
+      );
+    if (actionType === 'ADD_CHILD')
+      return (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Integration ID</label>
-          <input className="w-full border rounded-lg px-3 py-2 text-sm" value={integrationId} onChange={(e) => setIntegrationId(e.target.value)} />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Child Org ID</label>
+          <input
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            value={childPayloadOrgId}
+            onChange={(e) => setChildPayloadOrgId(e.target.value)}
+          />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Config JSON</label>
-          <textarea className="w-full border rounded-lg px-3 py-2 text-sm font-mono" rows={4} value={integrationConfigJson} onChange={(e) => setIntegrationConfigJson(e.target.value)} />
-        </div>
-      </>
-    );
+      );
+    if (actionType === 'UPDATE_INTEGRATIONS')
+      return (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Integration ID</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+              value={integrationId}
+              onChange={(e) => setIntegrationId(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Config JSON</label>
+            <textarea
+              className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
+              rows={4}
+              value={integrationConfigJson}
+              onChange={(e) => setIntegrationConfigJson(e.target.value)}
+            />
+          </div>
+        </>
+      );
     return null;
   }
 
@@ -403,7 +543,12 @@ function NewProposalSlideOver({
       <div className="relative w-full max-w-xl bg-white shadow-xl flex flex-col overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">New Proposal</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1">
           <div>
@@ -411,27 +556,49 @@ function NewProposalSlideOver({
             {childOrgsLoading ? (
               <div className="animate-pulse bg-gray-200 rounded h-9 w-full" />
             ) : childOrgsFetchFailed ? (
-              <input required className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Paste child org ID…" value={childOrgId} onChange={(e) => setChildOrgId(e.target.value)} />
+              <input
+                required
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+                placeholder="Paste child org ID…"
+                value={childOrgId}
+                onChange={(e) => setChildOrgId(e.target.value)}
+              />
             ) : childOrgs.length === 0 ? (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 You haven&apos;t been added as a co-parent of any child organizations yet. Go to the{' '}
-                <a href={`/tenant/${orgId}/hierarchy`} className="underline font-medium">Hierarchy page</a>{' '}
+                <a href={`/tenant/${orgId}/hierarchy`} className="underline font-medium">
+                  Hierarchy page
+                </a>{' '}
                 to set up co-ownership links.
               </p>
             ) : (
-              <select required className="w-full border rounded-lg px-3 py-2 text-sm" value={childOrgId} onChange={(e) => setChildOrgId(e.target.value)}>
+              <select
+                required
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+                value={childOrgId}
+                onChange={(e) => setChildOrgId(e.target.value)}
+              >
                 <option value="">Select a child org…</option>
                 {childOrgs.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
                 ))}
               </select>
             )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Action Type *</label>
-            <select required className="w-full border rounded-lg px-3 py-2 text-sm" value={actionType} onChange={(e) => setActionType(e.target.value)}>
+            <select
+              required
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+              value={actionType}
+              onChange={(e) => setActionType(e.target.value)}
+            >
               {ALL_ACTION_TYPES.map((t) => (
-                <option key={t} value={t}>{ACTION_LABELS[t]}</option>
+                <option key={t} value={t}>
+                  {ACTION_LABELS[t]}
+                </option>
               ))}
             </select>
           </div>
@@ -442,15 +609,32 @@ function NewProposalSlideOver({
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea className="w-full border rounded-lg px-3 py-2 text-sm" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <textarea
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
           {renderPayloadFields()}
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={submitting || (!childOrgsFetchFailed && !childOrgsLoading && childOrgs.length === 0)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={
+                submitting || (!childOrgsFetchFailed && !childOrgsLoading && childOrgs.length === 0)
+              }
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50"
+            >
               {submitting ? 'Submitting…' : 'Create Proposal'}
             </button>
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>
@@ -460,26 +644,56 @@ function NewProposalSlideOver({
 
 // ─── Pending Vote Tab ──────────────────────────────────────────────────────────
 
-function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onRefresh: () => void; onViewDetail: (id: string) => void }) {
+function PendingVoteTab({
+  orgId,
+  onRefresh,
+  onViewDetail,
+}: {
+  orgId: string;
+  onRefresh: () => void;
+  onViewDetail: (id: string) => void;
+}) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [voting, setVoting] = useState<Record<string, { decision: 'APPROVE' | 'REJECT' | null; comment: string; submitting: boolean; error: string; voteSuccess: boolean }>>({});
+  const [voting, setVoting] = useState<
+    Record<
+      string,
+      {
+        decision: 'APPROVE' | 'REJECT' | null;
+        comment: string;
+        submitting: boolean;
+        error: string;
+        voteSuccess: boolean;
+      }
+    >
+  >({});
 
   const load = useCallback(() => {
     setLoading(true);
     setLoadError(false);
     fetch(`/api/tenant/${orgId}/governance?tab=pending`)
-      .then((r) => { if (!r.ok) throw new Error('failed'); return r.json(); })
+      .then((r) => {
+        if (!r.ok) throw new Error('failed');
+        return r.json();
+      })
       .then(setProposals)
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [orgId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   function startVote(id: string, decision: 'APPROVE' | 'REJECT') {
-    setVoting((v) => ({ ...v, [id]: { ...(v[id] ?? { comment: '', submitting: false, error: '', voteSuccess: false }), decision } }));
+    setVoting((v) => ({
+      ...v,
+      [id]: {
+        ...(v[id] ?? { comment: '', submitting: false, error: '', voteSuccess: false }),
+        decision,
+      },
+    }));
   }
 
   async function submitVote(p: Proposal) {
@@ -494,26 +708,56 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
       });
       const data = await res.json();
       if (!res.ok) {
-        setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], submitting: false, error: data.error ?? 'Failed to cast vote' } }));
+        setVoting((prev) => ({
+          ...prev,
+          [p.id]: { ...prev[p.id], submitting: false, error: data.error ?? 'Failed to cast vote' },
+        }));
         return;
       }
-      setVoting((prev) => ({ ...prev, [p.id]: { decision: null, comment: '', submitting: false, error: '', voteSuccess: true } }));
+      setVoting((prev) => ({
+        ...prev,
+        [p.id]: { decision: null, comment: '', submitting: false, error: '', voteSuccess: true },
+      }));
       load();
       onRefresh();
-      setTimeout(() => setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], voteSuccess: false } })), 3000);
+      setTimeout(
+        () => setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], voteSuccess: false } })),
+        3000
+      );
     } catch {
-      setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], submitting: false, error: 'Network error' } }));
+      setVoting((prev) => ({
+        ...prev,
+        [p.id]: { ...prev[p.id], submitting: false, error: 'Network error' },
+      }));
     }
   }
 
-  if (loading) return <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-20" />)}</div>;
-  if (loadError) return (
-    <div className="text-center py-12">
-      <p className="text-red-600 mb-3">Failed to load pending votes.</p>
-      <button onClick={load} className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5">🔄 Retry</button>
-    </div>
-  );
-  if (!proposals.length) return <div className="text-center py-12 text-gray-500">No pending votes — you&apos;re all caught up! 🎉</div>;
+  if (loading)
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse bg-gray-200 rounded h-20" />
+        ))}
+      </div>
+    );
+  if (loadError)
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-3">Failed to load pending votes.</p>
+        <button
+          onClick={load}
+          className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
+        >
+          🔄 Retry
+        </button>
+      </div>
+    );
+  if (!proposals.length)
+    return (
+      <div className="text-center py-12 text-gray-500">
+        No pending votes — you&apos;re all caught up! 🎉
+      </div>
+    );
 
   return (
     <div className="space-y-4">
@@ -528,22 +772,38 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
           <div key={p.id} className="border rounded-xl p-5 bg-white shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="font-semibold text-gray-900">{p.childOrg?.name ?? p.childOrgId}</div>
-                <div className="text-sm text-gray-500">{ACTION_LABELS[p.actionType] ?? p.actionType}</div>
+                <div className="font-semibold text-gray-900">
+                  {p.childOrg?.name ?? p.childOrgId}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {ACTION_LABELS[p.actionType] ?? p.actionType}
+                </div>
                 {!!p.actionPayload?.description && (
-                  <p className="text-xs text-gray-400 italic mt-0.5">{String(p.actionPayload.description)}</p>
+                  <p className="text-xs text-gray-400 italic mt-0.5">
+                    {String(p.actionPayload.description)}
+                  </p>
                 )}
-                <div className="text-xs text-gray-400 mt-1">Initiated by {p.initiatorOrg?.name ?? p.initiatorOrgId} · {formatDate(p.createdAt)}</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Initiated by {p.initiatorOrg?.name ?? p.initiatorOrgId} ·{' '}
+                  {formatDate(p.createdAt)}
+                </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => onViewDetail(p.id)} className="text-blue-600 hover:text-blue-800 text-xs font-medium border border-blue-200 rounded px-2 py-1">👁️ Details</button>
+                <button
+                  onClick={() => onViewDetail(p.id)}
+                  className="text-blue-600 hover:text-blue-800 text-xs font-medium border border-blue-200 rounded px-2 py-1"
+                >
+                  👁️ Details
+                </button>
                 <StatusBadge status={p.status} />
               </div>
             </div>
 
             <div className="mt-3">
               <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>{approvals + rejections} of {p.requiredVoterCount} voted</span>
+                <span>
+                  {approvals + rejections} of {p.requiredVoterCount} voted
+                </span>
                 {countdown ? (
                   <span className={countdown.color}>{countdown.text}</span>
                 ) : (
@@ -555,7 +815,9 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
               <div className="w-full bg-gray-100 rounded-full h-2">
                 <div
                   className="bg-blue-500 h-2 rounded-full transition-all"
-                  style={{ width: `${p.requiredVoterCount > 0 ? ((approvals + rejections) / p.requiredVoterCount) * 100 : 0}%` }}
+                  style={{
+                    width: `${p.requiredVoterCount > 0 ? ((approvals + rejections) / p.requiredVoterCount) * 100 : 0}%`,
+                  }}
                 />
               </div>
               <div className="flex gap-3 text-xs mt-1">
@@ -572,8 +834,18 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
 
             {!voteState || voteState.decision === null ? (
               <div className="flex gap-2 mt-4">
-                <button onClick={() => startVote(p.id, 'APPROVE')} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm">✓ Approve</button>
-                <button onClick={() => startVote(p.id, 'REJECT')} className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm">✗ Reject</button>
+                <button
+                  onClick={() => startVote(p.id, 'APPROVE')}
+                  className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 font-medium py-2 rounded-lg text-sm"
+                >
+                  ✓ Approve
+                </button>
+                <button
+                  onClick={() => startVote(p.id, 'REJECT')}
+                  className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium py-2 rounded-lg text-sm"
+                >
+                  ✗ Reject
+                </button>
               </div>
             ) : (
               <div className="mt-4 space-y-2">
@@ -582,7 +854,12 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
                   placeholder="Optional comment…"
                   rows={2}
                   value={voteState.comment}
-                  onChange={(e) => setVoting((prev) => ({ ...prev, [p.id]: { ...prev[p.id], comment: e.target.value } }))}
+                  onChange={(e) =>
+                    setVoting((prev) => ({
+                      ...prev,
+                      [p.id]: { ...prev[p.id], comment: e.target.value },
+                    }))
+                  }
                 />
                 {voteState.error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">
@@ -595,9 +872,22 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
                     disabled={voteState.submitting}
                     className={`flex-1 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50 ${voteState.decision === 'APPROVE' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
                   >
-                    {voteState.submitting ? 'Submitting…' : `Confirm ${voteState.decision === 'APPROVE' ? 'Approve' : 'Reject'}`}
+                    {voteState.submitting
+                      ? 'Submitting…'
+                      : `Confirm ${voteState.decision === 'APPROVE' ? 'Approve' : 'Reject'}`}
                   </button>
-                  <button onClick={() => setVoting((prev) => { const next = { ...prev }; delete next[p.id]; return next; })} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+                  <button
+                    onClick={() =>
+                      setVoting((prev) => {
+                        const next = { ...prev };
+                        delete next[p.id];
+                        return next;
+                      })
+                    }
+                    className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             )}
@@ -610,7 +900,15 @@ function PendingVoteTab({ orgId, onRefresh, onViewDetail }: { orgId: string; onR
 
 // ─── My Proposals Tab ─────────────────────────────────────────────────────────
 
-function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onViewDetail: (id: string) => void; onRefresh: () => void }) {
+function MyProposalsTab({
+  orgId,
+  onViewDetail,
+  onRefresh,
+}: {
+  orgId: string;
+  onViewDetail: (id: string) => void;
+  onRefresh: () => void;
+}) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelError, setCancelError] = useState('');
@@ -624,13 +922,24 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
       .finally(() => setLoading(false));
   }, [orgId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function cancelProp(p: Proposal) {
-    if (!window.confirm(`Cancel proposal for "${ACTION_LABELS[p.actionType] ?? p.actionType}" on "${p.childOrg?.name}"?`)) return;
+    if (
+      !window.confirm(
+        `Cancel proposal for "${ACTION_LABELS[p.actionType] ?? p.actionType}" on "${p.childOrg?.name}"?`
+      )
+    )
+      return;
     setCancelError('');
     setCancelling(p.id);
-    const res = await fetch(`/api/tenant/${orgId}/governance/${p.id}?action=cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const res = await fetch(`/api/tenant/${orgId}/governance/${p.id}?action=cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setCancelError(data.error ?? 'Failed to cancel proposal');
@@ -638,27 +947,61 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
       return;
     }
     setCancelling(null);
-    load(); onRefresh();
+    load();
+    onRefresh();
   }
 
-  if (loading) return <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-12" />)}</div>;
-  if (!proposals.length) return <div className="text-center py-12 text-gray-500">You haven&apos;t initiated any proposals yet.</div>;
+  if (loading)
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse bg-gray-200 rounded h-12" />
+        ))}
+      </div>
+    );
+  if (!proposals.length)
+    return (
+      <div className="text-center py-12 text-gray-500">
+        You haven&apos;t initiated any proposals yet.
+      </div>
+    );
 
   return (
     <div className="overflow-x-auto">
       {cancelError && (
-        <div className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">{cancelError}</div>
+        <div className="mb-3 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">
+          {cancelError}
+        </div>
       )}
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
             <th colSpan={8} className="px-4 py-2 text-right">
-              <button onClick={load} className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1">🔄 Refresh</button>
+              <button
+                onClick={load}
+                className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1"
+              >
+                🔄 Refresh
+              </button>
             </th>
           </tr>
           <tr>
-            {['Child Org','Action','Status','Created','Expires/Resolved','Resolved Reason','Votes','Actions'].map(h=>(
-              <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
+            {[
+              'Child Org',
+              'Action',
+              'Status',
+              'Created',
+              'Expires/Resolved',
+              'Resolved Reason',
+              'Votes',
+              'Actions',
+            ].map((h) => (
+              <th
+                key={h}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
@@ -670,20 +1013,36 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
               <tr key={p.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">{p.childOrg?.name ?? p.childOrgId}</td>
                 <td className="px-4 py-3">{ACTION_LABELS[p.actionType] ?? p.actionType}</td>
-                <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={p.status} />
+                </td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
-                <td className={`px-4 py-3 ${isExpiringSoon(p.expiresAt) && p.status === 'PENDING_VOTES' ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                <td
+                  className={`px-4 py-3 ${isExpiringSoon(p.expiresAt) && p.status === 'PENDING_VOTES' ? 'text-red-600 font-medium' : 'text-gray-500'}`}
+                >
                   {p.resolvedAt ? formatDate(p.resolvedAt) : formatDate(p.expiresAt)}
                 </td>
-                <td className="px-4 py-3 text-gray-400 text-xs italic">{p.resolvedReason ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-400 text-xs italic">
+                  {p.resolvedReason ?? '—'}
+                </td>
                 <td className="px-4 py-3">
-                  <span className="text-green-600">✓{approvals}</span> <span className="text-red-500 ml-1">✗{rejections}</span>
+                  <span className="text-green-600">✓{approvals}</span>{' '}
+                  <span className="text-red-500 ml-1">✗{rejections}</span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => onViewDetail(p.id)} className="text-blue-600 hover:text-blue-800 text-xs font-medium">👁️ View</button>
+                    <button
+                      onClick={() => onViewDetail(p.id)}
+                      className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                    >
+                      👁️ View
+                    </button>
                     {p.status === 'PENDING_VOTES' && (
-                      <button onClick={() => cancelProp(p)} disabled={cancelling === p.id} className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50">
+                      <button
+                        onClick={() => cancelProp(p)}
+                        disabled={cancelling === p.id}
+                        className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50"
+                      >
                         {cancelling === p.id ? '…' : '✕ Cancel'}
                       </button>
                     )}
@@ -700,7 +1059,13 @@ function MyProposalsTab({ orgId, onViewDetail, onRefresh }: { orgId: string; onV
 
 // ─── Incoming Tab ─────────────────────────────────────────────────────────────
 
-function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id: string) => void }) {
+function IncomingTab({
+  orgId,
+  onViewDetail,
+}: {
+  orgId: string;
+  onViewDetail: (id: string) => void;
+}) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -709,33 +1074,66 @@ function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id
     setLoading(true);
     setLoadError(false);
     fetch(`/api/tenant/${orgId}/governance?tab=incoming`)
-      .then((r) => { if (!r.ok) throw new Error('failed'); return r.json(); })
+      .then((r) => {
+        if (!r.ok) throw new Error('failed');
+        return r.json();
+      })
       .then(setProposals)
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [orgId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  if (loading) return <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-12" />)}</div>;
-  if (loadError) return (
-    <div className="text-center py-12">
-      <p className="text-red-600 mb-3">Failed to load incoming proposals.</p>
-      <button onClick={load} className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5">🔄 Retry</button>
-    </div>
-  );
-  if (!proposals.length) return <div className="text-center py-12 text-gray-500">No incoming proposals targeting your org.</div>;
+  if (loading)
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse bg-gray-200 rounded h-12" />
+        ))}
+      </div>
+    );
+  if (loadError)
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-3">Failed to load incoming proposals.</p>
+        <button
+          onClick={load}
+          className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
+        >
+          🔄 Retry
+        </button>
+      </div>
+    );
+  if (!proposals.length)
+    return (
+      <div className="text-center py-12 text-gray-500">
+        No incoming proposals targeting your org.
+      </div>
+    );
 
   return (
     <div className="overflow-x-auto">
       <div className="mb-3 flex justify-end">
-        <button onClick={load} className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1">🔄 Refresh</button>
+        <button
+          onClick={load}
+          className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1"
+        >
+          🔄 Refresh
+        </button>
       </div>
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
-            {['Proposed By','Action','Status','Created','Expires','Votes'].map(h=>(
-              <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
+            {['Proposed By', 'Action', 'Status', 'Created', 'Expires', 'Votes'].map((h) => (
+              <th
+                key={h}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
@@ -744,12 +1142,20 @@ function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id
             const approvals = p.votes.filter((v) => v.decision === 'APPROVE').length;
             const rejections = p.votes.filter((v) => v.decision === 'REJECT').length;
             return (
-              <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onViewDetail(p.id)}>
-                <td className="px-4 py-3 font-medium">{p.initiatorOrg?.name ?? p.initiatorOrgId}</td>
+              <tr
+                key={p.id}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={() => onViewDetail(p.id)}
+              >
+                <td className="px-4 py-3 font-medium">
+                  {p.initiatorOrg?.name ?? p.initiatorOrgId}
+                </td>
                 <td className="px-4 py-3">
                   <div>{ACTION_LABELS[p.actionType] ?? p.actionType}</div>
                   {!!p.actionPayload?.description && (
-                    <p className="text-xs text-gray-400 italic mt-0.5">{String(p.actionPayload.description)}</p>
+                    <p className="text-xs text-gray-400 italic mt-0.5">
+                      {String(p.actionPayload.description)}
+                    </p>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -759,9 +1165,14 @@ function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id
                   )}
                 </td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
-                <td className={`px-4 py-3 ${isExpiringSoon(p.expiresAt) && p.status === 'PENDING_VOTES' ? 'text-red-600 font-medium' : 'text-gray-500'}`}>{formatDate(p.expiresAt)}</td>
+                <td
+                  className={`px-4 py-3 ${isExpiringSoon(p.expiresAt) && p.status === 'PENDING_VOTES' ? 'text-red-600 font-medium' : 'text-gray-500'}`}
+                >
+                  {formatDate(p.expiresAt)}
+                </td>
                 <td className="px-4 py-3">
-                  <span className="text-green-600">✓{approvals}</span> <span className="text-red-500 ml-1">✗{rejections}</span>
+                  <span className="text-green-600">✓{approvals}</span>{' '}
+                  <span className="text-red-500 ml-1">✗{rejections}</span>
                 </td>
               </tr>
             );
@@ -774,7 +1185,13 @@ function IncomingTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id
 
 // ─── History Tab ──────────────────────────────────────────────────────────────
 
-function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id: string) => void }) {
+function HistoryTab({
+  orgId,
+  onViewDetail,
+}: {
+  orgId: string;
+  onViewDetail: (id: string) => void;
+}) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -784,24 +1201,45 @@ function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id:
     setLoading(true);
     setLoadError(false);
     fetch(`/api/tenant/${orgId}/governance?tab=history`)
-      .then((r) => { if (!r.ok) throw new Error('failed'); return r.json(); })
+      .then((r) => {
+        if (!r.ok) throw new Error('failed');
+        return r.json();
+      })
       .then(setProposals)
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, [orgId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  if (loading) return <div className="space-y-2">{[1,2,3].map(i=><div key={i} className="animate-pulse bg-gray-200 rounded h-12" />)}</div>;
-  if (loadError) return (
-    <div className="text-center py-12">
-      <p className="text-red-600 mb-3">Failed to load history.</p>
-      <button onClick={load} className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5">🔄 Retry</button>
-    </div>
-  );
-  if (!proposals.length) return <div className="text-center py-12 text-gray-500">No resolved proposals yet.</div>;
+  if (loading)
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse bg-gray-200 rounded h-12" />
+        ))}
+      </div>
+    );
+  if (loadError)
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-3">Failed to load history.</p>
+        <button
+          onClick={load}
+          className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
+        >
+          🔄 Retry
+        </button>
+      </div>
+    );
+  if (!proposals.length)
+    return <div className="text-center py-12 text-gray-500">No resolved proposals yet.</div>;
 
-  const filtered = actionFilter ? proposals.filter((p) => p.actionType === actionFilter) : proposals;
+  const filtered = actionFilter
+    ? proposals.filter((p) => p.actionType === actionFilter)
+    : proposals;
 
   return (
     <div className="overflow-x-auto">
@@ -815,17 +1253,38 @@ function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id:
           >
             <option value="">All Actions</option>
             {ALL_ACTION_TYPES.map((t) => (
-              <option key={t} value={t}>{ACTION_LABELS[t]}</option>
+              <option key={t} value={t}>
+                {ACTION_LABELS[t]}
+              </option>
             ))}
           </select>
         </div>
-        <button onClick={load} className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1">🔄 Refresh</button>
+        <button
+          onClick={load}
+          className="text-xs text-gray-500 hover:text-gray-700 border rounded px-2 py-1"
+        >
+          🔄 Refresh
+        </button>
       </div>
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50">
           <tr>
-            {['Child Org','Action','Status','Initiated By','Created','Resolved','Resolved Reason','Votes'].map(h=>(
-              <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
+            {[
+              'Child Org',
+              'Action',
+              'Status',
+              'Initiated By',
+              'Created',
+              'Resolved',
+              'Resolved Reason',
+              'Votes',
+            ].map((h) => (
+              <th
+                key={h}
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
@@ -834,16 +1293,27 @@ function HistoryTab({ orgId, onViewDetail }: { orgId: string; onViewDetail: (id:
             const approvals = p.votes.filter((v) => v.decision === 'APPROVE').length;
             const rejections = p.votes.filter((v) => v.decision === 'REJECT').length;
             return (
-              <tr key={p.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onViewDetail(p.id)}>
+              <tr
+                key={p.id}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={() => onViewDetail(p.id)}
+              >
                 <td className="px-4 py-3 font-medium">{p.childOrg?.name ?? p.childOrgId}</td>
                 <td className="px-4 py-3">{ACTION_LABELS[p.actionType] ?? p.actionType}</td>
-                <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
-                <td className="px-4 py-3 text-gray-500">{p.initiatorOrg?.name ?? p.initiatorOrgId}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={p.status} />
+                </td>
+                <td className="px-4 py-3 text-gray-500">
+                  {p.initiatorOrg?.name ?? p.initiatorOrgId}
+                </td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(p.createdAt)}</td>
                 <td className="px-4 py-3 text-gray-500">{formatDate(p.resolvedAt)}</td>
-                <td className="px-4 py-3 text-xs text-gray-400 italic">{p.resolvedReason ?? '—'}</td>
+                <td className="px-4 py-3 text-xs text-gray-400 italic">
+                  {p.resolvedReason ?? '—'}
+                </td>
                 <td className="px-4 py-3">
-                  <span className="text-green-600">✓{approvals}</span> <span className="text-red-500 ml-1">✗{rejections}</span>
+                  <span className="text-green-600">✓{approvals}</span>{' '}
+                  <span className="text-red-500 ml-1">✗{rejections}</span>
                 </td>
               </tr>
             );
@@ -878,7 +1348,9 @@ export default function GovernancePage() {
       .catch(() => {});
   }, [orgId]);
 
-  useEffect(() => { loadCounts(); }, [loadCounts]);
+  useEffect(() => {
+    loadCounts();
+  }, [loadCounts]);
 
   function switchTab(tab: TabKey) {
     setActiveTab(tab);
@@ -922,7 +1394,9 @@ export default function GovernancePage() {
               >
                 {t.icon} {t.label}
                 {t.count !== undefined && t.count > 0 && (
-                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${activeTab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700'}`}>
+                  <span
+                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${activeTab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700'}`}
+                  >
                     {t.count}
                   </span>
                 )}
@@ -938,18 +1412,43 @@ export default function GovernancePage() {
         </div>
 
         <div>
-          {activeTab === 'pending' && <PendingVoteTab orgId={orgId} onRefresh={loadCounts} onViewDetail={setDetailProposalId} />}
-          {activeTab === 'mine' && <MyProposalsTab orgId={orgId} onViewDetail={setDetailProposalId} onRefresh={loadCounts} />}
-          {activeTab === 'incoming' && <IncomingTab orgId={orgId} onViewDetail={setDetailProposalId} />}
-          {activeTab === 'history' && <HistoryTab orgId={orgId} onViewDetail={setDetailProposalId} />}
+          {activeTab === 'pending' && (
+            <PendingVoteTab
+              orgId={orgId}
+              onRefresh={loadCounts}
+              onViewDetail={setDetailProposalId}
+            />
+          )}
+          {activeTab === 'mine' && (
+            <MyProposalsTab
+              orgId={orgId}
+              onViewDetail={setDetailProposalId}
+              onRefresh={loadCounts}
+            />
+          )}
+          {activeTab === 'incoming' && (
+            <IncomingTab orgId={orgId} onViewDetail={setDetailProposalId} />
+          )}
+          {activeTab === 'history' && (
+            <HistoryTab orgId={orgId} onViewDetail={setDetailProposalId} />
+          )}
         </div>
       </div>
 
       {detailProposalId && (
-        <ProposalDetailSlideOver orgId={orgId} proposalId={detailProposalId} onClose={() => setDetailProposalId(null)} onVoted={loadCounts} />
+        <ProposalDetailSlideOver
+          orgId={orgId}
+          proposalId={detailProposalId}
+          onClose={() => setDetailProposalId(null)}
+          onVoted={loadCounts}
+        />
       )}
       {showNewProposal && (
-        <NewProposalSlideOver orgId={orgId} onClose={() => setShowNewProposal(false)} onSuccess={handleNewProposalSuccess} />
+        <NewProposalSlideOver
+          orgId={orgId}
+          onClose={() => setShowNewProposal(false)}
+          onSuccess={handleNewProposalSuccess}
+        />
       )}
     </TenantLayout>
   );
