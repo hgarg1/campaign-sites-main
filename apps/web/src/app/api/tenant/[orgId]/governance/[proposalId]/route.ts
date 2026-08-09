@@ -4,9 +4,10 @@ import {
   getAuthUserId,
   verifyOrgAccess,
   verifyOrgAdmin,
+  verifyOrgOwner,
   writeAuditLog,
 } from '@/app/api/tenant/auth-utils';
-import { castVote, cancelProposal } from '@/lib/governance';
+import { castVote, cancelProposal, castTieBreak } from '@/lib/governance';
 import { VoteDecision, Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -134,8 +135,53 @@ export async function POST(
     }
   }
 
+  if (action === 'tiebreak') {
+    const { decision, reason } = body;
+    if (!decision || !['APPROVE', 'REJECT'].includes(decision)) {
+      return NextResponse.json({ error: 'decision must be APPROVE or REJECT' }, { status: 400 });
+    }
+    if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      return NextResponse.json(
+        { error: 'A tie-break overrides a deadlocked vote, so a reason is required' },
+        { status: 400 }
+      );
+    }
+
+    // OWNER, not ADMIN. Ancestor inheritance is near-vacuous at the root of a
+    // party tree, so this is effectively "an owner of the national tenant".
+    const owner = await verifyOrgOwner(userId, orgId);
+    if (!owner) {
+      return NextResponse.json(
+        { error: 'Only an owner of the national tenant may break a tie' },
+        { status: 403 }
+      );
+    }
+
+    try {
+      const updated = await castTieBreak({
+        proposalId,
+        tieBreakOrgId: orgId,
+        userId,
+        decision: decision as VoteDecision,
+        reason,
+      });
+
+      await writeAuditLog({
+        orgId,
+        actorUserId: userId,
+        action: 'governance.tiebreak',
+        extra: { proposalId, decision, resultingStatus: updated.status },
+      });
+
+      return NextResponse.json(updated);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to break tie';
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
   return NextResponse.json(
-    { error: 'Invalid action. Use ?action=vote or ?action=cancel' },
+    { error: 'Invalid action. Use ?action=vote, ?action=cancel or ?action=tiebreak' },
     { status: 400 }
   );
 }

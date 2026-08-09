@@ -1,5 +1,11 @@
 import { prisma } from '@/lib/database';
-import { insertAncestry, removeAncestry, getDescendantIds } from '@/lib/ancestry';
+import {
+  insertAncestry,
+  removeAncestry,
+  getDescendantIds,
+  getEffectiveStatus,
+} from '@/lib/ancestry';
+import { resolveNationalTenant, canTieBreak } from '@/lib/master-tenant';
 import {
   Prisma,
   GovernanceProposal,
@@ -170,6 +176,161 @@ function proposalPolicy(proposal: GovernanceProposal): PolicyConfig {
   });
 }
 
+// ─── Tie-break ────────────────────────────────────────────────────────────────
+
+/**
+ * Escalates a deadlocked proposal to its national tenant.
+ *
+ * Called only when the tally reports a genuine tie: full turnout with no rule
+ * fired. A proposal nobody is voting on is a stall, not a tie, and expires
+ * normally — if stalls escalated, one silent co-owner could hand every decision
+ * to the national tenant.
+ *
+ * The tie-break gets its own clock. A tie can be detected on day 6.9 of a
+ * 7-day proposal, and reusing `expiresAt` would kill it before anyone could act.
+ */
+async function escalateToTieBreak(proposal: GovernanceProposal): Promise<GovernanceProposal> {
+  const now = new Date();
+
+  // Eligibility is re-checked at tie time, not just at creation: the tie-breaker
+  // may have been suspended or deactivated since.
+  const blocked = await tieBreakerUnavailableReason(proposal);
+  if (blocked) {
+    const { count } = await prisma.governanceProposal.updateMany({
+      where: { id: proposal.id, status: 'PENDING_VOTES' as ProposalStatus },
+      data: {
+        status: 'EXPIRED' as ProposalStatus,
+        resolvedAt: now,
+        tieDetectedAt: now,
+        resolvedReason: `Tie unresolved: ${blocked}`,
+      },
+    });
+    if (count > 0) {
+      await notifyOwners(proposal.id, proposal.childOrgId, 'PROPOSAL_EXPIRED');
+      // Surface it to operators, who can force-resolve.
+      await logSystemAdminAction({
+        action: 'GOVERNANCE_TIE_UNRESOLVED',
+        resourceType: 'GovernanceProposal',
+        resourceId: proposal.id,
+        resourceName: `proposal ${proposal.id}`,
+        performedBy: 'system',
+        status: 'failure',
+        errorMessage: blocked,
+      });
+    }
+    return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposal.id } });
+  }
+
+  const tieBreakTtlDays = await getSystemConfigValue('tieBreakTtlDays', 3);
+
+  const { count } = await prisma.governanceProposal.updateMany({
+    where: { id: proposal.id, status: 'PENDING_VOTES' as ProposalStatus },
+    data: {
+      status: 'PENDING_TIEBREAK' as ProposalStatus,
+      tieDetectedAt: now,
+      tieBreakExpiresAt: new Date(now.getTime() + tieBreakTtlDays * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  if (count > 0 && proposal.tieBreakOrgId) {
+    await prisma.governanceNotification.create({
+      data: {
+        proposalId: proposal.id,
+        recipientOrgId: proposal.tieBreakOrgId,
+        type: 'TIEBREAK_REQUESTED' as NotificationType,
+      },
+    });
+    await notifyOwners(proposal.id, proposal.childOrgId, 'TIEBREAK_REQUESTED');
+  }
+
+  return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposal.id } });
+}
+
+/**
+ * Why the recorded tie-breaker cannot act, or null if it can.
+ *
+ * Deliberately does NOT fall back to another org when the tie-breaker is
+ * unavailable. Falling back would make "suspend the national tenant" a way to
+ * move the casting vote to a friendlier organization.
+ */
+async function tieBreakerUnavailableReason(
+  proposal: Pick<GovernanceProposal, 'tieBreakEnabled' | 'tieBreakOrgId'>
+): Promise<string | null> {
+  if (!proposal.tieBreakEnabled || !proposal.tieBreakOrgId) {
+    return 'no tie-breaker was assigned when this proposal was created';
+  }
+  const status = await getEffectiveStatus(proposal.tieBreakOrgId);
+  if (status !== 'ACTIVE') {
+    return `the national tenant is ${status.toLowerCase()}`;
+  }
+  return null;
+}
+
+/**
+ * Records the national tenant's casting decision.
+ *
+ * The tie-break *supersedes* the tally rather than joining it. If the national
+ * tenant is also a co-owner that already voted, counting this as a second
+ * ballot would double its influence — and under weighting, double its stake.
+ * The original ballot is left untouched for the record.
+ */
+export async function castTieBreak(params: {
+  proposalId: string;
+  tieBreakOrgId: string;
+  userId: string;
+  decision: VoteDecision;
+  reason: string;
+}): Promise<GovernanceProposal> {
+  const { proposalId, tieBreakOrgId, userId, decision, reason } = params;
+
+  if (!reason?.trim()) {
+    throw new Error('A tie-break requires a stated reason');
+  }
+
+  const proposal = await prisma.governanceProposal.findUniqueOrThrow({
+    where: { id: proposalId },
+  });
+
+  if (proposal.status !== ('PENDING_TIEBREAK' as ProposalStatus)) {
+    throw new Error(`Proposal ${proposalId} is not awaiting a tie-break`);
+  }
+  if (proposal.tieBreakOrgId !== tieBreakOrgId) {
+    throw new Error('This organization is not the assigned tie-breaker for this proposal');
+  }
+  if (proposal.tieBreakExpiresAt && proposal.tieBreakExpiresAt < new Date()) {
+    throw new Error('The tie-break window has closed');
+  }
+
+  const outcome = decision === ('APPROVE' as VoteDecision) ? 'APPROVED' : 'REJECTED';
+
+  const { count } = await prisma.governanceProposal.updateMany({
+    where: { id: proposalId, status: 'PENDING_TIEBREAK' as ProposalStatus },
+    data: {
+      status: outcome as ProposalStatus,
+      resolvedAt: new Date(),
+      resolvedReason: `Tie broken by national tenant: ${reason}`,
+      tieBreakDecision: decision,
+      tieBreakByUserId: userId,
+      tieBreakReason: reason,
+    },
+  });
+
+  if (count === 0) {
+    return prisma.governanceProposal.findUniqueOrThrow({ where: { id: proposalId } });
+  }
+
+  const resolved = await prisma.governanceProposal.findUniqueOrThrow({
+    where: { id: proposalId },
+  });
+
+  if (outcome === 'APPROVED') {
+    await executeAction(resolved);
+  }
+  await notifyOwners(proposalId, proposal.childOrgId, 'PROPOSAL_TIEBROKEN');
+
+  return resolved;
+}
+
 // ─── Electorate ───────────────────────────────────────────────────────────────
 
 /**
@@ -315,6 +476,22 @@ export async function createProposal(params: {
   // Resolve the policy this proposal will be judged by, most specific first.
   const policy = await resolvePolicy(childOrgId, actionType);
 
+  // Resolve the tie-breaker NOW, not when a tie occurs. ADD_PARENT and
+  // REMOVE_PARENT proposals mutate the very ancestry the resolver reads, so
+  // deferring would let a proposal choose its own casting vote.
+  let tieBreakOrgId: string | null = null;
+  let tieBreakEnabled = false;
+  if (policy.tieBreakEnabled) {
+    const resolution = await resolveNationalTenant(childOrgId);
+    const eligibility = canTieBreak(resolution, childOrgId);
+    if (eligibility.eligible) {
+      tieBreakOrgId = resolution.orgId;
+      tieBreakEnabled = true;
+    }
+    // Ineligible simply means no tie-break: a deadlock will expire, and the
+    // reason is recorded when that happens rather than blocking the proposal.
+  }
+
   // Legacy columns are still written so anything reading them keeps working.
   const ruleSet = await prisma.governanceRuleSet.findFirst({
     where: { actionType, isActive: true },
@@ -402,6 +579,8 @@ export async function createProposal(params: {
       quorumNum: policy.quorum.num,
       quorumDen: policy.quorum.den,
       dealMakerMinStakeBps: policy.dealMakerMinStakeBps,
+      tieBreakEnabled,
+      tieBreakOrgId,
       electorateSnapshotAt: new Date(),
       // Freeze who may vote and how much each weighs. Without this, a co-parent
       // could reallocate stakes mid-vote to change an outcome already underway.
@@ -539,6 +718,9 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
   } else if (decision.kind === 'REJECTED') {
     outcome = 'REJECTED';
     resolvedReason = decision.reason;
+  } else if (decision.kind === 'TIE') {
+    // Full turnout, no rule fired. Hand it to the national tenant.
+    return escalateToTieBreak(proposal);
   }
 
   if (!outcome) {
@@ -551,8 +733,14 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
   // of PENDING_VOTES may execute the action or notify. Without this the status
   // could flip APPROVED→REJECTED and executeAction could run for a proposal
   // that ends up rejected.
+  // Accepts PENDING_TIEBREAK as well: an owner withdrawing can break a tie
+  // (2–2 becomes 2–1), and the proposal should then resolve on its own terms
+  // rather than waiting for a casting vote it no longer needs.
   const { count } = await prisma.governanceProposal.updateMany({
-    where: { id: proposalId, status: 'PENDING_VOTES' as ProposalStatus },
+    where: {
+      id: proposalId,
+      status: { in: ['PENDING_VOTES', 'PENDING_TIEBREAK'] as ProposalStatus[] },
+    },
     data: {
       status: outcome as ProposalStatus,
       resolvedAt: new Date(),
@@ -1069,34 +1257,80 @@ async function performAction(proposal: GovernanceProposal): Promise<void> {
 
 // ─── Expire stale proposals ───────────────────────────────────────────────────
 
-export async function expireStaleProposals(orgId?: string): Promise<number> {
-  const stale = await prisma.governanceProposal.findMany({
+/**
+ * Re-evaluates proposals awaiting a tie-break.
+ *
+ * Ownership can change while a proposal sits in PENDING_TIEBREAK. If a
+ * withdrawal turns a 2–2 deadlock into 2–1, the proposal has an answer of its
+ * own and should not be waiting on a casting vote. Returns how many resolved.
+ */
+export async function reevaluateTieBreaks(orgId?: string): Promise<number> {
+  const pending = await prisma.governanceProposal.findMany({
     where: {
-      status: 'PENDING_VOTES' as ProposalStatus,
-      expiresAt: { lt: new Date() },
+      status: 'PENDING_TIEBREAK' as ProposalStatus,
       ...(orgId ? { OR: [{ childOrgId: orgId }, { initiatorOrgId: orgId }] } : {}),
     },
+    select: { id: true },
   });
 
-  if (stale.length === 0) return 0;
+  let resolved = 0;
+  for (const { id } of pending) {
+    const after = await evaluateProposal(id);
+    if (after.status !== ('PENDING_TIEBREAK' as ProposalStatus)) resolved += 1;
+  }
+  return resolved;
+}
 
+export async function expireStaleProposals(orgId?: string): Promise<number> {
   const now = new Date();
+  const orgScope = orgId ? { OR: [{ childOrgId: orgId }, { initiatorOrgId: orgId }] } : {};
+
+  // Two clocks, deliberately kept apart. A tie can be detected on the last day
+  // of a proposal's life, so a proposal awaiting a tie-break must NOT be
+  // expired by `expiresAt` — that would kill it before the national tenant had
+  // any chance to act. It runs out on its own tie-break window instead.
+  const [stale, staleTieBreaks] = await Promise.all([
+    prisma.governanceProposal.findMany({
+      where: {
+        status: 'PENDING_VOTES' as ProposalStatus,
+        expiresAt: { lt: now },
+        ...orgScope,
+      },
+    }),
+    prisma.governanceProposal.findMany({
+      where: {
+        status: 'PENDING_TIEBREAK' as ProposalStatus,
+        tieBreakExpiresAt: { lt: now },
+        ...orgScope,
+      },
+    }),
+  ]);
+
+  const all = [
+    ...stale.map((p) => ({ proposal: p, reason: 'Proposal expired' })),
+    ...staleTieBreaks.map((p) => ({ proposal: p, reason: 'Tie-break window elapsed' })),
+  ];
+
+  if (all.length === 0) return 0;
 
   await Promise.all(
-    stale.map(async (proposal) => {
-      await prisma.governanceProposal.update({
-        where: { id: proposal.id },
+    all.map(async ({ proposal, reason }) => {
+      // Guarded, so a vote landing concurrently cannot be overwritten.
+      const { count } = await prisma.governanceProposal.updateMany({
+        where: { id: proposal.id, status: proposal.status },
         data: {
           status: 'EXPIRED' as ProposalStatus,
           resolvedAt: now,
-          resolvedReason: 'Proposal expired',
+          resolvedReason: reason,
         },
       });
-      await notifyOwners(proposal.id, proposal.childOrgId, 'PROPOSAL_EXPIRED');
+      if (count > 0) {
+        await notifyOwners(proposal.id, proposal.childOrgId, 'PROPOSAL_EXPIRED');
+      }
     })
   );
 
-  return stale.length;
+  return all.length;
 }
 
 // ─── Cancel proposal ──────────────────────────────────────────────────────────

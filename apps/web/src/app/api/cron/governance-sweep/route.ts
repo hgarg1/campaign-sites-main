@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
-import { expireStaleProposals } from '@/lib/governance';
+import { expireStaleProposals, reevaluateTieBreaks } from '@/lib/governance';
 import { cleanupExpiredOverrides } from '@/lib/rbac';
 import { logger } from '@/lib/logger';
 
@@ -37,17 +37,23 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Order matters: a tie can be broken by an owner withdrawing, so give
+    // escalated proposals a chance to resolve on their own before anything is
+    // expired for running out of time.
+    const resolvedTieBreaks = await reevaluateTieBreaks();
+
     const [expiredProposals, removedOverrides] = await Promise.all([
       expireStaleProposals(),
       cleanupExpiredOverrides(),
     ]);
 
     logger.info('Governance sweep completed', 'cron', {
+      resolvedTieBreaks,
       expiredProposals,
       removedOverrides,
     });
 
-    return NextResponse.json({ expiredProposals, removedOverrides });
+    return NextResponse.json({ resolvedTieBreaks, expiredProposals, removedOverrides });
   } catch (error) {
     logger.error('Governance sweep failed', 'cron', {
       error: error instanceof Error ? error.message : String(error),
