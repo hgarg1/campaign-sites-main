@@ -12,7 +12,10 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export async function POST(request: NextRequest) {
   try {
     if (!isDatabaseEnabled()) {
-      logger.warn('Login endpoint blocked because database access is disabled in this environment', 'auth');
+      logger.warn(
+        'Login endpoint blocked because database access is disabled in this environment',
+        'auth'
+      );
       return NextResponse.json({ error: 'Login is temporarily unavailable.' }, { status: 503 });
     }
 
@@ -45,8 +48,20 @@ export async function POST(request: NextRequest) {
         role: true,
         passwordHash: true,
         requirePasskey: true,
+        deletedAt: true,
+        suspendedAt: true,
       },
     });
+
+    if (user && (user.deletedAt || user.suspendedAt)) {
+      logger.warn('Login attempt on suspended or deleted account', 'auth', {
+        userId: user.id,
+        suspended: Boolean(user.suspendedAt),
+        timestamp: new Date().toISOString(),
+      });
+      // Same message and status as a bad password — do not disclose account state.
+      return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+    }
 
     if (!user) {
       logger.warn('Login attempt with non-existent email', 'auth', {
@@ -66,7 +81,9 @@ export async function POST(request: NextRequest) {
       passwordChangedAt = userWithPasswordChangedAt?.passwordChangedAt;
     } catch (err) {
       // Column doesn't exist in schema yet - migration not applied
-      logger.warn('passwordChangedAt column not available', 'auth', { error: err instanceof Error ? err.message : String(err) });
+      logger.warn('passwordChangedAt column not available', 'auth', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       passwordChangedAt = new Date(); // Default to changed, to allow login
     }
 
@@ -114,7 +131,11 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // Routing hint for middleware only — never an authorization input.
+      // httpOnly so it cannot be forged from client script; the authoritative
+      // role check happens server-side in the admin layout and every API route.
       response.cookies.set('userRole', user.role, {
+        httpOnly: true,
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',

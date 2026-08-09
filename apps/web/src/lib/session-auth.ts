@@ -38,7 +38,10 @@ export function parseAndVerifySessionToken(token: string) {
   const expectedBuffer = Buffer.from(expectedSignature, 'hex');
   const actualBuffer = Buffer.from(signature, 'hex');
 
-  if (expectedBuffer.length !== actualBuffer.length || !timingSafeEqual(expectedBuffer, actualBuffer)) {
+  if (
+    expectedBuffer.length !== actualBuffer.length ||
+    !timingSafeEqual(expectedBuffer, actualBuffer)
+  ) {
     return null;
   }
 
@@ -62,13 +65,24 @@ export async function getSessionUserFromToken(sessionToken?: string) {
     return null;
   }
 
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: parsed.userId },
     select: {
       id: true,
       email: true,
       name: true,
       role: true,
+      deletedAt: true,
+      suspendedAt: true,
     },
   });
+
+  // A validly-signed token outlives the account it refers to, so suspension and
+  // deletion have to be enforced here rather than only at login.
+  if (!user || user.deletedAt || user.suspendedAt) {
+    return null;
+  }
+
+  const { deletedAt, suspendedAt, ...safeUser } = user;
+  return safeUser;
 }

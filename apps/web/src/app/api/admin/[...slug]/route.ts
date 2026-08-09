@@ -11,7 +11,13 @@ import {
   wouldCreateCycle,
 } from '@/lib/ancestry';
 import { executeAction } from '@/lib/governance';
-import { invalidatePolicyCache, invalidateAllPolicyCaches, getOrgEffectivePolicy } from '@/lib/system-policy';
+import { requireAdminForSlug } from '@/lib/require-admin';
+import { logSystemAdminAction } from '@/lib/audit-log';
+import {
+  invalidatePolicyCache,
+  invalidateAllPolicyCaches,
+  getOrgEffectivePolicy,
+} from '@/lib/system-policy';
 import type { PartyAffiliation } from '@prisma/client';
 import { NotificationType } from '@prisma/client';
 import { notifyAdmins, notifyOrgMembers } from '@/lib/notifications';
@@ -99,20 +105,33 @@ async function getAnalyticsGrowth() {
   // 9 queries instead of the previous 42 (14 days × 3 models in Promise.all).
   // Fetch all records created in the window once, then bucket in JS.
   const [
-    usersLast30, usersPrior30,
-    orgsLast30, orgsPrior30,
-    websitesLast30, websitesPrior30,
-    usersLast14, orgsLast14, websitesLast14,
+    usersLast30,
+    usersPrior30,
+    orgsLast30,
+    orgsPrior30,
+    websitesLast30,
+    websitesPrior30,
+    usersLast14,
+    orgsLast14,
+    websitesLast14,
   ] = await Promise.all([
     prisma.user.count({ where: { createdAt: { gte: last30 }, deletedAt: null } }),
     prisma.user.count({ where: { createdAt: { gte: prior30, lt: last30 }, deletedAt: null } }),
     prisma.organization.count({ where: { createdAt: { gte: last30 }, deletedAt: null } }),
-    prisma.organization.count({ where: { createdAt: { gte: prior30, lt: last30 }, deletedAt: null } }),
+    prisma.organization.count({
+      where: { createdAt: { gte: prior30, lt: last30 }, deletedAt: null },
+    }),
     prisma.website.count({ where: { createdAt: { gte: last30 } } }),
     prisma.website.count({ where: { createdAt: { gte: prior30, lt: last30 } } }),
     // Fetch only the createdAt timestamps — tiny payload, no extra queries per day
-    prisma.user.findMany({ where: { createdAt: { gte: last14 }, deletedAt: null }, select: { createdAt: true } }),
-    prisma.organization.findMany({ where: { createdAt: { gte: last14 }, deletedAt: null }, select: { createdAt: true } }),
+    prisma.user.findMany({
+      where: { createdAt: { gte: last14 }, deletedAt: null },
+      select: { createdAt: true },
+    }),
+    prisma.organization.findMany({
+      where: { createdAt: { gte: last14 }, deletedAt: null },
+      select: { createdAt: true },
+    }),
     prisma.website.findMany({ where: { createdAt: { gte: last14 } }, select: { createdAt: true } }),
   ]);
 
@@ -123,9 +142,11 @@ async function getAnalyticsGrowth() {
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
     return {
       date: dayStart.toISOString().split('T')[0],
-      users: usersLast14.filter(u => u.createdAt >= dayStart && u.createdAt < dayEnd).length,
-      organizations: orgsLast14.filter(o => o.createdAt >= dayStart && o.createdAt < dayEnd).length,
-      websites: websitesLast14.filter(w => w.createdAt >= dayStart && w.createdAt < dayEnd).length,
+      users: usersLast14.filter((u) => u.createdAt >= dayStart && u.createdAt < dayEnd).length,
+      organizations: orgsLast14.filter((o) => o.createdAt >= dayStart && o.createdAt < dayEnd)
+        .length,
+      websites: websitesLast14.filter((w) => w.createdAt >= dayStart && w.createdAt < dayEnd)
+        .length,
     };
   });
 
@@ -152,9 +173,9 @@ async function getAnalyticsUsage() {
     const dayStart = new Date(now.getTime() - (13 - index) * 24 * 60 * 60 * 1000);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-    const dayJobs = jobs.filter(j => j.createdAt >= dayStart && j.createdAt < dayEnd);
+    const dayJobs = jobs.filter((j) => j.createdAt >= dayStart && j.createdAt < dayEnd);
     const total = dayJobs.length;
-    const completed = dayJobs.filter(j => j.status === 'COMPLETED').length;
+    const completed = dayJobs.filter((j) => j.status === 'COMPLETED').length;
     return {
       date: dayStart.toISOString().split('T')[0],
       dailyActiveUsers: 0,
@@ -167,13 +188,12 @@ async function getAnalyticsUsage() {
 }
 
 async function getAnalyticsEngagement() {
-  const [totalWebsites, activeIntegrations, completedBuilds, totalMembers] =
-    await Promise.all([
-      prisma.website.count(),
-      prisma.integration.count({ where: { isActive: true } }),
-      prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
-      prisma.organizationMember.count(),
-    ]);
+  const [totalWebsites, activeIntegrations, completedBuilds, totalMembers] = await Promise.all([
+    prisma.website.count(),
+    prisma.integration.count({ where: { isActive: true } }),
+    prisma.buildJob.count({ where: { status: 'COMPLETED' } }),
+    prisma.organizationMember.count(),
+  ]);
 
   // Return EngagementMetric[] — the shape the EngagementDashboard component expects
   return [
@@ -300,6 +320,9 @@ function isActionPath(path: string[]) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  const auth = await requireAdminForSlug(params.slug || [], 'GET');
+  if (!auth.ok) return auth.error;
+
   const { getAdminSnapshot, getPaginatedWebsites, getPaginatedOrganizations, getPaginatedJobs } =
     await import('@/lib/admin-live');
   const path = params.slug || [];
@@ -312,14 +335,27 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     if (second === 'stats' && !third) {
       const now = new Date();
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const [pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules] = await Promise.all([
-        prisma.governanceProposal.count({ where: { status: 'PENDING_VOTES' } }),
-        prisma.governanceProposal.count({ where: { status: 'APPROVED', resolvedAt: { gte: yesterday } } }),
-        prisma.governanceProposal.count({ where: { status: 'EXPIRED', resolvedAt: { gte: yesterday } } }),
-        prisma.organizationOwnership.count({ where: { status: 'ACTIVE' } }),
-        prisma.governanceRuleSet.count({ where: { isActive: true } }),
-      ]);
-      return NextResponse.json({ pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules });
+      const [pending, approvedToday, expiredToday, totalOwnershipLinks, activeRules] =
+        await Promise.all([
+          prisma.governanceProposal.count({
+            where: { status: 'PENDING_VOTES', expiresAt: { gt: now } },
+          }),
+          prisma.governanceProposal.count({
+            where: { status: 'APPROVED', resolvedAt: { gte: yesterday } },
+          }),
+          prisma.governanceProposal.count({
+            where: { status: 'EXPIRED', resolvedAt: { gte: yesterday } },
+          }),
+          prisma.organizationOwnership.count({ where: { status: 'ACTIVE' } }),
+          prisma.governanceRuleSet.count({ where: { isActive: true } }),
+        ]);
+      return NextResponse.json({
+        pending,
+        approvedToday,
+        expiredToday,
+        totalOwnershipLinks,
+        activeRules,
+      });
     }
 
     if (second === 'config') {
@@ -350,7 +386,16 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         include: {
           childOrg: { select: { id: true, name: true, slug: true } },
           initiatorOrg: { select: { id: true, name: true, slug: true } },
-          votes: { select: { id: true, voterOrgId: true, voterUserId: true, decision: true, comment: true, votedAt: true } },
+          votes: {
+            select: {
+              id: true,
+              voterOrgId: true,
+              voterUserId: true,
+              decision: true,
+              comment: true,
+              votedAt: true,
+            },
+          },
         },
       });
       if (!proposal) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 });
@@ -820,9 +865,10 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   if (first === 'organizations' && second && third === 'effective-policy') {
     try {
       const result = await getOrgEffectivePolicy(second);
-      const source = result.policies.length > 0
-        ? result.policies.map((p) => p.name).join(', ')
-        : 'No policies assigned — all actions permitted';
+      const source =
+        result.policies.length > 0
+          ? result.policies.map((p) => p.name).join(', ')
+          : 'No policies assigned — all actions permitted';
       return NextResponse.json({ source, rules: result.merged ?? [] });
     } catch {
       return NextResponse.json({ source: 'Error loading policy', rules: [] });
@@ -837,7 +883,10 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         include: { parentOrg: { select: { id: true, name: true, slug: true } } },
         orderBy: { createdAt: 'asc' },
       });
-      const data = inherited.map((ip) => ({ ...ip, rules: Array.isArray(ip.rules) ? ip.rules : [] }));
+      const data = inherited.map((ip) => ({
+        ...ip,
+        rules: Array.isArray(ip.rules) ? ip.rules : [],
+      }));
       return NextResponse.json({ data });
     } catch {
       return NextResponse.json({ data: [] });
@@ -849,21 +898,42 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     try {
       const assignments = await prisma.orgPolicyAssignment.findMany({
         where: { orgId: second },
-        include: { policy: { select: { id: true, name: true, description: true, isDefault: true, _count: { select: { assignments: true } } } } },
+        include: {
+          policy: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              isDefault: true,
+              _count: { select: { assignments: true } },
+            },
+          },
+        },
         orderBy: { appliedAt: 'asc' },
       });
-      return NextResponse.json({ assignments: assignments.map((a) => ({ ...a.policy, _count: { orgAssignments: a.policy._count.assignments } })) });
+      return NextResponse.json({
+        assignments: assignments.map((a) => ({
+          ...a.policy,
+          _count: { orgAssignments: a.policy._count.assignments },
+        })),
+      });
     } catch {
       return NextResponse.json({ assignments: [] });
     }
   }
 
-  return NextResponse.json({
-    error: `Unsupported admin endpoint: /api/admin/${path.join('/')}`,
-  }, { status: 404 });
+  return NextResponse.json(
+    {
+      error: `Unsupported admin endpoint: /api/admin/${path.join('/')}`,
+    },
+    { status: 404 }
+  );
 }
 
 export async function POST(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  const auth = await requireAdminForSlug(params.slug || [], 'POST');
+  if (!auth.ok) return auth.error;
+
   const path = params.slug || [];
   const [first, second, third] = path;
 
@@ -879,7 +949,10 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
   }
 
   if (first === 'settings' && second === 'api-keys' && !third) {
-    const body = (await request.json().catch(() => ({}))) as { name?: string; permissions?: string[] };
+    const body = (await request.json().catch(() => ({}))) as {
+      name?: string;
+      permissions?: string[];
+    };
     return NextResponse.json(
       {
         id: `key_${Date.now()}`,
@@ -950,24 +1023,33 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
     if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
 
     const parent = await prisma.organization.findUnique({ where: { id: body.parentId } });
-    if (!parent) return NextResponse.json({ error: 'Parent organization not found' }, { status: 404 });
+    if (!parent)
+      return NextResponse.json({ error: 'Parent organization not found' }, { status: 404 });
 
     if (await wouldCreateCycle(second, body.parentId)) {
-      return NextResponse.json({ error: 'Cannot set parent: would create a cycle' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'Cannot set parent: would create a cycle' },
+        { status: 409 }
+      );
     }
 
     // Check max depth constraint on the new parent
     if (parent.maxChildDepth !== null) {
       const descendantIds = await getDescendantIds(second);
-      const subtreeDepth = descendantIds.length > 0 ? Math.max(...(await Promise.all(
-        descendantIds.map(async (id) => {
-          const row = await prisma.organizationAncestry.findFirst({
-            where: { ancestorId: second, descendantId: id },
-            select: { depth: true },
-          });
-          return row?.depth ?? 0;
-        })
-      ))) : 0;
+      const subtreeDepth =
+        descendantIds.length > 0
+          ? Math.max(
+              ...(await Promise.all(
+                descendantIds.map(async (id) => {
+                  const row = await prisma.organizationAncestry.findFirst({
+                    where: { ancestorId: second, descendantId: id },
+                    select: { depth: true },
+                  });
+                  return row?.depth ?? 0;
+                })
+              ))
+            )
+          : 0;
       if (subtreeDepth >= parent.maxChildDepth) {
         return NextResponse.json(
           { error: `Parent org allows max depth of ${parent.maxChildDepth}` },
@@ -1015,7 +1097,9 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
 
         // Check for cycles
         if (await wouldCreateCycle(edge.targetId, edge.sourceId)) {
-          results.errors.push(`Cannot set ${edge.sourceId} as parent of ${edge.targetId}: would create a cycle`);
+          results.errors.push(
+            `Cannot set ${edge.sourceId} as parent of ${edge.targetId}: would create a cycle`
+          );
           results.failed++;
           continue;
         }
@@ -1032,7 +1116,9 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
 
         results.successful++;
       } catch (error) {
-        results.errors.push(`Error processing edge ${edge.sourceId} -> ${edge.targetId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        results.errors.push(
+          `Error processing edge ${edge.sourceId} -> ${edge.targetId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         results.failed++;
       }
     }
@@ -1070,7 +1156,9 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
 
         results.successful++;
       } catch (error) {
-        results.errors.push(`Error processing edge removal ${edgeId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        results.errors.push(
+          `Error processing edge removal ${edgeId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         results.failed++;
       }
     }
@@ -1209,6 +1297,9 @@ export async function POST(request: NextRequest, { params }: { params: { slug: s
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  const auth = await requireAdminForSlug(params.slug || [], 'PATCH');
+  if (!auth.ok) return auth.error;
+
   const path = params.slug || [];
   const [first, second, third] = path;
 
@@ -1224,13 +1315,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { slug: 
     const updated = await prisma.organization.update({
       where: { id: second },
       data: {
-        ...(body.status !== undefined && { ownStatus: body.status === 'active' ? 'ACTIVE' : 'SUSPENDED' }),
+        ...(body.status !== undefined && {
+          ownStatus: body.status === 'active' ? 'ACTIVE' : 'SUSPENDED',
+        }),
         ...(body.whiteLabel !== undefined && { whiteLabel: body.whiteLabel }),
       },
     });
 
     // Count members and websites for this organization
-    const memberCount = await prisma.organizationMember.count({ where: { organizationId: second } });
+    const memberCount = await prisma.organizationMember.count({
+      where: { organizationId: second },
+    });
     const websiteCount = await prisma.website.count({ where: { organizationId: second } });
 
     return NextResponse.json({
@@ -1331,6 +1426,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { slug: 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  const auth = await requireAdminForSlug(params.slug || [], 'PUT');
+  if (!auth.ok) return auth.error;
+
   const path = params.slug || [];
   const [first, second] = path;
 
@@ -1359,6 +1457,9 @@ export async function PUT(request: NextRequest, { params }: { params: { slug: st
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { slug: string[] } }) {
+  const auth = await requireAdminForSlug(params.slug || [], 'DELETE');
+  if (!auth.ok) return auth.error;
+
   const path = params.slug || [];
   const [first, second, third] = path;
 
@@ -1366,7 +1467,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
   if (first === 'organizations' && second && third === 'parent') {
     const org = await prisma.organization.findUnique({ where: { id: second } });
     if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
-    if (!org.parentId) return NextResponse.json({ error: 'Organization has no parent' }, { status: 400 });
+    if (!org.parentId)
+      return NextResponse.json({ error: 'Organization has no parent' }, { status: 400 });
 
     await removeAncestry(second);
     // Rebuild self-ancestry for the detached subtree so its own children still find it
@@ -1413,7 +1515,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
     return new NextResponse(null, { status: 204 });
   }
 
-  if (path[0] === 'settings' || path[0] === 'organizations' || path[0] === 'users' || path[0] === 'websites') {
+  if (
+    path[0] === 'settings' ||
+    path[0] === 'organizations' ||
+    path[0] === 'users' ||
+    path[0] === 'websites'
+  ) {
     return new NextResponse(null, { status: 204 });
   }
 

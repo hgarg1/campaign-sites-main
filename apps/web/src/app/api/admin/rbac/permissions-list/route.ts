@@ -4,33 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/database';
-import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { requireAdmin } from '@/lib/require-admin';
 
 export const dynamic = 'force-dynamic';
 
-async function getAuthenticatedUserId() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('campaignsites_session')?.value;
-
-  if (!sessionToken) {
-    return null;
-  }
-
-  const parsedToken = parseAndVerifySessionToken(sessionToken);
-  return parsedToken?.userId ?? null;
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireAdmin('system_admin_portal:rbac:view_permissions');
+    if (!auth.ok) return auth.error;
 
     // Get search/filter parameters
     const { searchParams } = new URL(request.url);
@@ -59,9 +41,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(permissions);
   } catch (error) {
     console.error('Permission list fetch failed:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch permissions' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch permissions' }, { status: 500 });
   }
 }

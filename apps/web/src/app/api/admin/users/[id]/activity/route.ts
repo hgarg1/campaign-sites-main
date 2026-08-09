@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/require-admin';
+
+export const dynamic = 'force-dynamic';
 
 interface RouteParams {
   params: {
@@ -8,6 +11,9 @@ interface RouteParams {
 
 // GET /api/admin/users/[id]/activity - Get user activity history
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const auth = await requireAdmin('system_admin_portal:users:read');
+  if (!auth.ok) return auth.error;
+
   try {
     const userId = params.id;
     const { searchParams } = new URL(request.url);
@@ -34,14 +40,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     ];
 
-    return NextResponse.json(
-      { data: mockActivities, limit: parseInt(limit) },
-      { status: 200 }
-    );
+    return NextResponse.json({ data: mockActivities, limit: parseInt(limit) }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch user activity' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch user activity' }, { status: 500 });
   }
 }

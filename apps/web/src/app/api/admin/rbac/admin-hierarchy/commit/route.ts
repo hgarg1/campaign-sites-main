@@ -1,33 +1,16 @@
 /**
  * API endpoint to commit admin hierarchy changes
  * POST /api/admin/rbac/admin-hierarchy/commit
- * 
+ *
  * Validates changes for cycles, then updates delegations
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/database';
-import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { requireAdmin } from '@/lib/require-admin';
 import { logSystemAdminAction } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
-
-async function getAuthenticatedUserId() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('campaignsites_session')?.value;
-  if (!sessionToken) return null;
-  const parsedToken = parseAndVerifySessionToken(sessionToken);
-  return parsedToken?.userId ?? null;
-}
-
-async function checkIsGlobalAdmin(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  return user?.role === 'GLOBAL_ADMIN';
-}
 
 interface Edge {
   source: string;
@@ -78,22 +61,19 @@ function hasCycle(edges: Edge[]): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  // Resolved outside the try so the failure path below can still attribute the
+  // audit entry, and so the parsed body is available there without re-reading
+  // the already-consumed request stream.
+  const auth = await requireAdmin('system_admin_portal:rbac:edit_hierarchy');
+  if (!auth.ok) return auth.error;
+  const userId = auth.userId;
+
+  let justification = 'Unknown';
+
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = await checkIsGlobalAdmin(userId);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
-    const { edges, justification } = body;
+    const { edges } = body;
+    justification = body.justification;
 
     if (!Array.isArray(edges) || !justification) {
       return NextResponse.json(
@@ -135,10 +115,7 @@ export async function POST(request: NextRequest) {
     const existingIds = new Set(existingAdmins.map((a) => a.id));
     for (const id of allAdminIds) {
       if (!existingIds.has(id)) {
-        return NextResponse.json(
-          { error: `System admin not found: ${id}` },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: `System admin not found: ${id}` }, { status: 404 });
       }
     }
 
@@ -184,19 +161,16 @@ export async function POST(request: NextRequest) {
     console.error('Failed to commit admin hierarchy:', error);
 
     // Audit log failure
-    const userId = await getAuthenticatedUserId();
-    if (userId) {
-      await logSystemAdminAction({
-        action: 'ADMIN_HIERARCHY_UPDATE_FAILED',
-        resourceType: 'AdminHierarchy',
-        resourceId: 'global',
-        resourceName: 'Failed hierarchy update',
-        performedBy: userId,
-        justification: (await request.json()).justification || 'Unknown',
-        status: 'failure',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    await logSystemAdminAction({
+      action: 'ADMIN_HIERARCHY_UPDATE_FAILED',
+      resourceType: 'AdminHierarchy',
+      resourceId: 'global',
+      resourceName: 'Failed hierarchy update',
+      performedBy: userId,
+      justification,
+      status: 'failure',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
 
     return NextResponse.json(
       { error: 'Failed to commit admin hierarchy changes' },

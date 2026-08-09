@@ -3,6 +3,7 @@ import { insertAncestry, removeAncestry, getDescendantIds } from '@/lib/ancestry
 import {
   GovernanceProposal,
   GovernanceActionType,
+  MemberRole,
   VoteDecision,
   VotingMode,
   RejectMode,
@@ -10,6 +11,10 @@ import {
   NotificationType,
   OwnershipStatus,
 } from '@prisma/client';
+import { logSystemAdminAction } from '@/lib/audit-log';
+
+/** Roles a governance UPDATE_RBAC action may assign. */
+const ALLOWED_MEMBER_ROLES: MemberRole[] = ['MEMBER', 'ADMIN', 'OWNER'];
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -39,10 +44,7 @@ export interface GovernanceResult {
 
 // ─── System config ────────────────────────────────────────────────────────────
 
-export async function getSystemConfigValue(
-  key: string,
-  defaultValue: number
-): Promise<number> {
+export async function getSystemConfigValue(key: string, defaultValue: number): Promise<number> {
   const row = await prisma.systemConfig.findUnique({ where: { key } });
   if (!row) return defaultValue;
   const parsed = Number(row.value);
@@ -51,9 +53,7 @@ export async function getSystemConfigValue(
 
 // ─── Ownership helpers ────────────────────────────────────────────────────────
 
-export async function getActiveOwners(
-  childOrgId: string
-): Promise<Array<{ parentOrgId: string }>> {
+export async function getActiveOwners(childOrgId: string): Promise<Array<{ parentOrgId: string }>> {
   return prisma.organizationOwnership.findMany({
     where: { childOrgId, status: 'ACTIVE' as OwnershipStatus },
     select: { parentOrgId: true },
@@ -69,9 +69,7 @@ async function notifyOwners(
   excludeOrgId?: string
 ): Promise<void> {
   const owners = await getActiveOwners(childOrgId);
-  const recipients = excludeOrgId
-    ? owners.filter((o) => o.parentOrgId !== excludeOrgId)
-    : owners;
+  const recipients = excludeOrgId ? owners.filter((o) => o.parentOrgId !== excludeOrgId) : owners;
 
   if (recipients.length === 0) return;
 
@@ -100,9 +98,7 @@ export async function createProposal(params: {
     where: { parentOrgId: initiatorOrgId, childOrgId, status: 'ACTIVE' as OwnershipStatus },
   });
   if (!initiatorOwnership) {
-    throw new Error(
-      `Organization ${initiatorOrgId} is not an active owner of ${childOrgId}`
-    );
+    throw new Error(`Organization ${initiatorOrgId} is not an active owner of ${childOrgId}`);
   }
 
   // Load rule set — fall back to sensible defaults if none exists for this actionType
@@ -119,30 +115,33 @@ export async function createProposal(params: {
   const owners = await getActiveOwners(childOrgId);
   const requiredVoterCount = owners.length;
 
-  // N=1 shortcut: sole owner — execute immediately without persisting a proposal
+  // N=1 shortcut: a sole owner needs no vote, but the action is still recorded.
+  // Persisting a pre-resolved proposal keeps the governance history complete —
+  // previously this path executed against a synthetic in-memory object and left
+  // no trace of suspensions, role changes or hierarchy edits.
   if (requiredVoterCount === 1) {
-    // Build a synthetic proposal object to satisfy the return type
-    const synthetic = {
-      id: `auto-${Date.now()}`,
-      childOrgId,
-      initiatorOrgId,
-      initiatorUserId,
-      actionType,
-      actionPayload: payload as object,
-      status: 'APPROVED' as ProposalStatus,
-      votingMode,
-      quorumPercent,
-      rejectMode,
-      requiredVoterCount,
-      expiresAt: new Date(),
-      createdAt: new Date(),
-      resolvedAt: new Date(),
-      resolvedReason: 'Auto-approved: sole owner',
-    } as unknown as GovernanceProposal;
+    const now = new Date();
+    const proposal = await prisma.governanceProposal.create({
+      data: {
+        childOrgId,
+        initiatorOrgId,
+        initiatorUserId,
+        actionType,
+        actionPayload: payload as object,
+        status: 'APPROVED' as ProposalStatus,
+        votingMode,
+        quorumPercent,
+        rejectMode,
+        requiredVoterCount,
+        expiresAt: now,
+        resolvedAt: now,
+        resolvedReason: 'Auto-approved: sole owner',
+      },
+    });
 
     // Caller is responsible for catching action-specific errors
-    await executeAction(synthetic);
-    return { proposal: synthetic, autoExecuted: true };
+    await executeAction(proposal);
+    return { proposal, autoExecuted: true };
   }
 
   // N>1: persist proposal and notify co-owners
@@ -211,9 +210,7 @@ export async function castVote(params: {
     },
   });
   if (!voterOwnership) {
-    throw new Error(
-      `Organization ${voterOrgId} is not an active owner of ${proposal.childOrgId}`
-    );
+    throw new Error(`Organization ${voterOrgId} is not an active owner of ${proposal.childOrgId}`);
   }
 
   // Guard duplicate vote (the unique constraint will also catch this at the DB level)
@@ -241,18 +238,25 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
   });
   const votes = await prisma.governanceVote.findMany({ where: { proposalId } });
 
-  const approveCount = votes.filter((v) => v.decision === ('APPROVE' as VoteDecision)).length;
-  const rejectCount = votes.filter((v) => v.decision === ('REJECT' as VoteDecision)).length;
-  const required = proposal.requiredVoterCount;
+  // Evaluate against the CURRENT owner set, not the count snapshotted at
+  // creation. If an owner is removed mid-vote, the stored count makes unanimity
+  // unreachable; if one is added, the stored count lets a proposal pass without
+  // them. Votes from orgs that are no longer active owners are discarded.
+  const activeOwners = await getActiveOwners(proposal.childOrgId);
+  const activeOwnerIds = new Set(activeOwners.map((o) => o.parentOrgId));
+  const countingVotes = votes.filter((v) => activeOwnerIds.has(v.voterOrgId));
+
+  const approveCount = countingVotes.filter(
+    (v) => v.decision === ('APPROVE' as VoteDecision)
+  ).length;
+  const rejectCount = countingVotes.filter((v) => v.decision === ('REJECT' as VoteDecision)).length;
+  const required = Math.max(activeOwners.length, 1);
 
   let outcome: 'APPROVED' | 'REJECTED' | null = null;
   let resolvedReason: string | undefined;
 
   if (proposal.votingMode === ('UNANIMOUS' as VotingMode)) {
-    if (
-      proposal.rejectMode === ('SINGLE_VETO' as RejectMode) &&
-      rejectCount > 0
-    ) {
+    if (proposal.rejectMode === ('SINGLE_VETO' as RejectMode) && rejectCount > 0) {
       outcome = 'REJECTED';
       resolvedReason = 'Rejected by vote';
     } else if (
@@ -268,10 +272,7 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
     // QUORUM mode
     const pct = (proposal.quorumPercent ?? 51) / 100;
 
-    if (
-      proposal.rejectMode === ('SINGLE_VETO' as RejectMode) &&
-      rejectCount > 0
-    ) {
+    if (proposal.rejectMode === ('SINGLE_VETO' as RejectMode) && rejectCount > 0) {
       outcome = 'REJECTED';
       resolvedReason = 'Rejected by vote';
     } else if (
@@ -313,7 +314,42 @@ export async function evaluateProposal(proposalId: string): Promise<GovernancePr
 
 // ─── Execute action ───────────────────────────────────────────────────────────
 
+/**
+ * Executes an approved proposal and records the outcome.
+ *
+ * Every path that mutates state as a result of governance goes through here —
+ * approved-by-vote, auto-approved sole owner, and admin force-resolve — so this
+ * is the one place that guarantees an audit entry exists for the action.
+ */
 export async function executeAction(proposal: GovernanceProposal): Promise<void> {
+  try {
+    await performAction(proposal);
+    await logSystemAdminAction({
+      action: `GOVERNANCE_${proposal.actionType}`,
+      resourceType: 'Organization',
+      resourceId: proposal.childOrgId,
+      resourceName: `proposal ${proposal.id}`,
+      changes: (proposal.actionPayload ?? {}) as Record<string, unknown>,
+      justification: proposal.resolvedReason ?? undefined,
+      performedBy: proposal.initiatorUserId,
+      status: 'success',
+    });
+  } catch (error) {
+    await logSystemAdminAction({
+      action: `GOVERNANCE_${proposal.actionType}_FAILED`,
+      resourceType: 'Organization',
+      resourceId: proposal.childOrgId,
+      resourceName: `proposal ${proposal.id}`,
+      changes: (proposal.actionPayload ?? {}) as Record<string, unknown>,
+      performedBy: proposal.initiatorUserId,
+      status: 'failure',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw error;
+  }
+}
+
+async function performAction(proposal: GovernanceProposal): Promise<void> {
   const payload = (proposal.actionPayload ?? {}) as ActionPayload;
   const childOrgId = proposal.childOrgId;
 
@@ -321,9 +357,17 @@ export async function executeAction(proposal: GovernanceProposal): Promise<void>
     case 'SUSPEND': {
       const descendantIds = await getDescendantIds(childOrgId);
       if (descendantIds.length > 0) {
+        // Only cascade into descendants that are currently ACTIVE. Without this
+        // filter, suspending overwrites suspendedByOrgId on orgs another owner
+        // already suspended, and that owner's later REACTIVATE then restores
+        // orgs it never suspended.
         await prisma.organization.updateMany({
-          where: { id: { in: descendantIds } },
-          data: { ownStatus: 'SUSPENDED', suspendedByOrgId: proposal.initiatorOrgId },
+          where: { id: { in: descendantIds }, ownStatus: 'ACTIVE' },
+          data: {
+            ownStatus: 'SUSPENDED',
+            suspendedAt: new Date(),
+            suspendedByOrgId: proposal.initiatorOrgId,
+          },
         });
       }
       await prisma.organization.update({
@@ -363,7 +407,11 @@ export async function executeAction(proposal: GovernanceProposal): Promise<void>
             id: { in: descendantIds },
             ownStatus: { not: 'DEACTIVATED' },
           },
-          data: { ownStatus: 'DEACTIVATED' },
+          data: {
+            ownStatus: 'DEACTIVATED',
+            suspendedAt: new Date(),
+            suspendedByOrgId: proposal.initiatorOrgId,
+          },
         });
       }
       await prisma.organization.update({
@@ -386,6 +434,18 @@ export async function executeAction(proposal: GovernanceProposal): Promise<void>
     }
 
     case 'UPDATE_INTEGRATIONS': {
+      if (!payload.integrationId) {
+        throw new Error('UPDATE_INTEGRATIONS action requires payload.integrationId');
+      }
+      // The integration must belong to the org this proposal governs — otherwise
+      // an owner of one org could rewrite integration config in an unrelated one.
+      const integration = await (prisma as any).organizationIntegration.findUnique({
+        where: { id: payload.integrationId },
+        select: { organizationId: true },
+      });
+      if (!integration || integration.organizationId !== childOrgId) {
+        throw new Error('integrationId does not belong to the governed organization');
+      }
       await (prisma as any).organizationIntegration.update({
         where: { id: payload.integrationId },
         data: { config: payload.integrationConfig },
@@ -394,9 +454,24 @@ export async function executeAction(proposal: GovernanceProposal): Promise<void>
     }
 
     case 'UPDATE_RBAC': {
+      if (!payload.memberId) {
+        throw new Error('UPDATE_RBAC action requires payload.memberId');
+      }
+      // Scope the member row to the governed org. Without this check, any owner
+      // could promote an arbitrary user in an arbitrary organization.
+      const member = await prisma.organizationMember.findUnique({
+        where: { id: payload.memberId },
+        select: { organizationId: true },
+      });
+      if (!member || member.organizationId !== childOrgId) {
+        throw new Error('memberId does not belong to the governed organization');
+      }
+      if (!ALLOWED_MEMBER_ROLES.includes(payload.newRole as MemberRole)) {
+        throw new Error(`Invalid role: ${String(payload.newRole)}`);
+      }
       await prisma.organizationMember.update({
         where: { id: payload.memberId },
-        data: { role: payload.newRole as any },
+        data: { role: payload.newRole as MemberRole },
       });
       break;
     }
@@ -481,6 +556,29 @@ export async function executeAction(proposal: GovernanceProposal): Promise<void>
       if (!payload.childOrgId) {
         throw new Error('ADD_CHILD action requires payload.childOrgId');
       }
+      // Adopting an org the initiator has no authority over is a takeover, not a
+      // hierarchy change. Require an existing ownership link or ancestry edge.
+      const canAdopt = await prisma.organizationOwnership.findFirst({
+        where: {
+          parentOrgId: proposal.initiatorOrgId,
+          childOrgId: payload.childOrgId,
+          status: 'ACTIVE' as OwnershipStatus,
+        },
+      });
+      if (!canAdopt) {
+        const ancestry = await prisma.organizationAncestry.findFirst({
+          where: {
+            ancestorId: proposal.initiatorOrgId,
+            descendantId: payload.childOrgId,
+            depth: { gt: 0 },
+          },
+        });
+        if (!ancestry) {
+          throw new Error(
+            'Initiator has no existing authority over the organization named in payload.childOrgId'
+          );
+        }
+      }
       await prisma.organization.update({
         where: { id: payload.childOrgId },
         data: { parentId: proposal.initiatorOrgId },
@@ -504,7 +602,12 @@ export async function executeAction(proposal: GovernanceProposal): Promise<void>
       const policyRules = (payload as ActionPayload & { rules?: unknown[] }).rules ?? [];
       const policyNote = (payload as ActionPayload & { note?: string }).note ?? null;
       await prisma.orgInheritedPolicy.upsert({
-        where: { parentOrgId_targetOrgId: { parentOrgId: proposal.initiatorOrgId, targetOrgId: payload.childOrgId } },
+        where: {
+          parentOrgId_targetOrgId: {
+            parentOrgId: proposal.initiatorOrgId,
+            targetOrgId: payload.childOrgId,
+          },
+        },
         create: {
           parentOrgId: proposal.initiatorOrgId,
           targetOrgId: payload.childOrgId,
@@ -540,9 +643,7 @@ export async function expireStaleProposals(orgId?: string): Promise<number> {
     where: {
       status: 'PENDING_VOTES' as ProposalStatus,
       expiresAt: { lt: new Date() },
-      ...(orgId
-        ? { OR: [{ childOrgId: orgId }, { initiatorOrgId: orgId }] }
-        : {}),
+      ...(orgId ? { OR: [{ childOrgId: orgId }, { initiatorOrgId: orgId }] } : {}),
     },
   });
 
@@ -578,9 +679,7 @@ export async function cancelProposal(
   });
 
   if (proposal.status !== ('PENDING_VOTES' as ProposalStatus)) {
-    throw new Error(
-      `Proposal ${proposalId} cannot be cancelled (status: ${proposal.status})`
-    );
+    throw new Error(`Proposal ${proposalId} cannot be cancelled (status: ${proposal.status})`);
   }
 
   if (proposal.initiatorOrgId !== requestingOrgId) {

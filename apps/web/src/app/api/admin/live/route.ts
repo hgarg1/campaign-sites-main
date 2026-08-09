@@ -6,10 +6,14 @@ import {
   getPaginatedUsers,
   getPaginatedWebsites,
 } from '@/lib/admin-live';
+import { requireAdmin } from '@/lib/require-admin';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin('system_admin_portal:monitoring:read');
+  if (!auth.ok) return auth.error;
+
   const { searchParams } = request.nextUrl;
   const resource = searchParams.get('resource') || 'all';
   const forceRefresh = searchParams.get('refresh') === 'true';

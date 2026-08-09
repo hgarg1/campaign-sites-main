@@ -5,3 +5,9 @@ node_modules
 dist
 build
 *.log
+
+# Env files — secrets come from Vercel project env vars, never from uploaded files.
+# Uploading these lets a local .env silently override the dashboard config at build time.
+.env
+.env.*
+!.env.example

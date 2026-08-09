@@ -6,46 +6,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/database';
-import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { requireAdmin } from '@/lib/require-admin';
 import { logSystemAdminAction } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 
-async function getAuthenticatedUserId() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('campaignsites_session')?.value;
-  if (!sessionToken) return null;
-  const parsedToken = parseAndVerifySessionToken(sessionToken);
-  return parsedToken?.userId ?? null;
-}
-
-async function checkIsGlobalAdmin(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  return user?.role === 'GLOBAL_ADMIN';
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = await checkIsGlobalAdmin(userId);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden: Only GLOBAL_ADMIN can view system admin roles' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin('system_admin_portal:rbac:view_admins');
+    if (!auth.ok) return auth.error;
+    const userId = auth.userId;
 
     const roleAssignments = await prisma.systemAdminRoleAssignment.findMany({
       where: { adminId: params.id },
@@ -56,39 +27,21 @@ export async function GET(
     return NextResponse.json(roleAssignments);
   } catch (error) {
     console.error('Failed to fetch role assignments:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch role assignments' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch role assignments' }, { status: 500 });
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = await checkIsGlobalAdmin(userId);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden: Only GLOBAL_ADMIN can assign system admin roles' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin('system_admin_portal:rbac:assign_role');
+    if (!auth.ok) return auth.error;
+    const userId = auth.userId;
 
     const body = await request.json();
     const { roleId, justification } = body;
 
     if (!roleId || !justification) {
-      return NextResponse.json(
-        { error: 'roleId and justification are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'roleId and justification are required' }, { status: 400 });
     }
 
     // Verify role exists
@@ -104,9 +57,15 @@ export async function POST(
       where: { id: params.id },
     });
     if (!targetAdmin) {
+      return NextResponse.json({ error: 'System admin not found' }, { status: 404 });
+    }
+
+    // No self-escalation: granting yourself a role would let any admin holding
+    // assign_role climb to super-admin in one request.
+    if (targetAdmin.userId === userId) {
       return NextResponse.json(
-        { error: 'System admin not found' },
-        { status: 404 }
+        { error: 'You cannot modify your own role assignments' },
+        { status: 403 }
       );
     }
 
@@ -134,40 +93,22 @@ export async function POST(
     return NextResponse.json(assignment, { status: 201 });
   } catch (error) {
     console.error('Failed to assign role:', error);
-    return NextResponse.json(
-      { error: 'Failed to assign role' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to assign role' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = await checkIsGlobalAdmin(userId);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden: Only GLOBAL_ADMIN can revoke system admin roles' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin('system_admin_portal:rbac:revoke_role');
+    if (!auth.ok) return auth.error;
+    const userId = auth.userId;
 
     const url = new URL(request.url);
     const roleId = url.searchParams.get('roleId');
     const justification = url.searchParams.get('justification') || '';
 
     if (!roleId) {
-      return NextResponse.json(
-        { error: 'roleId query parameter is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'roleId query parameter is required' }, { status: 400 });
     }
 
     // Get assignment info for audit
@@ -182,9 +123,13 @@ export async function DELETE(
     });
 
     if (!assignment) {
+      return NextResponse.json({ error: 'Role assignment not found' }, { status: 404 });
+    }
+
+    if (assignment.admin.userId === userId) {
       return NextResponse.json(
-        { error: 'Role assignment not found' },
-        { status: 404 }
+        { error: 'You cannot modify your own role assignments' },
+        { status: 403 }
       );
     }
 
@@ -212,9 +157,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to revoke role:', error);
-    return NextResponse.json(
-      { error: 'Failed to revoke role' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to revoke role' }, { status: 500 });
   }
 }

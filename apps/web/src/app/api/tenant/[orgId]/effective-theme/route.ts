@@ -3,7 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
 import { parseAndVerifySessionToken } from '@/lib/session-auth';
-import { DEFAULT_THEME, PARTY_THEMES, TenantTheme, mergeTheme, themeFromBranding } from '@/lib/tenant-theme';
+import { verifyOrgAccess } from '@/app/api/tenant/auth-utils';
+import {
+  DEFAULT_THEME,
+  PARTY_THEMES,
+  TenantTheme,
+  mergeTheme,
+  themeFromBranding,
+} from '@/lib/tenant-theme';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,10 +30,10 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  // Auth: must be org member or GLOBAL_ADMIN
-  const member = await prisma.organizationMember.findFirst({
-    where: { userId, organizationId: params.orgId },
-  });
+  // Auth: direct member, inherited access from an ancestor org, or GLOBAL_ADMIN.
+  // Checking direct membership alone denied ancestor admins, who can reach every
+  // other endpoint for this org — see verifyOrgAccess in ../../auth-utils.
+  const member = await verifyOrgAccess(userId, params.orgId);
 
   if (!member) {
     const user = await prisma.user.findUnique({
@@ -40,18 +47,34 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
 
   try {
     // Walk up the parentId chain collecting org data (up to 5 levels)
-    type OrgRow = { id: string; name: string; partyAffiliation: string | null; branding: unknown; parentId: string | null };
-    const chain: Array<{ id: string; name: string; partyAffiliation: string | null; branding: any }> = [];
+    type OrgRow = {
+      id: string;
+      name: string;
+      partyAffiliation: string | null;
+      branding: unknown;
+      parentId: string | null;
+    };
+    const chain: Array<{
+      id: string;
+      name: string;
+      partyAffiliation: string | null;
+      branding: any;
+    }> = [];
 
     let currentId: string | null = params.orgId;
     let depth = 0;
     while (currentId && depth <= 5) {
-      const orgRow: OrgRow | null = await prisma.organization.findUnique({
+      const orgRow: OrgRow | null = (await prisma.organization.findUnique({
         where: { id: currentId },
         select: { id: true, name: true, partyAffiliation: true, branding: true, parentId: true },
-      }) as OrgRow | null;
+      })) as OrgRow | null;
       if (!orgRow) break;
-      chain.unshift({ id: orgRow.id, name: orgRow.name, partyAffiliation: orgRow.partyAffiliation, branding: orgRow.branding });
+      chain.unshift({
+        id: orgRow.id,
+        name: orgRow.name,
+        partyAffiliation: orgRow.partyAffiliation,
+        branding: orgRow.branding,
+      });
       currentId = orgRow.parentId ?? null;
       depth++;
     }

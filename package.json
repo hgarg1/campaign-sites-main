@@ -16,7 +16,7 @@
     "clean": "pnpm --recursive clean"
   },
   "engines": {
-    "node": "20.x",
+    "node": "24.x",
     "pnpm": ">=8.0.0"
   },
   "devDependencies": {

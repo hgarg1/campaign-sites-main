@@ -13,7 +13,10 @@ interface Permissions {
   allClaims: string[];
 }
 
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+// Short-lived: server-side checks are authoritative, but a long client cache
+// keeps rendering controls for a claim that has already been revoked.
+// Call refetch() after any role or override mutation to clear it immediately.
+const CACHE_DURATION_MS = 30 * 1000;
 let permissionsCache: Permissions | null = null;
 let cacheTimestamp = 0;
 
@@ -26,10 +29,7 @@ export function useSystemAdminPermissions() {
     try {
       // Check cache
       const now = Date.now();
-      if (
-        permissionsCache &&
-        now - cacheTimestamp < CACHE_DURATION_MS
-      ) {
+      if (permissionsCache && now - cacheTimestamp < CACHE_DURATION_MS) {
         setPermissions(permissionsCache);
         setLoading(false);
         return;
@@ -46,9 +46,7 @@ export function useSystemAdminPermissions() {
       setPermissions(data);
       setError(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Unknown error'
-      );
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setPermissions(null);
     } finally {
       setLoading(false);

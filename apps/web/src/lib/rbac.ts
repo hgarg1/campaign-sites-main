@@ -3,6 +3,7 @@
  * Used throughout the system admin portal for enforcing permissions
  */
 
+import { cache } from 'react';
 import { prisma } from '@/lib/database';
 
 export interface ResolvedPermissions {
@@ -11,20 +12,39 @@ export interface ResolvedPermissions {
   allClaims: string[]; // flattened with wildcards expanded
 }
 
+/** Escape regex metacharacters so only '*' is treated as a wildcard. */
+function escapeRegExp(literal: string): string {
+  return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Does `pattern` (which may contain '*' wildcards) match `claim`?
+ *
+ * This is the single matcher used for both allow and deny evaluation — the two
+ * must use identical semantics or a DENY can fail to shadow a broader ALLOW.
+ */
+export function claimMatches(pattern: string, claim: string): boolean {
+  if (!pattern.includes('*')) return pattern === claim;
+  const source = pattern.split('*').map(escapeRegExp).join('.*');
+  return new RegExp(`^${source}$`).test(claim);
+}
+
 /**
  * Expand wildcard claims to actual claims
  * e.g., "system_admin_portal:*" -> all claims
  *       "system_admin_portal:organizations:*" -> all organization claims
+ *
+ * Note: the permission table is seeded with wildcard claims, so an expansion can
+ * legitimately return wildcards rather than leaf claims. Both allow and deny
+ * evaluation go through `claimMatches`, so either form resolves correctly.
  */
-export function expandWildcardClaim(
-  claim: string,
-  allClaims: string[]
-): string[] {
+export function expandWildcardClaim(claim: string, allClaims: string[]): string[] {
   if (!claim.includes('*')) return [claim];
 
-  const pattern = claim.replace(/\*/g, '.*');
-  const regex = new RegExp(`^${pattern}$`);
-  return allClaims.filter((c) => regex.test(c));
+  const expanded = allClaims.filter((c) => claimMatches(claim, c));
+  // Always retain the pattern itself: it may cover claims that are checked in
+  // code but not present as rows in SystemAdminPermission.
+  return expanded.includes(claim) ? expanded : [claim, ...expanded];
 }
 
 /**
@@ -38,7 +58,7 @@ export function expandWildcardClaim(
  * 1. User-level overrides (explicit ALLOW/DENY)
  * 2. Role permissions
  */
-export async function resolveSystemAdminPermissions(
+export const resolveSystemAdminPermissions = cache(async function resolveSystemAdminPermissions(
   systemAdminId: string
 ): Promise<ResolvedPermissions> {
   // Get all available claims
@@ -73,20 +93,14 @@ export async function resolveSystemAdminPermissions(
   });
 
   if (!admin) {
-    // SystemAdmin must be set up ahead of time - no auto-creation
-    const user = await prisma.user.findUnique({
-      where: { id: systemAdminId },
-      select: { email: true },
-    });
-    
-    throw new Error(
-      `SystemAdmin record not found for user ${user?.email || systemAdminId}. ` +
-      `Please run the setup migration or contact your system administrator.`
-    );
+    // SystemAdmin must be set up ahead of time — no auto-creation.
+    // A missing record is a denial, not a server error: returning an empty
+    // permission set lets callers answer 403 instead of surfacing a 500.
+    return { allowedClaims: [], deniedClaims: [], allClaims };
   }
 
-  let allowedClaims: Set<string> = new Set();
-  let deniedClaims: Set<string> = new Set();
+  const allowedClaims: Set<string> = new Set();
+  const deniedClaims: Set<string> = new Set();
 
   // Collect role permissions
   for (const roleAssignment of admin.roleAssignments) {
@@ -108,16 +122,19 @@ export async function resolveSystemAdminPermissions(
     const expanded = expandWildcardClaim(claim, allClaims);
 
     if (override.action === 'DENY') {
-      // DENY takes precedence over ALLOW
-      expanded.forEach((c) => {
-        allowedClaims.delete(c);
-        deniedClaims.add(c);
-      });
+      // DENY takes precedence over ALLOW. Record the denial pattern itself so
+      // it still shadows broader wildcard grants that were never expanded into
+      // the concrete claim (e.g. denying `…:users:delete` under `…:*`).
+      deniedClaims.add(claim);
+      expanded.forEach((c) => deniedClaims.add(c));
+      // Drop anything the denial covers, including wildcards it fully subsumes.
+      for (const allowed of Array.from(allowedClaims)) {
+        if (claimMatches(claim, allowed)) allowedClaims.delete(allowed);
+      }
     } else if (override.action === 'ALLOW') {
-      // ALLOW adds to permitted claims
+      // ALLOW adds to permitted claims, unless already explicitly denied
       expanded.forEach((c) => {
-        // Only add if not explicitly denied
-        if (!deniedClaims.has(c)) {
+        if (!Array.from(deniedClaims).some((d) => claimMatches(d, c))) {
           allowedClaims.add(c);
         }
       });
@@ -129,7 +146,7 @@ export async function resolveSystemAdminPermissions(
     deniedClaims: Array.from(deniedClaims),
     allClaims,
   };
-}
+});
 
 /**
  * Check if admin has permission for a specific claim
@@ -139,39 +156,30 @@ export async function hasSystemAdminPermission(
   requiredClaim: string
 ): Promise<boolean> {
   const permissions = await resolveSystemAdminPermissions(systemAdminId);
-
-  // Check exact match
-  if (permissions.allowedClaims.includes(requiredClaim)) {
-    return true;
-  }
-
-  // Check wildcard matches in allowed claims
-  for (const claim of permissions.allowedClaims) {
-    if (claim.includes('*')) {
-      const pattern = claim.replace(/\*/g, '.*');
-      const regex = new RegExp(`^${pattern}$`);
-      if (regex.test(requiredClaim)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
+  return checkResolved(permissions, requiredClaim);
 }
 
 /**
- * Check if admin has any of the required claims
+ * Evaluate a claim against an already-resolved permission set.
+ * DENY always wins, and both sides match with identical wildcard semantics.
+ */
+export function checkResolved(permissions: ResolvedPermissions, requiredClaim: string): boolean {
+  if (permissions.deniedClaims.some((c) => claimMatches(c, requiredClaim))) {
+    return false;
+  }
+  return permissions.allowedClaims.some((c) => claimMatches(c, requiredClaim));
+}
+
+/**
+ * Check if admin has any of the required claims.
+ * Resolves once and evaluates in memory rather than re-querying per claim.
  */
 export async function hasSystemAdminAnyPermission(
   systemAdminId: string,
   requiredClaims: string[]
 ): Promise<boolean> {
-  for (const claim of requiredClaims) {
-    if (await hasSystemAdminPermission(systemAdminId, claim)) {
-      return true;
-    }
-  }
-  return false;
+  const permissions = await resolveSystemAdminPermissions(systemAdminId);
+  return requiredClaims.some((claim) => checkResolved(permissions, claim));
 }
 
 /**

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
-import { getAuthUserId, verifyOrgAccess, verifyOrgAdmin } from '@/app/api/tenant/auth-utils';
+import {
+  getAuthUserId,
+  verifyOrgAccess,
+  verifyOrgAdmin,
+  writeAuditLog,
+} from '@/app/api/tenant/auth-utils';
 import { castVote, cancelProposal } from '@/lib/governance';
 import { VoteDecision } from '@prisma/client';
 
@@ -42,11 +47,12 @@ export async function GET(
   // Verify this org is involved: initiator, owner of childOrg, or childOrg itself
   const isInitiator = proposal.initiatorOrgId === orgId;
   const isChildOrg = proposal.childOrgId === orgId;
-  const ownership = isInitiator || isChildOrg
-    ? true
-    : await prisma.organizationOwnership.findFirst({
-        where: { parentOrgId: orgId, childOrgId: proposal.childOrgId, status: 'ACTIVE' },
-      });
+  const ownership =
+    isInitiator || isChildOrg
+      ? true
+      : await prisma.organizationOwnership.findFirst({
+          where: { parentOrgId: orgId, childOrgId: proposal.childOrgId, status: 'ACTIVE' },
+        });
 
   if (!ownership) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -79,7 +85,11 @@ export async function POST(
     const ownership = await prisma.organizationOwnership.findFirst({
       where: { parentOrgId: orgId, childOrgId: proposal.childOrgId, status: 'ACTIVE' },
     });
-    if (!ownership) return NextResponse.json({ error: 'You are not an active owner of this child org' }, { status: 403 });
+    if (!ownership)
+      return NextResponse.json(
+        { error: 'You are not an active owner of this child org' },
+        { status: 403 }
+      );
 
     try {
       const updated = await castVote({
@@ -89,6 +99,14 @@ export async function POST(
         decision: decision as VoteDecision,
         comment,
       });
+
+      await writeAuditLog({
+        orgId,
+        actorUserId: userId,
+        action: 'governance.vote',
+        extra: { proposalId, decision, resultingStatus: updated.status },
+      });
+
       return NextResponse.json(updated);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to cast vote';
@@ -99,6 +117,14 @@ export async function POST(
   if (action === 'cancel') {
     try {
       const updated = await cancelProposal(proposalId, orgId);
+
+      await writeAuditLog({
+        orgId,
+        actorUserId: userId,
+        action: 'governance.cancel',
+        extra: { proposalId },
+      });
+
       return NextResponse.json(updated);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to cancel proposal';
@@ -106,5 +132,8 @@ export async function POST(
     }
   }
 
-  return NextResponse.json({ error: 'Invalid action. Use ?action=vote or ?action=cancel' }, { status: 400 });
+  return NextResponse.json(
+    { error: 'Invalid action. Use ?action=vote or ?action=cancel' },
+    { status: 400 }
+  );
 }

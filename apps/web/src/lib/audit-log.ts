@@ -43,17 +43,8 @@ export async function logSystemAdminAction(entry: AuditLogEntry): Promise<void> 
   }
 }
 
-/**
- * Log a tenant admin action
- */
-export async function logTenantAdminAction(entry: AuditLogEntry, orgId: string): Promise<void> {
-  try {
-    await fetch(`/api/admin/organizations/${orgId}/audit-logs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry),
-    });
-  } catch (error) {
-    console.error('Failed to log tenant admin action:', error);
-  }
-}
+// Tenant-side actions are recorded by `writeAuditLog` in
+// apps/web/src/app/api/tenant/auth-utils.ts, which writes to the database
+// directly. A previous `logTenantAdminAction` helper here issued a relative
+// fetch to this app's own API from server code — which always throws, since
+// server-side fetch requires an absolute URL — and had no callers.

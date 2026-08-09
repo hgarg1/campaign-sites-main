@@ -19,6 +19,8 @@ model User {
   role            UserRole  @default(USER)
   requirePasskey  Boolean   @default(false) // GLOBAL_ADMIN can enforce passkey-only auth for ADMINs
   passwordChangedAt DateTime? // null means user must change password on first login
+  suspendedAt     DateTime? // non-null means the account is suspended and cannot authenticate
+  suspendedBy     String?   // userId of the system admin who suspended the account
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?

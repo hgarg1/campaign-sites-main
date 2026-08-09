@@ -1,10 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
-import { getAuthUserId, verifyOrgAccess, verifyOrgAdmin } from '@/app/api/tenant/auth-utils';
+import {
+  getAuthUserId,
+  verifyOrgAccess,
+  verifyOrgAdmin,
+  enforceSystemPolicy,
+  writeAuditLog,
+} from '@/app/api/tenant/auth-utils';
 import { createProposal } from '@/lib/governance';
 import { GovernanceActionType } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
+
+/** Action types a tenant may propose. Anything else is rejected at the boundary. */
+const PROPOSABLE_ACTIONS: GovernanceActionType[] = [
+  'SUSPEND',
+  'REACTIVATE',
+  'DEACTIVATE',
+  'UPDATE_SETTINGS',
+  'UPDATE_BRANDING',
+  'UPDATE_INTEGRATIONS',
+  'UPDATE_RBAC',
+  'ADD_PARENT',
+  'REMOVE_PARENT',
+  'ADD_CHILD',
+  'SET_CHILD_POLICY',
+  'REMOVE_CHILD_POLICY',
+];
 
 const proposalInclude = {
   childOrg: { select: { id: true, name: true } },
@@ -12,10 +34,7 @@ const proposalInclude = {
   votes: { select: { id: true, voterOrgId: true, decision: true, comment: true, createdAt: true } },
 };
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { orgId: string } }
-) {
+export async function GET(req: NextRequest, { params }: { params: { orgId: string } }) {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   const access = await verifyOrgAccess(userId, params.orgId);
@@ -35,7 +54,11 @@ export async function GET(
     const [pendingProposals, mineCount, historyCount, incomingCount] = await Promise.all([
       childOrgIds.length > 0
         ? prisma.governanceProposal.findMany({
-            where: { childOrgId: { in: childOrgIds }, status: 'PENDING_VOTES' },
+            where: {
+              childOrgId: { in: childOrgIds },
+              status: 'PENDING_VOTES',
+              expiresAt: { gt: new Date() },
+            },
             include: { votes: { select: { voterOrgId: true } } },
           })
         : [],
@@ -43,10 +66,7 @@ export async function GET(
       prisma.governanceProposal.count({
         where: {
           status: { in: ['APPROVED', 'REJECTED', 'EXPIRED', 'CANCELLED'] },
-          OR: [
-            { initiatorOrgId: orgId },
-            { childOrgId: { in: childOrgIds } },
-          ],
+          OR: [{ initiatorOrgId: orgId }, { childOrgId: { in: childOrgIds } }],
         },
       }),
       prisma.governanceProposal.count({ where: { childOrgId: orgId } }),
@@ -77,7 +97,11 @@ export async function GET(
     if (childOrgIds.length === 0) return NextResponse.json([]);
 
     const proposals = await prisma.governanceProposal.findMany({
-      where: { childOrgId: { in: childOrgIds }, status: 'PENDING_VOTES' },
+      where: {
+        childOrgId: { in: childOrgIds },
+        status: 'PENDING_VOTES',
+        expiresAt: { gt: new Date() },
+      },
       include: proposalInclude,
       orderBy: { createdAt: 'desc' },
     });
@@ -128,10 +152,7 @@ export async function GET(
   return NextResponse.json({ error: 'Invalid tab' }, { status: 400 });
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { orgId: string } }
-) {
+export async function POST(req: NextRequest, { params }: { params: { orgId: string } }) {
   const userId = await getAuthUserId();
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   const access = await verifyOrgAdmin(userId, params.orgId);
@@ -142,8 +163,25 @@ export async function POST(
   const { childOrgId, actionType, payload, description } = body;
 
   if (!childOrgId || !actionType || !payload) {
-    return NextResponse.json({ error: 'Missing required fields: childOrgId, actionType, payload' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Missing required fields: childOrgId, actionType, payload' },
+      { status: 400 }
+    );
   }
+
+  if (!PROPOSABLE_ACTIONS.includes(actionType as GovernanceActionType)) {
+    return NextResponse.json(
+      { error: `Unsupported actionType: ${String(actionType)}` },
+      { status: 400 }
+    );
+  }
+
+  if (typeof payload !== 'object' || Array.isArray(payload)) {
+    return NextResponse.json({ error: 'payload must be an object' }, { status: 400 });
+  }
+
+  const blocked = await enforceSystemPolicy(orgId, 'governance', 'propose');
+  if (blocked) return blocked;
 
   try {
     const result = await createProposal({
@@ -153,6 +191,19 @@ export async function POST(
       actionType: actionType as GovernanceActionType,
       payload: { ...payload, description },
     });
+
+    await writeAuditLog({
+      orgId,
+      actorUserId: userId,
+      action: 'governance.propose',
+      extra: {
+        childOrgId,
+        actionType,
+        proposalId: result.proposal.id,
+        autoExecuted: result.autoExecuted,
+      },
+    });
+
     return NextResponse.json(result, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to create proposal';

@@ -2,5 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "ELECTRON_SKIP_BINARY_DOWNLOAD=1 pnpm install --filter @campaignsites/web...",
   "buildCommand": "pnpm --filter @campaignsites/database db:generate && pnpm --filter @campaignsites/database db:migrate:deploy && pnpm --filter @campaignsites/web build",
-  "outputDirectory": "apps/web/.next"
+  "outputDirectory": "apps/web/.next",
+  "crons": [
+    {
+      "path": "/api/cron/governance-sweep",
+      "schedule": "0 * * * *"
+    }
+  ]
 }

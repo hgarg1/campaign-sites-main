@@ -6,46 +6,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/database';
-import { parseAndVerifySessionToken } from '@/lib/session-auth';
+import { requireAdmin } from '@/lib/require-admin';
 import { logSystemAdminAction } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 
-async function getAuthenticatedUserId() {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get('campaignsites_session')?.value;
-  if (!sessionToken) return null;
-  const parsedToken = parseAndVerifySessionToken(sessionToken);
-  return parsedToken?.userId ?? null;
-}
-
-async function checkIsGlobalAdmin(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  return user?.role === 'GLOBAL_ADMIN';
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const isAdmin = await checkIsGlobalAdmin(userId);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdmin('system_admin_portal:rbac:view_overrides');
+    if (!auth.ok) return auth.error;
+    const userId = auth.userId;
 
     // Get all permissions
     const allPermissions = await prisma.systemAdminPermission.findMany({
@@ -77,27 +48,27 @@ export async function GET(
     });
   } catch (error) {
     console.error('Failed to fetch permissions:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch permissions' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch permissions' }, { status: 500 });
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin('system_admin_portal:rbac:add_override');
+    if (!auth.ok) return auth.error;
+    const userId = auth.userId;
 
-    const isAdmin = await checkIsGlobalAdmin(userId);
-    if (!isAdmin) {
+    // No self-escalation: an admin must not grant or revoke their own overrides.
+    const targetAdmin = await prisma.systemAdmin.findUnique({
+      where: { id: params.id },
+      select: { userId: true },
+    });
+    if (!targetAdmin) {
+      return NextResponse.json({ error: 'System admin not found' }, { status: 404 });
+    }
+    if (targetAdmin.userId === userId) {
       return NextResponse.json(
-        { error: 'Forbidden' },
+        { error: 'You cannot modify your own permission overrides' },
         { status: 403 }
       );
     }
@@ -113,10 +84,7 @@ export async function POST(
     }
 
     if (!['ALLOW', 'DENY'].includes(action)) {
-      return NextResponse.json(
-        { error: 'action must be ALLOW or DENY' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'action must be ALLOW or DENY' }, { status: 400 });
     }
 
     // Verify permission exists
@@ -124,10 +92,7 @@ export async function POST(
       where: { id: permissionId },
     });
     if (!permission) {
-      return NextResponse.json(
-        { error: 'Permission not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Permission not found' }, { status: 404 });
     }
 
     // Create or update override
@@ -167,27 +132,27 @@ export async function POST(
     return NextResponse.json(override, { status: 201 });
   } catch (error) {
     console.error('Failed to create override:', error);
-    return NextResponse.json(
-      { error: 'Failed to create override' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create override' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const userId = await getAuthenticatedUserId();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin('system_admin_portal:rbac:delete_override');
+    if (!auth.ok) return auth.error;
+    const userId = auth.userId;
 
-    const isAdmin = await checkIsGlobalAdmin(userId);
-    if (!isAdmin) {
+    // No self-escalation: an admin must not grant or revoke their own overrides.
+    const targetAdmin = await prisma.systemAdmin.findUnique({
+      where: { id: params.id },
+      select: { userId: true },
+    });
+    if (!targetAdmin) {
+      return NextResponse.json({ error: 'System admin not found' }, { status: 404 });
+    }
+    if (targetAdmin.userId === userId) {
       return NextResponse.json(
-        { error: 'Forbidden' },
+        { error: 'You cannot modify your own permission overrides' },
         { status: 403 }
       );
     }
@@ -215,10 +180,7 @@ export async function DELETE(
     });
 
     if (!override) {
-      return NextResponse.json(
-        { error: 'Override not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Override not found' }, { status: 404 });
     }
 
     // Delete override
@@ -245,9 +207,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete override:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete override' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete override' }, { status: 500 });
   }
 }

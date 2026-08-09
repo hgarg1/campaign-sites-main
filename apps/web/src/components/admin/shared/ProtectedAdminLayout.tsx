@@ -38,11 +38,7 @@ export function ProtectedAdminLayout({
       setHasAccess(false);
 
       // Show toast notification
-      error(
-        'Access Denied',
-        `You don't have permission to access this page.`,
-        5000
-      );
+      error('Access Denied', `You don't have permission to access this page.`, 5000);
 
       // Redirect to dashboard after brief delay
       const timeout = setTimeout(() => {
@@ -75,7 +71,7 @@ export function ProtectedAdminLayout({
       <AdminLayout title="Access Denied" subtitle="Redirecting...">
         <PermissionErrorPage
           pageTitle={title}
-          requiredClaim={requiredClaim || 'system_admin_portal:access'}
+          requiredClaim={requiredClaim || 'system_admin_portal:dashboard:access'}
         />
       </AdminLayout>
     );

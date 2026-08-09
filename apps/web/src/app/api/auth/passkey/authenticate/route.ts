@@ -18,7 +18,8 @@ function getSecret() {
 /** Derive rpID and origin from the inbound request — works on localhost, Vercel, and production. */
 function getRpConfig(request: NextRequest) {
   const host = request.headers.get('host') ?? 'localhost';
-  const proto = request.headers.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  const proto =
+    request.headers.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
   const rpID = host.split(':')[0];
   const origin = process.env.NEXT_PUBLIC_ORIGIN ?? `${proto}://${host}`;
   return { rpID, origin };
@@ -44,7 +45,8 @@ function decodeChallengeToken(token: string): string | null {
     const ts = parseInt(raw.substring(secondLastColon + 1, lastColon), 10);
     if (isNaN(ts) || Math.floor(Date.now() / 1000) - ts > CHALLENGE_TTL) return null;
     const expectedSig = createHmac('sha256', getSecret()).update(payload).digest('base64url');
-    const a = Buffer.from(sig), b = Buffer.from(expectedSig);
+    const a = Buffer.from(sig),
+      b = Buffer.from(expectedSig);
     if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
     return payload.substring(0, secondLastColon);
   } catch {
@@ -78,7 +80,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const { rpID, origin } = getRpConfig(request);
   const token = request.cookies.get(CHALLENGE_COOKIE)?.value;
-  if (!token) return NextResponse.json({ error: 'Missing challenge — please try again' }, { status: 400 });
+  if (!token)
+    return NextResponse.json({ error: 'Missing challenge — please try again' }, { status: 400 });
 
   const expectedChallenge = decodeChallengeToken(token);
   if (!expectedChallenge) {
@@ -138,8 +141,11 @@ export async function POST(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
   });
+  // Routing hint for middleware only — never an authorization input.
   res.cookies.set('userRole', stored.user.role, {
+    httpOnly: true,
     sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
   });
