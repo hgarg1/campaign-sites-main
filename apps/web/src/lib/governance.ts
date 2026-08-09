@@ -8,6 +8,7 @@ import {
   VoteDecision,
   VotingMode,
   RejectMode,
+  TallyBasis,
   ProposalStatus,
   NotificationType,
   OwnershipStatus,
@@ -17,6 +18,7 @@ import { tally as tallyBallots, type Ballot, type BallotDecision } from '@/lib/g
 import {
   evaluateOutcome,
   toPolicyConfig,
+  validatePolicy,
   type PolicyColumns,
   type PolicyConfig,
 } from '@/lib/governance-policy';
@@ -40,6 +42,26 @@ export interface ActionPayload {
   addedByUserId?: string;
   // ADD_CHILD
   childOrgId?: string;
+  // SET_OWNERSHIP_STAKES — the complete new allocation, which must total 10000
+  stakes?: Array<{ parentOrgId: string; stakeBps: number }>;
+  // SET_GOVERNANCE_RULE — the org's own policy, optionally scoped to one action
+  rule?: {
+    actionType?: GovernanceActionType | null;
+    votingMode: VotingMode;
+    rejectMode: RejectMode;
+    tallyBasis: TallyBasis;
+    approveNum: number;
+    approveDen: number;
+    approveInclusive: boolean;
+    vetoNum?: number | null;
+    vetoDen?: number | null;
+    vetoInclusive?: boolean;
+    quorumNum?: number;
+    quorumDen?: number;
+    tieBreakEnabled?: boolean;
+    dealMakerMinStakeBps?: number;
+    ttlDays?: number;
+  };
   // Human-readable summary (always set)
   description?: string;
 }
@@ -903,6 +925,140 @@ async function performAction(proposal: GovernanceProposal): Promise<void> {
         where: { parentOrgId: proposal.initiatorOrgId, targetOrgId: payload.childOrgId },
       });
       await invalidateOrgPolicyCache(payload.childOrgId);
+      break;
+    }
+
+    case 'SET_OWNERSHIP_STAKES': {
+      const stakes = payload.stakes;
+      if (!Array.isArray(stakes) || stakes.length === 0) {
+        throw new Error('SET_OWNERSHIP_STAKES requires payload.stakes');
+      }
+
+      const owners = await getActiveOwners(childOrgId);
+      const ownerIds = new Set(owners.map((o) => o.parentOrgId));
+
+      // The allocation must name every active owner exactly once. A partial
+      // vector would leave omitted owners at a stale weight while everyone
+      // else's share moved, which is dilution by omission.
+      const named = new Set(stakes.map((s) => s.parentOrgId));
+      if (named.size !== stakes.length) {
+        throw new Error('SET_OWNERSHIP_STAKES lists the same organization twice');
+      }
+      for (const s of stakes) {
+        if (!ownerIds.has(s.parentOrgId)) {
+          throw new Error(`${s.parentOrgId} is not an active owner of ${childOrgId}`);
+        }
+        if (!Number.isInteger(s.stakeBps) || s.stakeBps < 0 || s.stakeBps > 10000) {
+          throw new Error('Each stake must be an integer between 0 and 10000 basis points');
+        }
+      }
+      for (const o of owners) {
+        if (!named.has(o.parentOrgId)) {
+          throw new Error(`Allocation omits active owner ${o.parentOrgId}`);
+        }
+      }
+
+      const total = stakes.reduce((sum, s) => sum + s.stakeBps, 0);
+      if (total !== 10000) {
+        throw new Error(`Stakes must total 10000 basis points, got ${total}`);
+      }
+
+      const previous = new Map(owners.map((o) => [o.parentOrgId, o.stakeBps]));
+      const now = new Date();
+
+      for (const s of stakes) {
+        const from = previous.get(s.parentOrgId) ?? null;
+        if (from === s.stakeBps) continue;
+        await prisma.organizationOwnership.update({
+          where: {
+            parentOrgId_childOrgId: { parentOrgId: s.parentOrgId, childOrgId },
+          },
+          data: {
+            stakeBps: s.stakeBps,
+            stakeUpdatedAt: now,
+            stakeUpdatedByUserId: proposal.initiatorUserId,
+          },
+        });
+        // The edge row is reused rather than versioned, so history lives here.
+        await prisma.ownershipStakeChange.create({
+          data: {
+            parentOrgId: s.parentOrgId,
+            childOrgId,
+            fromStakeBps: from,
+            toStakeBps: s.stakeBps,
+            reason: 'PROPOSAL',
+            proposalId: proposal.id,
+            changedByUserId: proposal.initiatorUserId,
+          },
+        });
+      }
+      break;
+    }
+
+    case 'SET_GOVERNANCE_RULE': {
+      const rule = payload.rule;
+      if (!rule) throw new Error('SET_GOVERNANCE_RULE requires payload.rule');
+
+      const candidate = toPolicyConfig({
+        votingMode: rule.votingMode,
+        rejectMode: rule.rejectMode,
+        tallyBasis: rule.tallyBasis,
+        approveNum: rule.approveNum,
+        approveDen: rule.approveDen,
+        approveInclusive: rule.approveInclusive,
+        vetoNum: rule.vetoNum ?? null,
+        vetoDen: rule.vetoDen ?? null,
+        vetoInclusive: rule.vetoInclusive ?? true,
+        quorumNum: rule.quorumNum ?? 0,
+        quorumDen: rule.quorumDen ?? 1,
+        tieBreakEnabled: rule.tieBreakEnabled ?? false,
+        dealMakerMinStakeBps: rule.dealMakerMinStakeBps ?? 0,
+        ttlDays: rule.ttlDays ?? 7,
+        quorumPercent: null,
+      });
+
+      // Refuse to install a rule that cannot resolve. Validating here as well as
+      // at the API boundary matters because a proposal may sit for days, and the
+      // guards can tighten between proposing and executing.
+      const validation = validatePolicy(candidate);
+      if (!validation.ok) {
+        throw new Error(`Invalid governance rule: ${validation.message}`);
+      }
+
+      const columns = {
+        votingMode: rule.votingMode,
+        rejectMode: rule.rejectMode,
+        tallyBasis: rule.tallyBasis,
+        approveNum: rule.approveNum,
+        approveDen: rule.approveDen,
+        approveInclusive: rule.approveInclusive,
+        vetoNum: rule.vetoNum ?? null,
+        vetoDen: rule.vetoDen ?? null,
+        vetoInclusive: rule.vetoInclusive ?? true,
+        quorumNum: rule.quorumNum ?? 0,
+        quorumDen: rule.quorumDen ?? 1,
+        tieBreakEnabled: rule.tieBreakEnabled ?? false,
+        dealMakerMinStakeBps: rule.dealMakerMinStakeBps ?? 0,
+        ttlDays: rule.ttlDays ?? 7,
+        isActive: true,
+        setByProposalId: proposal.id,
+      };
+
+      // Not an upsert: Prisma types the compound-unique selector's actionType as
+      // non-nullable, so the org-wide default row (actionType NULL) cannot be
+      // addressed that way. Uniqueness is still enforced by the partial index
+      // created alongside the table.
+      const existing = await prisma.orgGovernanceRule.findFirst({
+        where: { childOrgId, actionType: rule.actionType ?? null },
+      });
+
+      if (existing) {
+        await prisma.orgGovernanceRule.update({ where: { id: existing.id }, data: columns });
+      } else {
+        await prisma.orgGovernanceRule.create({
+          data: { childOrgId, actionType: rule.actionType ?? null, ...columns },
+        });
+      }
       break;
     }
 

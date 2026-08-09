@@ -26,6 +26,8 @@ const PROPOSABLE_ACTIONS: GovernanceActionType[] = [
   'ADD_CHILD',
   'SET_CHILD_POLICY',
   'REMOVE_CHILD_POLICY',
+  'SET_OWNERSHIP_STAKES',
+  'SET_GOVERNANCE_RULE',
 ];
 
 // Typed as Prisma.GovernanceProposalInclude so a field that does not exist on

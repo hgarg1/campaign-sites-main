@@ -57,6 +57,12 @@ const ACTION_LABELS: Record<string, string> = {
   ADD_PARENT: 'Add Parent',
   REMOVE_PARENT: 'Remove Parent',
   ADD_CHILD: 'Add Child Org',
+  // These four are implemented in the engine but had no entry here, so the
+  // dropdown (built from these keys) could never offer them.
+  SET_CHILD_POLICY: 'Restrict Child Org',
+  REMOVE_CHILD_POLICY: 'Remove Child Restriction',
+  SET_OWNERSHIP_STAKES: 'Reallocate Voting Stakes',
+  SET_GOVERNANCE_RULE: 'Change Governance Rule',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -393,45 +399,91 @@ function NewProposalSlideOver({
       .finally(() => setChildOrgsLoading(false));
   }, [orgId]);
 
-  function buildPayload(): Record<string, unknown> {
+  /**
+   * Builds the action payload, or reports why it could not be built.
+   *
+   * Malformed JSON used to fall through to an empty payload, so a typo
+   * silently produced a proposal that would do nothing once approved. A
+   * governance action is not something to fail quietly.
+   */
+  function buildPayload(): { payload: Record<string, unknown> } | { error: string } {
+    const parseJson = (raw: string, field: string): { value: unknown } | { error: string } => {
+      try {
+        return { value: JSON.parse(raw) };
+      } catch (e) {
+        return { error: `${field} is not valid JSON: ${(e as Error).message}` };
+      }
+    };
+
     if (['SUSPEND', 'REACTIVATE', 'DEACTIVATE'].includes(actionType)) {
-      return {};
+      return { payload: {} };
     }
     if (['UPDATE_SETTINGS', 'UPDATE_BRANDING'].includes(actionType)) {
-      try {
-        return { settings: JSON.parse(payloadJson) };
-      } catch {
-        return {};
-      }
+      const parsed = parseJson(payloadJson, 'Settings');
+      return 'error' in parsed ? parsed : { payload: { settings: parsed.value } };
     }
     if (actionType === 'UPDATE_RBAC') {
-      return { memberId, newRole };
+      return { payload: { memberId, newRole } };
     }
     if (actionType === 'ADD_PARENT' || actionType === 'REMOVE_PARENT') {
-      return { parentOrgId };
+      return { payload: { parentOrgId } };
     }
     if (actionType === 'ADD_CHILD') {
-      return { childOrgId: childPayloadOrgId };
+      return { payload: { childOrgId: childPayloadOrgId } };
     }
     if (actionType === 'UPDATE_INTEGRATIONS') {
-      try {
-        return { integrationId, integrationConfig: JSON.parse(integrationConfigJson) };
-      } catch {
-        return {};
-      }
+      const parsed = parseJson(integrationConfigJson, 'Integration config');
+      return 'error' in parsed
+        ? parsed
+        : { payload: { integrationId, integrationConfig: parsed.value } };
     }
-    return {};
+    if (actionType === 'SET_CHILD_POLICY') {
+      const parsed = parseJson(payloadJson, 'Policy rules');
+      if ('error' in parsed) return parsed;
+      if (!Array.isArray(parsed.value)) return { error: 'Policy rules must be an array' };
+      return { payload: { childOrgId, rules: parsed.value, note: description } };
+    }
+    if (actionType === 'REMOVE_CHILD_POLICY') {
+      return { payload: { childOrgId } };
+    }
+    if (actionType === 'SET_OWNERSHIP_STAKES') {
+      const parsed = parseJson(payloadJson, 'Stake allocation');
+      if ('error' in parsed) return parsed;
+      if (!Array.isArray(parsed.value)) {
+        return { error: 'Stake allocation must be an array of { parentOrgId, stakeBps }' };
+      }
+      const stakes = parsed.value as Array<{ stakeBps?: number }>;
+      const total = stakes.reduce((sum, s) => sum + (Number(s.stakeBps) || 0), 0);
+      if (total !== 10000) {
+        return {
+          error: `Stakes must total 10000 basis points (100%), got ${total} — currently ${(total / 100).toFixed(2)}%`,
+        };
+      }
+      return { payload: { stakes: parsed.value } };
+    }
+    if (actionType === 'SET_GOVERNANCE_RULE') {
+      const parsed = parseJson(payloadJson, 'Governance rule');
+      return 'error' in parsed ? parsed : { payload: { rule: parsed.value } };
+    }
+    return { payload: {} };
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    const built = buildPayload();
+    if ('error' in built) {
+      setError(built.error);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch(`/api/tenant/${orgId}/governance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ childOrgId, actionType, payload: buildPayload(), description }),
+        body: JSON.stringify({ childOrgId, actionType, payload: built.payload, description }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -450,7 +502,73 @@ function NewProposalSlideOver({
   }
 
   function renderPayloadFields() {
-    if (['SUSPEND', 'REACTIVATE', 'DEACTIVATE'].includes(actionType)) return null;
+    if (['SUSPEND', 'REACTIVATE', 'DEACTIVATE', 'REMOVE_CHILD_POLICY'].includes(actionType))
+      return null;
+
+    if (actionType === 'SET_OWNERSHIP_STAKES')
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Stake allocation (basis points, must total 10000)
+          </label>
+          <textarea
+            className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
+            rows={5}
+            placeholder={
+              '[\n  { "parentOrgId": "org_a", "stakeBps": 6000 },\n  { "parentOrgId": "org_b", "stakeBps": 4000 }\n]'
+            }
+            value={payloadJson}
+            onChange={(e) => setPayloadJson(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            List every current co-owner. 10000 basis points = 100%, so 6000 is 60%. This normally
+            requires unanimous approval, since it changes how much every owner&apos;s vote counts.
+          </p>
+        </div>
+      );
+
+    if (actionType === 'SET_GOVERNANCE_RULE')
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Governance rule</label>
+          <textarea
+            className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
+            rows={6}
+            placeholder={
+              '{\n  "actionType": "SUSPEND",\n  "votingMode": "WEIGHTED",\n  "tallyBasis": "STAKE_WEIGHTED",\n  "rejectMode": "DERIVED",\n  "approveNum": 2,\n  "approveDen": 3,\n  "approveInclusive": true\n}'
+            }
+            value={payloadJson}
+            onChange={(e) => setPayloadJson(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Thresholds are fractions, not percentages — two thirds is 2/3, which no percentage
+            encodes correctly for every number of owners. Omit actionType to set this org&apos;s
+            default for all actions.
+          </p>
+        </div>
+      );
+
+    if (actionType === 'SET_CHILD_POLICY')
+      return (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Policy rules to impose on the child
+          </label>
+          <textarea
+            className="w-full border rounded-lg px-3 py-2 text-sm font-mono"
+            rows={5}
+            placeholder={
+              '[\n  { "resource": "websites", "actions": ["delete"], "allow": false }\n]'
+            }
+            value={payloadJson}
+            onChange={(e) => setPayloadJson(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            The description above is stored as the reason and shown to the child organization.
+          </p>
+        </div>
+      );
+
     if (['UPDATE_SETTINGS', 'UPDATE_BRANDING'].includes(actionType))
       return (
         <div>
