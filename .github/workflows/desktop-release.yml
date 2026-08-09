@@ -1,17 +1,59 @@
 name: Desktop App Release
 
+# Release-only. This never runs on a branch push — not on main, not on any
+# other branch — because `on.push.tags` without `on.push.branches` matches tag
+# refs exclusively. Publishing three signed installers and a GitHub Release is
+# deliberate work, so it takes a version tag or an explicit manual dispatch.
 on:
   push:
     tags:
       - 'v*.*.*'          # stable: v1.0.0
       - 'v*.*.*-canary.*' # canary: v1.0.0-canary.1
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or SHA to build (must already exist)'
+        required: true
+
+# One release at a time. Two tags pushed in quick succession would otherwise
+# race three-OS matrix builds against the same GitHub Release.
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
+  guard:
+    name: Verify tag is on main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A tag pushed from a feature branch would otherwise publish a public
+      # release from unmerged code. Fail loudly rather than skip silently, so a
+      # blocked release is visible instead of looking like nothing happened.
+      - name: Reject tags not reachable from main
+        if: github.event_name == 'push'
+        run: |
+          # checkout@v4 resolves the tag ref; main is not guaranteed to be
+          # present as a remote-tracking branch, and a missing ref here would
+          # block every release rather than just unmerged ones.
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "${{ github.sha }}" origin/main; then
+            echo "::error::Tag ${{ github.ref_name }} points at a commit that is not on main."
+            echo "Merge to main first, then re-tag. Refusing to publish a release from unmerged code."
+            exit 1
+          fi
+          echo "Tag ${{ github.ref_name }} is reachable from main."
+
   build:
     name: Build (${{ matrix.os }})
+    needs: guard
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -32,6 +74,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Manual dispatch builds the ref the operator named; tag pushes
+          # build the tag that triggered the run.
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -111,6 +156,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Manual dispatch builds the ref the operator named; tag pushes
+          # build the tag that triggered the run.
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -120,7 +168,7 @@ jobs:
       - name: Determine release type
         id: release_type
         run: |
-          TAG="${{ github.ref_name }}"
+          TAG="${{ inputs.ref || github.ref_name }}"
           if [[ "$TAG" == *"-canary"* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
             echo "name=Canary $TAG" >> "$GITHUB_OUTPUT"
@@ -132,9 +180,9 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "${{ github.ref_name }}" | head -1)
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "${{ inputs.ref || github.ref_name }}" | head -1)
           if [ -n "$PREV_TAG" ]; then
-            NOTES=$(git log --oneline "$PREV_TAG".."${{ github.ref_name }}" --no-merges | head -40)
+            NOTES=$(git log --oneline "$PREV_TAG".."${{ inputs.ref || github.ref_name }}" --no-merges | head -40)
           else
             NOTES=$(git log --oneline -20 --no-merges)
           fi
@@ -157,6 +205,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          # On a manual dispatch github.ref is a branch, which would create a
+          # release against the branch name instead of the version tag.
+          tag_name: ${{ inputs.ref || github.ref_name }}
           name: ${{ steps.release_type.outputs.name }}
           body: ${{ steps.release_notes.outputs.notes }}
           prerelease: ${{ steps.release_type.outputs.prerelease }}
