@@ -69,7 +69,8 @@ function HierarchyTab({ orgId }: { orgId: string }) {
 
   const fetchHierarchy = useCallback(() => {
     setHierarchyLoading(true);
-    globalThis.fetch(`/api/admin/organizations/${orgId}/hierarchy`)
+    globalThis
+      .fetch(`/api/admin/organizations/${orgId}/hierarchy`)
       .then((r) => r.json())
       .then((d: HierarchyData) => setHierarchyData(d))
       .catch(() => setHierarchyError('Failed to load hierarchy data'))
@@ -85,7 +86,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
     try {
       await globalThis.fetch(`/api/admin/organizations/${orgId}/suspend`, { method: 'POST' });
       setShowSuspendModal(false);
-      
+
       // Log the action
       await logSystemAdminAction({
         action: 'ORGANIZATION_SUSPENDED',
@@ -96,7 +97,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
         justification,
         status: 'success',
       });
-      
+
       fetchHierarchy();
     } catch (error) {
       // Log the failure
@@ -120,7 +121,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
     try {
       await globalThis.fetch(`/api/admin/organizations/${orgId}/deactivate`, { method: 'POST' });
       setShowDeactivateModal(false);
-      
+
       // Log the action
       await logSystemAdminAction({
         action: 'ORGANIZATION_DEACTIVATED',
@@ -131,7 +132,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
         justification,
         status: 'success',
       });
-      
+
       fetchHierarchy();
     } catch (error) {
       // Log the failure
@@ -154,7 +155,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
     setActionLoading(true);
     try {
       await globalThis.fetch(`/api/admin/organizations/${orgId}/reactivate`, { method: 'POST' });
-      
+
       // Log the action
       await logSystemAdminAction({
         action: 'ORGANIZATION_REACTIVATED',
@@ -165,7 +166,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
         justification,
         status: 'success',
       });
-      
+
       fetchHierarchy();
     } catch (error) {
       // Log the failure
@@ -213,12 +214,15 @@ function HierarchyTab({ orgId }: { orgId: string }) {
       {/* Ancestor breadcrumb */}
       {ancestors.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">Ancestor Path</p>
+          <p className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">
+            Ancestor Path
+          </p>
           <div className="flex items-center gap-1 text-sm flex-wrap">
             {ancestors.map((a, i) => (
               <span key={a.id} className="flex items-center gap-1">
                 {i > 0 && <span className="text-gray-300">→</span>}
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => router.push(`/admin/portal/organizations/${a.id}`)}
                   className="text-blue-600 hover:underline font-medium"
                 >
@@ -247,7 +251,8 @@ function HierarchyTab({ orgId }: { orgId: string }) {
           <div>
             <span className="text-gray-500 block mb-1">Parent Organization</span>
             {parent ? (
-              <button type="button"
+              <button
+                type="button"
                 onClick={() => router.push(`/admin/portal/organizations/${parent.id}`)}
                 className="font-medium text-blue-600 hover:underline"
               >
@@ -263,13 +268,17 @@ function HierarchyTab({ orgId }: { orgId: string }) {
           </div>
           <div>
             <span className="text-gray-500 block mb-1">Own Status</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[org.ownStatus]}`}>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[org.ownStatus]}`}
+            >
               {org.ownStatus}
             </span>
           </div>
           <div>
             <span className="text-gray-500 block mb-1">Effective Status</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[org.effectiveStatus]}`}>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[org.effectiveStatus]}`}
+            >
               {org.effectiveStatus}
             </span>
             {org.effectiveStatus !== org.ownStatus && (
@@ -278,13 +287,33 @@ function HierarchyTab({ orgId }: { orgId: string }) {
           </div>
           <div>
             <span className="text-gray-500 block mb-1">Can Create Children</span>
-            <span className="font-medium text-gray-900">{org.canCreateChildren ? 'Yes' : 'No'}</span>
-            <a href={`/admin/portal/hierarchy/${orgId}`} className="ml-2 text-xs text-blue-600 hover:underline">Edit in Hierarchy Manager</a>
+            <span className="font-medium text-gray-900">
+              {org.canCreateChildren ? 'Yes' : 'No'}
+            </span>
+            <a
+              href={`/admin/portal/hierarchy/${orgId}`}
+              className="ml-2 text-xs text-blue-600 hover:underline"
+            >
+              Edit in Hierarchy Manager
+            </a>
+            <a
+              href={`/admin/portal/organizations/${orgId}/authority`}
+              className="ml-2 text-xs text-blue-600 hover:underline"
+            >
+              Who can act on this org
+            </a>
           </div>
           <div>
             <span className="text-gray-500 block mb-1">Max Child Depth</span>
-            <span className="font-medium text-gray-900">{org.maxChildDepth != null ? org.maxChildDepth : 'Unlimited'}</span>
-            <a href={`/admin/portal/hierarchy/${orgId}`} className="ml-2 text-xs text-blue-600 hover:underline">Edit in Hierarchy Manager</a>
+            <span className="font-medium text-gray-900">
+              {org.maxChildDepth != null ? org.maxChildDepth : 'Unlimited'}
+            </span>
+            <a
+              href={`/admin/portal/hierarchy/${orgId}`}
+              className="ml-2 text-xs text-blue-600 hover:underline"
+            >
+              Edit in Hierarchy Manager
+            </a>
           </div>
         </div>
       </div>
@@ -293,13 +322,23 @@ function HierarchyTab({ orgId }: { orgId: string }) {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-1">Status Control</h3>
         {descendantCount > 0 && (
-          <p className="text-xs text-gray-500 mb-4">Changes cascade to {descendantCount} descendant organization{descendantCount !== 1 ? 's' : ''}.</p>
+          <p className="text-xs text-gray-500 mb-4">
+            Changes cascade to {descendantCount} descendant organization
+            {descendantCount !== 1 ? 's' : ''}.
+          </p>
         )}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="text-sm text-gray-600">
-            Current: <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[org.ownStatus]}`}>{org.ownStatus}</span>
+            Current:{' '}
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[org.ownStatus]}`}
+            >
+              {org.ownStatus}
+            </span>
             {org.effectiveStatus !== org.ownStatus && (
-              <span className="ml-2 text-xs text-orange-600">(effectively {org.effectiveStatus} via ancestor)</span>
+              <span className="ml-2 text-xs text-orange-600">
+                (effectively {org.effectiveStatus} via ancestor)
+              </span>
             )}
           </div>
           {(org.ownStatus === 'ACTIVE' || org.ownStatus === 'SUSPENDED') && (
@@ -337,11 +376,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Hierarchy</h3>
         <div style={{ height: '500px', width: '100%' }}>
-          <HierarchyGraph 
-            org={org}
-            editable={false}
-            onHierarchyChange={() => {}}
-          />
+          <HierarchyGraph org={org} editable={false} onHierarchyChange={() => {}} />
         </div>
       </div>
 
@@ -349,13 +384,11 @@ function HierarchyTab({ orgId }: { orgId: string }) {
       <ConfirmationModal
         isOpen={showSuspendModal}
         title="Suspend Organization"
-        message={
-          `This will suspend ${org.name}${
-            descendantCount > 0 
-              ? ` and cascade to ${descendantCount} descendant organization${descendantCount !== 1 ? 's' : ''} (skipping any already suspended)` 
-              : ''
-          }. Suspension is reversible.`
-        }
+        message={`This will suspend ${org.name}${
+          descendantCount > 0
+            ? ` and cascade to ${descendantCount} descendant organization${descendantCount !== 1 ? 's' : ''} (skipping any already suspended)`
+            : ''
+        }. Suspension is reversible.`}
         confirmText="Suspend"
         cancelText="Cancel"
         isDangerous={true}
@@ -370,13 +403,11 @@ function HierarchyTab({ orgId }: { orgId: string }) {
       <ConfirmationModal
         isOpen={showDeactivateModal}
         title="Deactivate Organization"
-        message={
-          `This will deactivate ${org.name}${
-            descendantCount > 0 
-              ? ` and all ${descendantCount} descendant organization${descendantCount !== 1 ? 's' : ''}`
-              : ''
-          }. Deactivated organizations lose access to their tenant portals.`
-        }
+        message={`This will deactivate ${org.name}${
+          descendantCount > 0
+            ? ` and all ${descendantCount} descendant organization${descendantCount !== 1 ? 's' : ''}`
+            : ''
+        }. Deactivated organizations lose access to their tenant portals.`}
         confirmText="Deactivate"
         cancelText="Cancel"
         isDangerous={true}
@@ -391,13 +422,11 @@ function HierarchyTab({ orgId }: { orgId: string }) {
       <ConfirmationModal
         isOpen={showReactivateModal}
         title="Reactivate Organization"
-        message={
-          `This will reactivate ${org.name} and restore access to all users.${
-            org.ownStatus === 'DEACTIVATED' 
-              ? ' Note: This is a significant action for deactivated organizations.'
-              : ''
-          }`
-        }
+        message={`This will reactivate ${org.name} and restore access to all users.${
+          org.ownStatus === 'DEACTIVATED'
+            ? ' Note: This is a significant action for deactivated organizations.'
+            : ''
+        }`}
         confirmText="Reactivate"
         cancelText="Cancel"
         isDangerous={false}
@@ -432,7 +461,10 @@ interface InheritedPolicy {
 function PoliciesTab({ orgId }: { orgId: string }) {
   const [assignments, setAssignments] = useState<Policy[]>([]);
   const [availablePolicies, setAvailablePolicies] = useState<Policy[]>([]);
-  const [effectivePolicy, setEffectivePolicy] = useState<{ source: string; rules: { resource: string; actions: string[]; allow: boolean }[] } | null>(null);
+  const [effectivePolicy, setEffectivePolicy] = useState<{
+    source: string;
+    rules: { resource: string; actions: string[]; allow: boolean }[];
+  } | null>(null);
   const [inheritedPolicies, setInheritedPolicies] = useState<InheritedPolicy[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPolicyId, setSelectedPolicyId] = useState('');
@@ -466,10 +498,14 @@ function PoliciesTab({ orgId }: { orgId: string }) {
     }
   }, [orgId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const assignedIds = new Set(assignments.map((p) => p.id));
-  const unassignedPolicies = availablePolicies.filter((p) => !assignedIds.has(p.id) && !p.isDefault);
+  const unassignedPolicies = availablePolicies.filter(
+    (p) => !assignedIds.has(p.id) && !p.isDefault
+  );
 
   async function assign() {
     if (!selectedPolicyId) return;
@@ -496,7 +532,9 @@ function PoliciesTab({ orgId }: { orgId: string }) {
   async function unassign(policyId: string) {
     setRemoving(policyId);
     try {
-      await globalThis.fetch(`/api/admin/organizations/${orgId}/policies/${policyId}`, { method: 'DELETE' });
+      await globalThis.fetch(`/api/admin/organizations/${orgId}/policies/${policyId}`, {
+        method: 'DELETE',
+      });
       load();
     } finally {
       setRemoving(null);
@@ -514,7 +552,9 @@ function PoliciesTab({ orgId }: { orgId: string }) {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{error}</div>
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">
+          {error}
+        </div>
       )}
 
       {/* Assigned Policies */}
@@ -522,20 +562,28 @@ function PoliciesTab({ orgId }: { orgId: string }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Applied Policies</h3>
-            <p className="text-sm text-gray-500 mt-1">Policies directly assigned to this organization.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Policies directly assigned to this organization.
+            </p>
           </div>
         </div>
         {assignments.length === 0 ? (
-          <p className="text-sm text-gray-500">No policies explicitly assigned. Org inherits any default policy.</p>
+          <p className="text-sm text-gray-500">
+            No policies explicitly assigned. Org inherits any default policy.
+          </p>
         ) : (
           <div className="space-y-2">
             {assignments.map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+              <div
+                key={p.id}
+                className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-3"
+              >
                 <div>
                   <span className="font-medium text-gray-900 text-sm">{p.name}</span>
                   {p.description && <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>}
                 </div>
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => unassign(p.id)}
                   disabled={removing === p.id}
                   className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
@@ -557,10 +605,13 @@ function PoliciesTab({ orgId }: { orgId: string }) {
             >
               <option value="">Select policy to assign…</option>
               {unassignedPolicies.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
-            <button type="button"
+            <button
+              type="button"
               onClick={assign}
               disabled={!selectedPolicyId || assigning}
               className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
@@ -575,14 +626,18 @@ function PoliciesTab({ orgId }: { orgId: string }) {
       {inheritedPolicies.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">Parent-Set Restrictions</h3>
-          <p className="text-sm text-gray-500 mb-4">Policies imposed on this org by its parent organizations.</p>
+          <p className="text-sm text-gray-500 mb-4">
+            Policies imposed on this org by its parent organizations.
+          </p>
           <div className="space-y-4">
             {inheritedPolicies.map((ip) => (
               <div key={ip.id} className="border border-amber-200 bg-amber-50 rounded-lg p-4">
                 <p className="text-sm font-medium text-amber-900 mb-1">
                   From: <span className="font-bold">{ip.parentOrg?.name ?? ip.parentOrgId}</span>
                 </p>
-                {ip.note && <p className="text-xs text-amber-700 italic mb-2">&quot;{ip.note}&quot;</p>}
+                {ip.note && (
+                  <p className="text-xs text-amber-700 italic mb-2">&quot;{ip.note}&quot;</p>
+                )}
                 {ip.rules.length > 0 ? (
                   <table className="w-full text-xs">
                     <thead>
@@ -596,9 +651,13 @@ function PoliciesTab({ orgId }: { orgId: string }) {
                       {ip.rules.map((rule, i) => (
                         <tr key={i} className="border-b border-amber-100 last:border-0">
                           <td className="py-1 px-2 font-mono text-gray-900">{rule.resource}</td>
-                          <td className="py-1 px-2 font-mono text-gray-600">{rule.actions.join(', ')}</td>
+                          <td className="py-1 px-2 font-mono text-gray-600">
+                            {rule.actions.join(', ')}
+                          </td>
                           <td className="py-1 px-2">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${rule.allow ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${rule.allow ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                            >
                               {rule.allow ? 'Allow' : 'Deny'}
                             </span>
                           </td>
@@ -638,9 +697,13 @@ function PoliciesTab({ orgId }: { orgId: string }) {
                   {effectivePolicy.rules.map((rule, i) => (
                     <tr key={i} className="border-b border-gray-100">
                       <td className="py-2 px-3 font-mono text-gray-900">{rule.resource}</td>
-                      <td className="py-2 px-3 font-mono text-gray-600">{rule.actions.join(', ')}</td>
+                      <td className="py-2 px-3 font-mono text-gray-600">
+                        {rule.actions.join(', ')}
+                      </td>
                       <td className="py-2 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${rule.allow ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${rule.allow ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                        >
                           {rule.allow ? 'Allow' : 'Deny'}
                         </span>
                       </td>
@@ -651,7 +714,10 @@ function PoliciesTab({ orgId }: { orgId: string }) {
             </div>
           )}
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <a href="/admin/portal/policies" className="text-sm text-blue-600 hover:underline font-medium">
+            <a
+              href="/admin/portal/policies"
+              className="text-sm text-blue-600 hover:underline font-medium"
+            >
               Manage system policies →
             </a>
           </div>
@@ -672,7 +738,12 @@ export default function OrganizationDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   const { data: organization, loading, updateOrganization } = useOrganization(organizationId);
-  const { data: members, loading: membersLoading, updateMemberRole, removeMember } = useOrganizationMembers(organizationId);
+  const {
+    data: members,
+    loading: membersLoading,
+    updateMemberRole,
+    removeMember,
+  } = useOrganizationMembers(organizationId);
   const { data: websites, loading: websitesLoading } = useOrganizationWebsites(organizationId);
   const { data: usage, loading: usageLoading } = useOrganizationUsage(organizationId);
 
@@ -691,7 +762,8 @@ export default function OrganizationDetailPage() {
       <AdminLayout title="Not Found" subtitle="">
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <p className="text-gray-600">Organization not found</p>
-          <button type="button"
+          <button
+            type="button"
             onClick={() => router.push('/admin/portal/organizations')}
             className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
           >
@@ -709,12 +781,10 @@ export default function OrganizationDetailPage() {
   ];
 
   return (
-    <AdminLayout
-      title={organization.name}
-      subtitle={`Organization Details - ${organization.slug}`}
-    >
+    <AdminLayout title={organization.name} subtitle={`Organization Details - ${organization.slug}`}>
       {/* Back Button */}
-      <button type="button"
+      <button
+        type="button"
         onClick={() => router.push('/admin/portal/organizations')}
         className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2"
       >
@@ -724,7 +794,8 @@ export default function OrganizationDetailPage() {
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
         {TABS.map((tab) => (
-          <button type="button"
+          <button
+            type="button"
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
@@ -755,36 +826,23 @@ export default function OrganizationDetailPage() {
             />
 
             {/* Websites */}
-            <OrganizationWebsitesSection
-              websites={websites}
-              loading={websitesLoading}
-            />
+            <OrganizationWebsitesSection websites={websites} loading={websitesLoading} />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Settings */}
-            <OrganizationSettings
-              organization={organization}
-              onUpdate={updateOrganization}
-            />
+            <OrganizationSettings organization={organization} onUpdate={updateOrganization} />
 
             {/* Usage */}
-            <OrganizationUsageCard
-              usage={usage}
-              loading={usageLoading}
-            />
+            <OrganizationUsageCard usage={usage} loading={usageLoading} />
           </div>
         </div>
       )}
 
-      {activeTab === 'hierarchy' && (
-        <HierarchyTab orgId={organizationId} />
-      )}
+      {activeTab === 'hierarchy' && <HierarchyTab orgId={organizationId} />}
 
-      {activeTab === 'policies' && (
-        <PoliciesTab orgId={organizationId} />
-      )}
+      {activeTab === 'policies' && <PoliciesTab orgId={organizationId} />}
     </AdminLayout>
   );
 }
