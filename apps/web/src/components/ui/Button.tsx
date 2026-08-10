@@ -28,8 +28,17 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'typ
   children: ReactNode;
 }
 
+/*
+ * `primary` follows the tenant's colour, everything else does not.
+ *
+ * A themed portal that renders platform blue on its main action reads as a
+ * half-finished white-label. `danger` deliberately stays red — a destructive
+ * action must not be recoloured into a party's own palette, where a Republican
+ * tenant's "Delete" would be indistinguishable from its "Save".
+ */
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300',
+  primary:
+    'bg-brand text-brand-fg hover:bg-brand-hover disabled:opacity-50 disabled:hover:bg-brand',
   secondary: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
   danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300',
   ghost: 'text-gray-600 hover:bg-gray-100',
@@ -56,7 +65,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-fast ease-enter disabled:cursor-not-allowed disabled:opacity-60 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
     >
       {loading && (
         <span

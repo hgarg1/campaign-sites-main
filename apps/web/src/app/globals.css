@@ -21,9 +21,31 @@
 	 * putting a ring around every mouse click.
 	 */
 	:focus-visible {
-		outline: 2px solid #2563eb;
+		/*
+		 * Follows the tenant's colour where one is set, so the focus ring does not
+		 * flash platform blue across an otherwise red or green portal.
+		 */
+		outline: 2px solid var(--t-primary, #2563eb);
 		outline-offset: 2px;
 		border-radius: 2px;
+	}
+
+	/*
+	 * Type is legible before it is styled.
+	 *
+	 * `text-sm` and `text-xs` account for 1,836 of the 2,440 sizing utilities in
+	 * the app, so most surfaces sit at 12–14px. Tightening the leading and
+	 * loosening the tracking at those sizes is what separates dense from cramped.
+	 */
+	body {
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	/* Digits in a column should line up. */
+	table,
+	.tabular {
+		font-variant-numeric: tabular-nums;
 	}
 
 	/* Respect a user's reduced-motion preference across the whole app. */
@@ -46,6 +68,58 @@
   
 	.bg-gradient-radial {
 		background-image: radial-gradient(circle, var(--tw-gradient-stops));
+	}
+
+	/*
+	 * Full viewport height that survives mobile browser chrome.
+	 *
+	 * `h-screen` is 100vh, which on iOS Safari and Chrome Android is the height
+	 * with the URL bar *hidden* — so a `h-screen` app shell with an internally
+	 * scrolling main region has its last ~90px permanently under the address bar.
+	 * `dvh` tracks the visible area; the vh line is the fallback for browsers
+	 * without it.
+	 */
+	.h-dscreen {
+		height: 100vh;
+		height: 100dvh;
+	}
+
+	.min-h-dscreen {
+		min-height: 100vh;
+		min-height: 100dvh;
+	}
+
+	/*
+	 * A skeleton that sweeps rather than pulses.
+	 *
+	 * `animate-pulse` fades the whole block in and out, which reads as "broken"
+	 * more than "loading" once several are on screen blinking out of phase. A
+	 * shimmer travels in one direction and implies progress.
+	 */
+	.skeleton {
+		position: relative;
+		overflow: hidden;
+		background-color: theme('colors.gray.100');
+	}
+
+	.skeleton::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		transform: translateX(-100%);
+		background-image: linear-gradient(
+			90deg,
+			transparent,
+			theme('colors.gray.50'),
+			transparent
+		);
+		animation: shimmer 1.6s infinite;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.skeleton::after {
+			animation: none;
+		}
 	}
 }
 

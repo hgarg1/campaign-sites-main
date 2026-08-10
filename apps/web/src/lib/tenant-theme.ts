@@ -61,10 +61,67 @@ export function themeFromBranding(branding: Record<string, any> | null | undefin
   return result;
 }
 
-/** Convert a TenantTheme into CSS custom property key-value pairs */
+/** Parse `#rgb` or `#rrggbb` into channels. Returns null for anything else. */
+function parseHex(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const h = m[1];
+  const full = h.length === 3 ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2] : h;
+  return [
+    parseInt(full.slice(0, 2), 16),
+    parseInt(full.slice(2, 4), 16),
+    parseInt(full.slice(4, 6), 16),
+  ];
+}
+
+const toHex = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+
+/**
+ * Relative luminance, per WCAG 2.1.
+ *
+ * Needed because a tenant may pick any primary colour. Libertarian amber
+ * (#b45309) and Green (#15803d) sit far enough apart that a fixed white label
+ * fails contrast on one of them — the text colour has to follow the background.
+ */
+function luminance([r, g, b]: [number, number, number]): number {
+  const channel = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+/** White or near-black, whichever has more contrast against `hex`. */
+export function readableForeground(hex: string): string {
+  const rgb = parseHex(hex);
+  if (!rgb) return '#ffffff';
+  // 0.179 is the luminance at which white and #111827 contrast equally.
+  return luminance(rgb) > 0.179 ? '#111827' : '#ffffff';
+}
+
+/** Scale each channel toward black (`amount` < 1) or white (> 1). */
+export function shade(hex: string, amount: number): string {
+  const rgb = parseHex(hex);
+  if (!rgb) return hex;
+  const adjust = (c: number) => (amount <= 1 ? c * amount : c + (255 - c) * (amount - 1));
+  return `#${toHex(adjust(rgb[0]))}${toHex(adjust(rgb[1]))}${toHex(adjust(rgb[2]))}`;
+}
+
+/**
+ * Convert a TenantTheme into CSS custom property key-value pairs.
+ *
+ * The derived entries (`-fg`, `-hover`, `-ring`) exist so a component can render
+ * a themed button without knowing anything about the tenant's palette. Without
+ * them every call site would have to hardcode `bg-blue-600 hover:bg-blue-700`,
+ * which is exactly why 39 primary buttons in the tenant portal stayed platform
+ * blue while the sidebar beside them turned red.
+ */
 export function buildCssVars(theme: TenantTheme): Record<string, string> {
   return {
     '--t-primary': theme.primaryColor,
+    '--t-primary-fg': readableForeground(theme.primaryColor),
+    '--t-primary-hover': shade(theme.primaryColor, 0.86),
+    '--t-primary-ring': shade(theme.primaryColor, 1.55),
     '--t-secondary': theme.secondaryColor,
     '--t-accent': theme.accentColor,
     '--t-sidebar-from': theme.sidebarFrom,

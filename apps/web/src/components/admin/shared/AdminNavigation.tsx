@@ -111,7 +111,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 flex flex-col
-          lg:relative lg:sticky lg:top-0 lg:z-auto lg:h-screen
+          lg:relative lg:sticky lg:top-0 lg:z-auto lg:h-dscreen
           bg-gradient-to-b from-slate-900 to-slate-800 text-white border-r border-slate-700
           transition-all duration-300 ease-in-out
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}

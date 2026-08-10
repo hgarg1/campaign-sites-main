@@ -15,7 +15,10 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    // h-dscreen, not h-screen: this shell pins its height and scrolls `main`
+    // internally, so 100vh put the last ~90px of every admin page permanently
+    // underneath the mobile browser's address bar.
+    <div className="flex h-dscreen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <AdminNavigation isMobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

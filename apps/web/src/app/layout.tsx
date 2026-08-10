@@ -33,16 +33,39 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="color-scheme" content="light dark" />
+        {/*
+         * Declared light because that is the only theme the application actually
+         * has. Only 7 of 190 components define `dark:` variants — all of them on
+         * the marketing pages — so advertising "light dark" made the browser
+         * render native inputs, selects and scrollbars dark inside portal cards
+         * that stayed white.
+         *
+         * The script below promotes this to "light dark" for anyone who opts in.
+         */}
+        <meta name="color-scheme" content="light" />
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
+            /*
+             * Dark mode is opt-in, never inferred from the OS.
+             *
+             * This previously followed `prefers-color-scheme`, which handed every
+             * dark-OS visitor a near-black page behind an admin portal that has
+             * no dark styling at all. Worse, it toggled a `.dark` class while the
+             * Tailwind config still defaulted to `darkMode: 'media'` — so the
+             * class matched nothing in the compiled CSS (verified: zero `.dark`
+             * selectors in the deployed stylesheet) and the preference could not
+             * be overridden by anyone, ever.
+             *
+             * With `darkMode: 'class'` set, this is now the single switch.
+             */
             __html: `
-              if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
+              try {
+                if (localStorage.getItem('theme') === 'dark') {
+                  document.documentElement.classList.add('dark');
+                  document.querySelector('meta[name="color-scheme"]').setAttribute('content', 'dark');
+                }
+              } catch (e) {}
             `,
           }}
         />

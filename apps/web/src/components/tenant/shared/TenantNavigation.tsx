@@ -53,7 +53,7 @@ export function TenantNavigation({ orgId, onNavigate }: TenantNavigationProps) {
 
   return (
     <aside
-      className="sticky top-0 h-screen w-64 text-white border-r border-slate-700 flex flex-col overflow-hidden"
+      className="sticky top-0 h-dscreen w-64 text-white border-r border-slate-700 flex flex-col overflow-hidden"
       style={{
         background: 'linear-gradient(to bottom, var(--t-sidebar-from), var(--t-sidebar-to))',
       }}

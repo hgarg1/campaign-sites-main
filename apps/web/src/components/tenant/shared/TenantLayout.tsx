@@ -62,7 +62,8 @@ export function TenantLayout({ children, title, subtitle, orgId }: TenantLayoutP
     // Toasts are mounted here so tenant screens can report outcomes through the
     // same system the admin portal uses, instead of hand-rolled inline banners.
     <ToastProvider>
-      <div className="flex h-screen bg-gray-50">
+      {/* h-dscreen so mobile browser chrome does not clip the bottom of the shell. */}
+      <div className="flex h-dscreen bg-gray-50">
         {setupDone === false && isOwner && (
           <SetupModal orgId={orgId} onComplete={handleSetupComplete} />
         )}
