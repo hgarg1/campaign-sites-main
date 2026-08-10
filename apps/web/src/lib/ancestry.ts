@@ -169,6 +169,27 @@ export async function insertAncestry(
     update: {},
   });
 
+  /*
+   * And the parent's, which is the whole reason a root's subtree used to vanish.
+   *
+   * The rows below are built by composing "ancestors of parent" with
+   * "descendants of child". A root organization is created with no parent, so
+   * nothing ever called this function for it, so it had no self-link — and
+   * `parentAndAncestors` came back empty, making the cross product empty and
+   * this function a silent no-op. Every child of a root ended up with only its
+   * own self-link.
+   *
+   * That failure was invisible and total: `getDescendantIds(root)` returned
+   * nothing, so suspending a root cascaded to nobody; `getEffectiveStatus` saw
+   * no suspended ancestor; and `resolveNationalTenant` could not find the party
+   * committee, so tie-breaking never engaged.
+   */
+  await db.organizationAncestry.upsert({
+    where: { ancestorId_descendantId: { ancestorId: parentId, descendantId: parentId } },
+    create: { ancestorId: parentId, descendantId: parentId, depth: 0 },
+    update: {},
+  });
+
   // Ancestors of parent (including parent itself, depth 0)
   const parentAndAncestors = await db.organizationAncestry.findMany({
     where: { descendantId: parentId },

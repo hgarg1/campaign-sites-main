@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "clean": "rm -rf .next",
-    "test": "jest"
+    "test": "jest",
+    "sim": "tsx --tsconfig tsconfig.json src/sim/main.ts"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",

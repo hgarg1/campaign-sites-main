@@ -491,15 +491,38 @@ export async function createProposal(params: {
     // reason is recorded when that happens rather than blocking the proposal.
   }
 
-  // Legacy columns are still written so anything reading them keeps working.
-  const ruleSet = await prisma.governanceRuleSet.findFirst({
-    where: { actionType, isActive: true },
-  });
+  /*
+   * These come from the resolved policy, not from the platform rule set.
+   *
+   * They used to be read straight off `GovernanceRuleSet`, which quietly
+   * discarded two of the four fields a per-child rule exists to set. Because
+   * `evaluateOutcome` branches on both — `votingMode === 'UNANIMOUS'`
+   * short-circuits the threshold entirely, and `rejectMode` drives the whole
+   * rejection block — a per-child rule was largely inert:
+   *
+   *   * A child configured SUPERMAJORITY 2/3 was judged UNANIMOUS. Its 2/3
+   *     columns were written to the proposal and never consulted.
+   *   * A child configured MAJORITY_VETO was judged SINGLE_VETO, so the first
+   *     rejection ended it — and no tie could ever form, which made tie-breaking
+   *     unreachable no matter how it was configured.
+   *
+   * `resolvePolicy` already returns the right values; they were being thrown
+   * away one line later.
+   */
+  const votingMode: VotingMode = policy.votingMode;
+  const rejectMode: RejectMode = policy.rejectMode;
+  const ttlDays: number = policy.ttlDays ?? (await readConfig('proposalDefaultTtlDays', 7));
 
-  const votingMode: VotingMode = ruleSet?.votingMode ?? 'UNANIMOUS';
-  const quorumPercent: number = ruleSet?.quorumPercent ?? 51;
-  const rejectMode: RejectMode = ruleSet?.rejectMode ?? 'SINGLE_VETO';
-  const ttlDays: number = ruleSet?.ttlDays ?? (await readConfig('proposalDefaultTtlDays', 7));
+  /*
+   * `quorumPercent` is a legacy display column and must be null on new rows.
+   *
+   * `toPolicyConfig` translates a legacy percentage back into a threshold when
+   * it sees `approve == 1/1 && votingMode == QUORUM && quorumPercent != null`.
+   * Copying a percentage from the platform rule set onto a proposal governed by
+   * a per-child rule would re-fire that translation on read, and the child would
+   * silently inherit the platform's quorum.
+   */
+  const quorumPercent: number | null = null;
 
   const owners = await getActiveOwners(childOrgId);
   const requiredVoterCount = owners.length;
@@ -957,6 +980,14 @@ async function performAction(proposal: GovernanceProposal): Promise<void> {
           addedByUserId: payload.addedByUserId ?? proposal.initiatorUserId,
           removedAt: null,
           removedByUserId: null,
+          // Re-admission starts from nothing. The row is reused rather than
+          // versioned, so leaving the old stake in place would hand back voting
+          // power that was deliberately removed — and would do it without any
+          // SET_OWNERSHIP_STAKES proposal, which is the only thing allowed to
+          // change a stake.
+          stakeBps: 0,
+          stakeUpdatedAt: new Date(),
+          stakeUpdatedByUserId: payload.addedByUserId ?? proposal.initiatorUserId,
         },
         create: {
           parentOrgId: payload.parentOrgId,
