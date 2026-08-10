@@ -54,7 +54,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       className={[
-        'relative px-4 py-2 font-medium transition-all duration-200 rounded-lg group',
+        'relative px-4 py-2 font-medium transition-colors duration-200 rounded-lg group',
         isActive
           ? 'text-blue-600 bg-blue-50'
           : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50',
@@ -64,7 +64,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
       {isActive ? (
         <div className="absolute bottom-1 left-2 right-2 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
       ) : (
-        <div className="absolute bottom-1 left-2 right-2 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-100 scale-x-0 group-hover:scale-x-100 transition-all duration-300 origin-left"></div>
+        <div className="absolute bottom-1 left-2 right-2 h-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-100 scale-x-0 group-hover:scale-x-100 transition duration-300 origin-left"></div>
       )}
     </Link>
   );
@@ -76,7 +76,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
   const mobileMenuVariants = {
     closed: {
       opacity: 0,
-      y: -20,
+      y: -8,
       pointerEvents: 'none' as const,
     },
     open: {
@@ -87,12 +87,12 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
   };
 
   const mobileMenuItemVariants = {
-    closed: { opacity: 0, x: -20 },
+    closed: { opacity: 0, x: -8 },
     open: (i: number) => ({
       opacity: 1,
       x: 0,
       transition: {
-        delay: i * 0.1,
+        delay: Math.min(i, 6) * 0.04,
       },
     }),
   };
@@ -125,7 +125,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
             ))}
             <Link
               href="/get-started"
-              className="ml-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-110 active:scale-95 font-semibold"
+              className="ml-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition duration-200 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-110 active:scale-95 font-semibold"
             >
               Get Started
             </Link>
@@ -137,27 +137,30 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
             className="md:hidden relative z-10 p-2 rounded-lg hover:bg-gray-100 transition-colors"
             variants={hamburgerVariants}
             animate={mobileMenuOpen ? 'open' : 'closed'}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
           >
             <div className="w-6 h-5 flex flex-col justify-between relative">
               <motion.span
                 className="h-0.5 bg-gray-800 rounded-full"
                 animate={
-                  mobileMenuOpen ? { rotate: 45, y: 10 } : { rotate: 0, y: 0 }
+                  // 9px, not the 8px entrance offset: this is geometry, not a
+                  // gesture — the bars sit 9px apart in an h-5 stack and have to
+                  // meet exactly in the middle to form the X.
+                  mobileMenuOpen ? { rotate: 45, y: 9 } : { rotate: 0, y: 0 }
                 }
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               />
               <motion.span
                 className="h-0.5 bg-gray-800 rounded-full"
                 animate={mobileMenuOpen ? { opacity: 0 } : { opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               />
               <motion.span
                 className="h-0.5 bg-gray-800 rounded-full"
                 animate={
-                  mobileMenuOpen ? { rotate: -45, y: -10 } : { rotate: 0, y: 0 }
+                  mobileMenuOpen ? { rotate: -45, y: -9 } : { rotate: 0, y: 0 }
                 }
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               />
             </div>
           </motion.button>
@@ -187,7 +190,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
               initial="closed"
               animate="open"
               exit="closed"
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="px-6 py-8 max-w-7xl mx-auto">
                 <div className="space-y-3 mb-6">
@@ -203,7 +206,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
                       <Link
                         href={link.href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="block px-4 py-3 rounded-lg text-gray-700 font-medium hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 transform hover:translate-x-1"
+                        className="block px-4 py-3 rounded-lg text-gray-700 font-medium hover:bg-blue-50 hover:text-blue-600 transition duration-200 transform hover:translate-x-1"
                       >
                         {link.label}
                       </Link>
@@ -222,7 +225,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
                   <Link
                     href="/get-started"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/30 font-semibold text-center transform hover:scale-105"
+                    className="block w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full hover:from-blue-700 hover:to-purple-700 transition duration-200 hover:shadow-lg hover:shadow-blue-500/30 font-semibold text-center transform hover:scale-105"
                   >
                     Get Started
                   </Link>
@@ -332,7 +335,7 @@ export function MarketingLayout({ children }: MarketingLayoutProps) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="inline-flex items-center px-3 py-1.5 rounded-full bg-gray-800 hover:bg-blue-600/30 text-gray-300 hover:text-white text-xs font-medium transition-all border border-gray-700 hover:border-blue-500/50"
+                    className="inline-flex items-center px-3 py-1.5 rounded-full bg-gray-800 hover:bg-blue-600/30 text-gray-300 hover:text-white text-xs font-medium transition-colors border border-gray-700 hover:border-blue-500/50"
                   >
                     {link.label}
                   </Link>

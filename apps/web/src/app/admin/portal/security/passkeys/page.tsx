@@ -117,7 +117,7 @@ export default function PasskeysPage() {
         )}
 
         {/* Register new passkey */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 shadow-raised">
           <h2 className="text-base font-semibold text-gray-800 mb-3">Register a New Passkey</h2>
           <div className="flex gap-2">
             <input
@@ -142,13 +142,13 @@ export default function PasskeysPage() {
         </div>
 
         {/* Active credentials */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-4">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-raised overflow-hidden mb-4">
           <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
             <h2 className="text-sm font-semibold text-gray-700">Active Passkeys ({active.length})</h2>
           </div>
           {loading ? (
             <div className="p-5 space-y-2">
-              {[1, 2].map((i) => <div key={i} className="animate-pulse bg-gray-100 h-10 rounded" />)}
+              {[1, 2].map((i) => <div key={i} className="skeleton h-10 rounded" />)}
             </div>
           ) : active.length === 0 ? (
             <div className="p-5 text-sm text-gray-400 text-center">No active passkeys yet.</div>
@@ -179,7 +179,7 @@ export default function PasskeysPage() {
         </div>
 
         {revoked.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-raised overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
               <h2 className="text-sm font-semibold text-gray-500">Revoked ({revoked.length})</h2>
             </div>

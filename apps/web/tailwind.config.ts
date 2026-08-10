@@ -49,7 +49,42 @@ const config: Config = {
           ring: 'var(--t-primary-ring, #93c5fd)',
           soft: 'var(--t-accent, #93c5fd)',
           secondary: 'var(--t-secondary, #7c3aed)',
+          /*
+           * The tint ramp, numbered to match the Tailwind palette it replaces:
+           * `bg-blue-50` becomes `bg-brand-50` and keeps reading the same way.
+           * Fallbacks are the platform blues, so these are safe on untenanted
+           * surfaces.
+           */
+          50: 'var(--t-primary-50, #eff6ff)',
+          100: 'var(--t-primary-100, #dbeafe)',
+          200: 'var(--t-primary-200, #bfdbfe)',
+          300: 'var(--t-primary-300, #93c5fd)',
+          600: 'var(--t-primary, #2563eb)',
+          700: 'var(--t-primary-hover, #1d4ed8)',
+          800: 'var(--t-primary-800, #1e40af)',
+          900: 'var(--t-primary-900, #1e3a8a)',
         },
+      },
+
+      /**
+       * The rungs the scale was missing.
+       *
+       * `text-sm` and `text-xs` carry 1,836 of the 2,440 sizing utilities in the
+       * app — 75% of all typography sits at 12 or 14px, and `text-base` appears
+       * 13 times. Dense is the right call for an operator tool, but a scale with
+       * no middle cannot express hierarchy inside a card: heading, value and
+       * caption all land on `text-sm`, separated only by weight and colour.
+       *
+       * These are additive. `xs` and `sm` keep their sizes — redefining either
+       * would move 1,836 call sites at once — and gain tracking, which is what
+       * separates dense from cramped at those sizes. `2xs` and `md` fill the gaps
+       * above and below.
+       */
+      fontSize: {
+        '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }], // 11px
+        xs: ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.01em' }], // 12px
+        sm: ['0.875rem', { lineHeight: '1.35rem', letterSpacing: '0.005em' }], // 14px
+        md: ['0.9375rem', { lineHeight: '1.45rem' }], // 15px — the missing step
       },
 
       /**
@@ -88,6 +123,13 @@ const config: Config = {
        * a proposal resolving, not a dropdown opening.
        */
       transitionTimingFunction: {
+        /*
+         * Overriding DEFAULT is what gives the app one feel without touching
+         * ~370 call sites: every `transition-*` utility that does not name a
+         * curve inherits this one. Tailwind's own default is a symmetric
+         * ease-in-out, which makes short UI moves feel sluggish at the start.
+         */
+        DEFAULT: 'cubic-bezier(0.16, 1, 0.3, 1)',
         enter: 'cubic-bezier(0.16, 1, 0.3, 1)',
         exit: 'cubic-bezier(0.4, 0, 1, 1)',
         emphasis: 'cubic-bezier(0.34, 1.4, 0.64, 1)',

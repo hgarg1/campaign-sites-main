@@ -109,7 +109,7 @@ function Skeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="animate-pulse bg-gray-200 rounded h-4 w-full" />
+        <div key={i} className="skeleton rounded h-4 w-full" />
       ))}
     </div>
   );
@@ -175,7 +175,7 @@ function StatsPanel() {
         <div key={card.label} className={`border rounded-xl p-4 flex flex-col gap-1 ${card.color}`}>
           <div className="text-2xl">{card.icon}</div>
           {loading ? (
-            <div className="animate-pulse bg-gray-200 rounded h-6 w-12" />
+            <div className="skeleton rounded h-6 w-12" />
           ) : (
             <div className="text-2xl font-bold">{card.value}</div>
           )}
@@ -257,7 +257,7 @@ function ConfigTab() {
   if (loading) return <Skeleton />;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 max-w-lg">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-raised p-6 max-w-lg">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Governance System Config</h3>
 
       {error && (
@@ -433,7 +433,7 @@ function RulesTab() {
   if (loading) return <Skeleton />;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-raised overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Voting Rules</h3>
       </div>
@@ -688,7 +688,7 @@ function ProposalSlideOver({ proposalId, onClose }: ProposalSlideOverProps) {
       {/* Overlay */}
       <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
       {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 overflow-y-auto flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-modal z-50 overflow-y-auto flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white">
           <h2 className="text-lg font-semibold text-gray-900">Proposal Details</h2>
           <button
@@ -937,7 +937,7 @@ function ProposalsTab() {
         onClose={() => setSelectedProposalId(null)}
       />
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-raised overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
           <h3 className="text-lg font-semibold text-gray-900">
             Proposals{' '}

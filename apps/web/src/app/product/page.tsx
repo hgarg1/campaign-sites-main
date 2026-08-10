@@ -50,7 +50,7 @@ export default function ProductPage() {
                 text: 'Sync campaign pages with fundraising and CRM tools from day one.',
               },
             ].map((item) => (
-              <article key={item.title} className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-8 hover:shadow-xl transition-all">
+              <article key={item.title} className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-8 hover:shadow-xl transition">
                 <h3 className="text-xl font-bold mb-3">{item.title}</h3>
                 <p className="text-gray-600 mb-5">{item.text}</p>
                 <Link href="/contact" className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
@@ -132,13 +132,13 @@ export default function ProductPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/contact"
-              className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all"
+              className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition"
             >
               Schedule Demo
             </Link>
             <Link
               href="/pricing"
-              className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition-all"
+              className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition"
             >
               View Plans
             </Link>

@@ -98,7 +98,7 @@ export default async function BlogPostPage({
           <div className="mb-6 md:mb-8">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-100 bg-white text-sm font-semibold text-blue-600 hover:text-blue-700 hover:shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-100 bg-white text-sm font-semibold text-blue-600 hover:text-blue-700 hover:shadow-sm transition"
             >
               ← Back to Blog
             </Link>

@@ -71,6 +71,44 @@
 	}
 
 	/*
+	 * Type by role, not by size.
+	 *
+	 * Card hierarchy was being assembled three utilities at a time — size, weight
+	 * and colour picked independently at every call site — which is why a heading,
+	 * a value and a caption so often ended up the same size. Choosing a role gets
+	 * all four decisions at once, consistently.
+	 */
+	.type-eyebrow {
+		@apply text-2xs font-semibold uppercase tracking-wider text-gray-500;
+	}
+
+	.type-label {
+		@apply text-xs font-medium text-gray-500;
+	}
+
+	.type-caption {
+		@apply text-xs text-gray-500;
+	}
+
+	.type-body {
+		@apply text-sm text-gray-700;
+	}
+
+	.type-title {
+		@apply text-md font-semibold tracking-tight text-gray-900;
+	}
+
+	.type-section {
+		@apply text-lg font-semibold tracking-tight text-gray-900;
+	}
+
+	/* Numbers that are meant to be compared line up and do not wrap. */
+	.type-metric {
+		@apply text-2xl font-bold tracking-tight text-gray-900;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/*
 	 * Full viewport height that survives mobile browser chrome.
 	 *
 	 * `h-screen` is 100vh, which on iOS Safari and Chrome Android is the height
@@ -107,10 +145,12 @@
 		position: absolute;
 		inset: 0;
 		transform: translateX(-100%);
+		/* White at partial alpha, not gray-50 — a 4-unit step off gray-100 was
+		   too small a contrast to read as movement at all. */
 		background-image: linear-gradient(
 			90deg,
 			transparent,
-			theme('colors.gray.50'),
+			rgb(255 255 255 / 0.85),
 			transparent
 		);
 		animation: shimmer 1.6s infinite;
@@ -130,6 +170,21 @@
 	}
 	50% {
 		transform: translateY(-20px);
+	}
+}
+
+/*
+ * Declared here, not only in tailwind.config.ts.
+ *
+ * Tailwind emits a keyframe block only when the matching `animate-*` utility is
+ * found in the content scan. `.skeleton::after` drives this animation from raw
+ * CSS, so the config-defined copy was tree-shaken away and every skeleton in the
+ * app rendered as a static grey block — verified by its absence from the built
+ * stylesheet. The config entry stays for anyone using `animate-shimmer` directly.
+ */
+@keyframes shimmer {
+	100% {
+		transform: translateX(100%);
 	}
 }
 

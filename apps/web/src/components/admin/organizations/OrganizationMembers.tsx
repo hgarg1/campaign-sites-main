@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { OrganizationMember } from '@/hooks/useOrganizations';
 import { useToast } from '../shared/ToastContext';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface OrganizationMembersProps {
   members: OrganizationMember[];
@@ -53,18 +54,16 @@ export function OrganizationMembers({ members, loading, onUpdateRole, onRemoveMe
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </div>
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
+      transition={{ duration: 0.2, delay: 0.1 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Members ({members.length})</h3>
@@ -73,9 +72,9 @@ export function OrganizationMembers({ members, loading, onUpdateRole, onRemoveMe
         {members.map((member, index) => (
           <motion.div
             key={member.id}
-            initial={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2, delay: index * 0.05 }}
+            transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
             className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <div className="flex-1">

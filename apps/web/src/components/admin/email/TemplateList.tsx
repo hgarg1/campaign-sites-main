@@ -157,7 +157,7 @@ export function TemplateList({ onSelectTemplate, selectedKey }: TemplateListProp
         className="space-y-4"
       >
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-200 h-24 rounded-lg" />
+          <div key={i} className="skeleton h-24 rounded-lg" />
         ))}
       </motion.div>
     );
@@ -178,7 +178,7 @@ export function TemplateList({ onSelectTemplate, selectedKey }: TemplateListProp
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
@@ -245,9 +245,9 @@ export function TemplateList({ onSelectTemplate, selectedKey }: TemplateListProp
             return (
               <motion.div
                 key={template.key}
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`rounded-lg border-2 p-4 cursor-pointer transition-all ${
+                className={`rounded-lg border-2 p-4 cursor-pointer transition ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 bg-white hover:border-gray-300'

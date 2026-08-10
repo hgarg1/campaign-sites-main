@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { CostAnalytics } from '@/hooks/useBuildJobs';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface CostAnalyticsPanelProps {
   analytics: CostAnalytics | null;
@@ -13,9 +14,7 @@ export function CostAnalyticsPanel({ analytics, loading }: CostAnalyticsPanelPro
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost Analytics</h3>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </div>
     );
   }
@@ -24,9 +23,9 @@ export function CostAnalyticsPanel({ analytics, loading }: CostAnalyticsPanelPro
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
+      transition={{ duration: 0.2, delay: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-6">Cost Analytics</h3>
@@ -61,9 +60,9 @@ export function CostAnalyticsPanel({ analytics, loading }: CostAnalyticsPanelPro
           {analytics.byProvider.map((item, index) => (
             <motion.div
               key={item.provider}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
             >
               <span className="text-sm font-medium text-gray-900 capitalize">{item.provider}</span>
@@ -80,9 +79,9 @@ export function CostAnalyticsPanel({ analytics, loading }: CostAnalyticsPanelPro
           {analytics.byOrganization.slice(0, 5).map((item, index) => (
             <motion.div
               key={item.organizationId}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
             >
               <span className="text-sm font-medium text-gray-900">{item.organizationName}</span>

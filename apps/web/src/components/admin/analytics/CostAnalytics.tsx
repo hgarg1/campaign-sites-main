@@ -14,7 +14,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
   const [selectedBreakdown, setSelectedBreakdown] = useState<'organization' | 'user' | 'website' | 'provider'>('organization');
 
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
+    return <div className="skeleton h-96 rounded-lg" />;
   }
 
   if (!data) {
@@ -45,7 +45,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
@@ -68,7 +68,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
 
       {/* Total Cost Card */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-8 text-white"
@@ -80,7 +80,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
 
       {/* Cost Breakdown Grid */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -127,7 +127,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
 
       {/* Top Breakdown View */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className="bg-white rounded-lg border border-gray-200 p-6"
@@ -150,7 +150,7 @@ export function CostAnalytics({ data, loading, onPeriodChange }: CostAnalyticsPr
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 h-full rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 h-full rounded-full transition duration-300"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>

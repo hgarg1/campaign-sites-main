@@ -62,12 +62,12 @@ export default function InviteMemberPage() {
     setCopied(false);
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   return (
     <TenantLayout title="Invite Member" subtitle="Add someone to your team" orgId={orgId}>
       <div className="max-w-lg mx-auto">
-        <Link href={`/tenant/${orgId}/team`} className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-6 inline-block">
+        <Link href={`/tenant/${orgId}/team`} className="text-brand hover:text-brand-700 font-medium text-sm mb-6 inline-block">
           ← Back to Team
         </Link>
 
@@ -76,14 +76,14 @@ export default function InviteMemberPage() {
 
           {result ? (
             <div className="space-y-4">
-              <div className={`rounded-lg p-4 border ${result.status === 'ACCEPTED' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
-                <p className={`font-medium ${result.status === 'ACCEPTED' ? 'text-green-800' : 'text-blue-800'}`}>
+              <div className={`rounded-lg p-4 border ${result.status === 'ACCEPTED' ? 'bg-green-50 border-green-200' : 'bg-brand-50 border-brand-200'}`}>
+                <p className={`font-medium ${result.status === 'ACCEPTED' ? 'text-green-800' : 'text-brand-800'}`}>
                   {result.status === 'ACCEPTED'
                     ? `✓ ${email} already has an account and has been added to your team.`
                     : `✓ Invitation created for ${email}`}
                 </p>
                 {result.status !== 'ACCEPTED' && (
-                  <p className="text-sm text-blue-700 mt-1">Share the invite link below, or they can use it to join.</p>
+                  <p className="text-sm text-brand-700 mt-1">Share the invite link below, or they can use it to join.</p>
                 )}
               </div>
 
@@ -116,7 +116,7 @@ export default function InviteMemberPage() {
               <div className="flex gap-3 pt-2">
                 <button type="button"
                   onClick={handleSendAnother}
-                  className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium"
+                  className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium"
                 >
                   Send another
                 </button>
@@ -155,7 +155,7 @@ export default function InviteMemberPage() {
                 </p>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+              <div className="bg-brand-50 border border-brand-200 rounded-lg p-3 text-xs text-brand-700">
                 💡 If the person already has an account, they&apos;ll be added immediately. Otherwise, they can use the invite link to join.
               </div>
 
@@ -165,7 +165,7 @@ export default function InviteMemberPage() {
                 <button
                   type="submit"
                   disabled={submitting || !email.trim()}
-                  className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-50"
+                  className="bg-brand text-white hover:bg-brand-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-50"
                 >
                   {submitting ? 'Sending…' : 'Send Invitation'}
                 </button>

@@ -60,9 +60,9 @@ export function UserStatsCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
+      transition={{ duration: 0.2, delay: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-bold text-gray-900 mb-4">Usage & Engagement</h3>
@@ -72,7 +72,7 @@ export function UserStatsCard({
         {stats.map((stat, idx) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: 0.05 * idx }}
             className={`${stat.bgColor} rounded-lg p-3`}

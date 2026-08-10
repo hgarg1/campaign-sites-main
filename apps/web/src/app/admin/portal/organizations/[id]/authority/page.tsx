@@ -77,7 +77,7 @@ export default function AuthorityPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-12 animate-pulse rounded bg-gray-100" />
+            <div key={i} className="skeleton h-12 rounded" />
           ))}
         </div>
       ) : !data ? null : data.entries.length === 0 ? (

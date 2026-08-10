@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { BuildJob } from '@/hooks/useBuildJobs';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface BuildJobsTimelineProps {
   jobs: BuildJob[];
@@ -28,9 +29,7 @@ export function BuildJobsTimeline({ jobs, loading }: BuildJobsTimelineProps) {
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </div>
     );
   }
@@ -45,9 +44,9 @@ export function BuildJobsTimeline({ jobs, loading }: BuildJobsTimelineProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
+      transition={{ duration: 0.2, delay: 0.1 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Build Jobs History ({jobs.length})</h3>
@@ -60,15 +59,15 @@ export function BuildJobsTimeline({ jobs, loading }: BuildJobsTimelineProps) {
           return (
             <motion.div
               key={job.id}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
               className="relative pl-8 pb-4 border-l-2 border-gray-200 last:border-l-0"
             >
               {/* Timeline dot */}
               <div className={`absolute left-0 top-0 -translate-x-1/2 w-4 h-4 rounded-full ${
                 statusInfo.bg
-              } border-2 border-white shadow-sm`}></div>
+              } border-2 border-white shadow-raised`}></div>
 
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">

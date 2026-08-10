@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -77,14 +78,12 @@ export default function NewChildOrgPage() {
     }
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   if (canCreate === null) {
     return (
       <TenantLayout title="Create Child Organization" orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
@@ -96,7 +95,7 @@ export default function NewChildOrgPage() {
           <span className="text-4xl mb-3 block">🚫</span>
           <h2 className="text-xl font-bold text-red-700 mb-2">Permission Denied</h2>
           <p className="text-red-600 text-sm mb-4">Your organization does not have permission to create child organizations.</p>
-          <Link href={`/tenant/${orgId}/hierarchy`} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+          <Link href={`/tenant/${orgId}/hierarchy`} className="text-brand hover:text-brand-700 text-sm font-medium">
             ← Back to Hierarchy
           </Link>
         </div>
@@ -107,7 +106,7 @@ export default function NewChildOrgPage() {
   return (
     <TenantLayout title="Create Child Organization" orgId={orgId}>
       <div className="max-w-xl">
-        <Link href={`/tenant/${orgId}/hierarchy`} className="text-sm text-blue-600 hover:text-blue-700 font-medium mb-6 inline-block">
+        <Link href={`/tenant/${orgId}/hierarchy`} className="text-sm text-brand hover:text-brand-700 font-medium mb-6 inline-block">
           ← Back to Hierarchy
         </Link>
 
@@ -162,7 +161,7 @@ export default function NewChildOrgPage() {
               <button
                 type="submit"
                 disabled={submitting || !name || !slug || !!slugError}
-                className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
                 {submitting ? 'Creating...' : 'Create Organization'}

@@ -80,9 +80,9 @@ export function PermissionOverridePanel({
   return (
     <motion.div
       className="bg-white rounded-xl border border-gray-200 p-6 mt-4"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.3 }}
+      transition={{ duration: 0.2, delay: 0.3 }}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
@@ -110,7 +110,7 @@ export function PermissionOverridePanel({
                   ? 'bg-green-50 border-green-200'
                   : 'bg-red-50 border-red-200'
               }`}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
             >
               <div className="flex-1">
@@ -169,7 +169,7 @@ export function PermissionOverridePanel({
 
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+          <div className="bg-white rounded-xl shadow-floating max-w-md w-full p-6">
             <h2 className="text-lg font-semibold mb-2">Add Permission Override</h2>
             <p className="text-sm text-gray-600 mb-4">
               Advanced feature: Grant or revoke specific permissions. Use with caution.

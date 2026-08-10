@@ -81,7 +81,7 @@ export default function TenantChooserPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
@@ -99,14 +99,14 @@ export default function TenantChooserPage() {
           {/* System Admin Portal card — shown first for admins */}
           {isSystemAdmin && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="relative group"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-700 to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-300 -z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-700 to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 blur transition duration-300 -z-10" />
               <Link href="/admin/portal" className="block h-full">
-                <div className="relative bg-gradient-to-br from-slate-800 to-gray-900 rounded-2xl p-8 border border-slate-600 group-hover:border-slate-400 transition-all duration-300 h-full">
+                <div className="relative bg-gradient-to-br from-slate-800 to-gray-900 rounded-2xl p-8 border border-slate-600 group-hover:border-slate-400 transition-colors duration-300 h-full">
                   {/* Icon */}
                   <div className="w-12 h-12 rounded-full bg-gradient-to-r from-slate-500 to-gray-600 flex items-center justify-center mb-4">
                     <span className="text-white text-xl">⚙️</span>
@@ -144,15 +144,15 @@ export default function TenantChooserPage() {
           {orgs.map((org, index) => (
             <motion.button
               key={org.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: (index + (isSystemAdmin ? 1 : 0)) * 0.1 }}
               onClick={() => handleSelectOrgAndRedirect(org.id)}
               disabled={selectedOrgId !== null}
               className="relative group text-left"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-100 blur transition-all duration-300 -z-10" />
-              <div className="relative bg-white rounded-2xl p-8 border border-blue-100 group-hover:border-blue-300 transition-all duration-300 h-full">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-100 blur transition duration-300 -z-10" />
+              <div className="relative bg-white rounded-2xl p-8 border border-blue-100 group-hover:border-blue-300 transition-colors duration-300 h-full">
                 {/* Org Icon */}
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center mb-4">
                   <span className="text-white font-bold text-lg">

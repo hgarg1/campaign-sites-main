@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useToast } from '@/components/admin/shared/ToastContext';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface AlertsListProps {
   alerts: Alert[];
@@ -68,9 +69,7 @@ export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: Alerts
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </div>
     );
   }
@@ -127,9 +126,9 @@ export function AlertsList({ alerts, loading, onAcknowledge, onResolve }: Alerts
             return (
               <motion.div
                 key={alert.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
                 className="p-6 hover:bg-gray-50"
               >
                 <div className="flex items-start gap-4">

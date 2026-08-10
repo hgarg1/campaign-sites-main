@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { useUser } from '@/hooks/useUsers';
 import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface PageProps {
   params: {
@@ -68,9 +69,7 @@ export default function UserDetailPage({ params }: PageProps) {
   if (loading) {
     return (
       <AdminLayout title="Loading user..." subtitle="Fetching user details">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </AdminLayout>
     );
   }

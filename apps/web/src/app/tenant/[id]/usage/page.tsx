@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantUsage } from '@/hooks/useTenant';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface UsageBarProps {
   label: string;
@@ -26,7 +27,7 @@ function UsageBar({ label, used, limit, formatValue }: UsageBarProps) {
       </div>
       {limit != null && (
         <div className="w-full bg-white bg-opacity-60 rounded-full h-3 mb-3">
-          <div style={{ width: `${pct}%` }} className={`h-3 rounded-full ${color} transition-all duration-500`} />
+          <div style={{ width: `${pct}%` }} className={`h-3 rounded-full ${color} transition-[width] duration-500`} />
         </div>
       )}
       <div className="flex justify-between text-sm text-gray-600">
@@ -53,9 +54,7 @@ export default function UsagePage() {
   return (
     <TenantLayout title="Usage" subtitle="Monitor your resource consumption" orgId={orgId}>
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       ) : !data ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500">
           Usage data not available.
@@ -109,7 +108,7 @@ export default function UsagePage() {
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
+          <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-sm text-brand-700">
             <p className="font-medium mb-1">Usage resets at the beginning of each billing period.</p>
             <p>Contact support if you need to increase your limits.</p>
           </div>

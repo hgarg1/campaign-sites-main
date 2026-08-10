@@ -63,21 +63,21 @@ export default function ContactPage() {
               <div className="space-y-3">
                 <a
                   href="mailto:hello@campaignsites.com"
-                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:shadow-md transition-all"
+                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:shadow-md transition"
                 >
                   <span className="font-semibold text-gray-900">Email Sales</span>
                   <span className="text-blue-600 text-sm font-semibold">hello@campaignsites.com →</span>
                 </a>
                 <a
                   href="mailto:support@campaignsites.com"
-                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:shadow-md transition-all"
+                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:shadow-md transition"
                 >
                   <span className="font-semibold text-gray-900">Customer Support</span>
                   <span className="text-blue-600 text-sm font-semibold">support@campaignsites.com →</span>
                 </a>
                 <a
                   href="/careers"
-                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:shadow-md transition-all"
+                  className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-5 py-4 hover:border-blue-300 hover:shadow-md transition"
                 >
                   <span className="font-semibold text-gray-900">Hiring / Talent</span>
                   <span className="text-blue-600 text-sm font-semibold">Open roles →</span>
@@ -153,7 +153,7 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 text-white font-semibold hover:shadow-lg transition-all"
+                  className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 text-white font-semibold hover:shadow-lg transition"
                 >
                   Request Strategy Call
                 </button>

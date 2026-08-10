@@ -11,9 +11,9 @@ function StatusBadge({ status }: { status: string }) {
   const classes: Record<string, string> = {
     PUBLISHED: 'bg-green-100 text-green-700',
     DRAFT: 'bg-yellow-100 text-yellow-700',
-    BUILDING: 'bg-blue-100 text-blue-700',
-    AUDITING: 'bg-blue-100 text-blue-700',
-    DEPLOYING: 'bg-blue-100 text-blue-700',
+    BUILDING: 'bg-brand-100 text-brand-700',
+    AUDITING: 'bg-brand-100 text-brand-700',
+    DEPLOYING: 'bg-brand-100 text-brand-700',
     FAILED: 'bg-red-100 text-red-700',
   };
   return (
@@ -83,12 +83,12 @@ export default function TenantWebsitesPage() {
             placeholder="Search websites..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand w-64"
           />
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="">All Statuses</option>
             {['DRAFT', 'BUILDING', 'AUDITING', 'DEPLOYING', 'PUBLISHED', 'FAILED'].map(s => (
@@ -96,7 +96,7 @@ export default function TenantWebsitesPage() {
             ))}
           </select>
           <div className="ml-auto">
-            <Link href={`/tenant/${orgId}/websites/new`} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium inline-block">
+            <Link href={`/tenant/${orgId}/websites/new`} className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium inline-block">
               + Create Website
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default function TenantWebsitesPage() {
             <>
               <Link
                 href={`/tenant/${orgId}/websites/${w.id}`}
-                className="text-blue-600 hover:text-blue-700 text-xs font-medium px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
+                className="text-brand hover:text-brand-700 text-xs font-medium px-2 py-1 rounded border border-brand-200 hover:bg-brand-50"
                 onClick={e => e.stopPropagation()}
               >
                 Edit

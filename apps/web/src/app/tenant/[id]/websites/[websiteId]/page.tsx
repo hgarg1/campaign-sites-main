@@ -5,14 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantWebsite } from '@/hooks/useTenantWebsites';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 function StatusBadge({ status }: { status: string }) {
   const classes: Record<string, string> = {
     PUBLISHED: 'bg-green-100 text-green-700',
     DRAFT: 'bg-yellow-100 text-yellow-700',
-    BUILDING: 'bg-blue-100 text-blue-700',
-    AUDITING: 'bg-blue-100 text-blue-700',
-    DEPLOYING: 'bg-blue-100 text-blue-700',
+    BUILDING: 'bg-brand-100 text-brand-700',
+    AUDITING: 'bg-brand-100 text-brand-700',
+    DEPLOYING: 'bg-brand-100 text-brand-700',
     FAILED: 'bg-red-100 text-red-700',
   };
   return (
@@ -84,14 +85,12 @@ export default function WebsiteDetailPage() {
     router.push(`/tenant/${orgId}/websites`);
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   if (loading) {
     return (
       <TenantLayout title="Loading..." orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
@@ -101,7 +100,7 @@ export default function WebsiteDetailPage() {
       <TenantLayout title="Not Found" orgId={orgId}>
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <p className="text-gray-600">Website not found</p>
-          <button type="button" onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mt-4 text-blue-600 hover:text-blue-700 font-medium">
+          <button type="button" onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mt-4 text-brand hover:text-brand-700 font-medium">
             ← Back to Websites
           </button>
         </div>
@@ -111,7 +110,7 @@ export default function WebsiteDetailPage() {
 
   return (
     <TenantLayout title={website.name} subtitle="Website Details" orgId={orgId}>
-      <button type="button" onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mb-6 text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 text-sm">
+      <button type="button" onClick={() => router.push(`/tenant/${orgId}/websites`)} className="mb-6 text-brand hover:text-brand-700 font-medium flex items-center gap-2 text-sm">
         ← Back to Websites
       </button>
 
@@ -141,7 +140,7 @@ export default function WebsiteDetailPage() {
               </div>
               {msg && <p className="text-sm text-green-700">{msg}</p>}
               {err && <p className="text-sm text-red-700">{err}</p>}
-              <button type="button" onClick={handleSave} disabled={saving} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+              <button type="button" onClick={handleSave} disabled={saving} className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
@@ -169,7 +168,7 @@ export default function WebsiteDetailPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Actions</h3>
             <div className="space-y-2">
-              <button type="button" onClick={handleRebuild} disabled={rebuilding} className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+              <button type="button" onClick={handleRebuild} disabled={rebuilding} className="w-full bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
                 {rebuilding ? 'Rebuilding...' : 'Rebuild'}
               </button>
               <button type="button"
@@ -189,10 +188,10 @@ export default function WebsiteDetailPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Links</h3>
             <div className="space-y-2">
-              <Link href={`/tenant/${orgId}/websites/${websiteId}/pages`} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <Link href={`/tenant/${orgId}/websites/${websiteId}/pages`} className="flex items-center gap-2 text-brand hover:text-brand-700 text-sm font-medium">
                 Manage Pages →
               </Link>
-              <Link href={`/tenant/${orgId}/websites/${websiteId}/integrations`} className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
+              <Link href={`/tenant/${orgId}/websites/${websiteId}/integrations`} className="flex items-center gap-2 text-brand hover:text-brand-700 text-sm font-medium">
                 Manage Integrations →
               </Link>
             </div>

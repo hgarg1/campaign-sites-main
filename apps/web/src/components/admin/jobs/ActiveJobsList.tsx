@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { BuildJob } from '@/hooks/useBuildJobs';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface ActiveJobsListProps {
   jobs: BuildJob[];
@@ -30,9 +31,7 @@ export function ActiveJobsList({ jobs, loading }: ActiveJobsListProps) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Active Jobs</h3>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </div>
     );
   }
@@ -41,9 +40,9 @@ export function ActiveJobsList({ jobs, loading }: ActiveJobsListProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.3 }}
+      transition={{ duration: 0.2, delay: 0.3 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -54,9 +53,9 @@ export function ActiveJobsList({ jobs, loading }: ActiveJobsListProps) {
         {activeJobs.map((job, index) => (
           <motion.div
             key={job.id}
-            initial={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2, delay: index * 0.05 }}
+            transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
             className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <div className="flex-1">

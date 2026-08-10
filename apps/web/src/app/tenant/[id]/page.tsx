@@ -8,6 +8,7 @@ import { TenantLayout } from '@/components/tenant/shared';
 import { MetricCard } from '@/components/admin/shared';
 import { useTenantOrg } from '@/hooks/useTenant';
 import { useTenantWebsites } from '@/hooks/useTenantWebsites';
+import { PageLoading, SectionLoading } from '@/components/ui/Skeleton';
 
 interface AncestorNode { id: string; name: string; slug: string; partyAffiliation: string | null; ownStatus: string; depth: number; }
 interface AncestryData { org: { id: string; name: string }; ancestors: AncestorNode[]; }
@@ -17,9 +18,9 @@ function StatusBadge({ status }: { status: string }) {
   const classes: Record<string, string> = {
     PUBLISHED: 'bg-green-100 text-green-700',
     DRAFT: 'bg-yellow-100 text-yellow-700',
-    BUILDING: 'bg-blue-100 text-blue-700',
-    AUDITING: 'bg-blue-100 text-blue-700',
-    DEPLOYING: 'bg-blue-100 text-blue-700',
+    BUILDING: 'bg-brand-100 text-brand-700',
+    AUDITING: 'bg-brand-100 text-brand-700',
+    DEPLOYING: 'bg-brand-100 text-brand-700',
     FAILED: 'bg-red-100 text-red-700',
   };
   return (
@@ -55,7 +56,7 @@ export default function TenantDashboardPage() {
   const loading = orgLoading;
 
   const quickActions = [
-    { title: 'Create Website', icon: '🌐', color: 'from-blue-600 to-blue-400', href: `/tenant/${orgId}/websites/new` },
+    { title: 'Create Website', icon: '🌐', color: 'from-brand to-brand-300', href: `/tenant/${orgId}/websites/new` },
     { title: 'Manage Team', icon: '👥', color: 'from-purple-600 to-purple-400', href: `/tenant/${orgId}/team` },
     { title: 'Settings', icon: '⚙️', color: 'from-orange-600 to-orange-400', href: `/tenant/${orgId}/settings` },
     { title: 'Analytics', icon: '📊', color: 'from-green-600 to-green-400', href: `/tenant/${orgId}/analytics` },
@@ -64,9 +65,7 @@ export default function TenantDashboardPage() {
   if (loading) {
     return (
       <TenantLayout title="Dashboard" orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
@@ -81,18 +80,18 @@ export default function TenantDashboardPage() {
     <TenantLayout title="Dashboard" subtitle={org?.name || 'Tenant Portal'} orgId={orgId}>
       {/* Hierarchy breadcrumb banner */}
       {ancestryData && ancestryData.ancestors.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-          <p className="text-xs text-blue-500 font-medium mb-1">Organization Hierarchy</p>
+        <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 mb-6">
+          <p className="text-xs text-brand font-medium mb-1">Organization Hierarchy</p>
           <div className="flex items-center gap-2 text-sm flex-wrap">
-            <span className="text-blue-600 font-medium">Part of:</span>
+            <span className="text-brand font-medium">Part of:</span>
             {[...ancestryData.ancestors].sort((a, b) => a.depth - b.depth).map((anc, i) => (
               <span key={anc.id} className="flex items-center gap-1">
-                {i > 0 && <span className="text-blue-400">→</span>}
-                <Link href={`/tenant/${anc.id}`} className="text-blue-700 hover:text-blue-800 font-medium">{anc.name}</Link>
+                {i > 0 && <span className="text-brand-300">→</span>}
+                <Link href={`/tenant/${anc.id}`} className="text-brand-700 hover:text-brand-800 font-medium">{anc.name}</Link>
               </span>
             ))}
-            <span className="text-blue-400">→</span>
-            <span className="font-bold text-blue-900">{org?.name ?? 'Your Org'}</span>
+            <span className="text-brand-300">→</span>
+            <span className="font-bold text-brand-900">{org?.name ?? 'Your Org'}</span>
           </div>
         </div>
       )}
@@ -102,7 +101,7 @@ export default function TenantDashboardPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900">🌳 Your Network</h2>
-            <Link href={`/tenant/${orgId}/hierarchy`} className="text-sm text-blue-600 hover:text-blue-700 font-medium">View Hierarchy →</Link>
+            <Link href={`/tenant/${orgId}/hierarchy`} className="text-sm text-brand hover:text-brand-700 font-medium">View Hierarchy →</Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div><p className="text-2xl font-bold text-gray-900">{aggregateData.totalDescendants}</p><p className="text-xs text-gray-500">Child Orgs</p></div>
@@ -144,13 +143,13 @@ export default function TenantDashboardPage() {
           {quickActions.map((action, index) => (
             <motion.div
               key={action.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.08 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
             >
               <Link href={action.href} className="relative group block">
-                <div className={`absolute inset-0 bg-gradient-to-r ${action.color} rounded-xl opacity-0 group-hover:opacity-100 blur transition-all duration-300 -z-10`} />
-                <div className="relative bg-white rounded-xl border border-gray-200 group-hover:border-transparent p-6 text-center transition-all duration-300 flex flex-col items-center gap-3 h-full">
+                <div className={`absolute inset-0 bg-gradient-to-r ${action.color} rounded-xl opacity-0 group-hover:opacity-100 blur transition duration-300 -z-10`} />
+                <div className="relative bg-white rounded-xl border border-gray-200 group-hover:border-transparent p-6 text-center transition-colors duration-300 flex flex-col items-center gap-3 h-full">
                   <span className="text-3xl">{action.icon}</span>
                   <p className="font-semibold text-gray-900">{action.title}</p>
                 </div>
@@ -163,14 +162,12 @@ export default function TenantDashboardPage() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-gray-900">Recent Websites</h2>
-          <Link href={`/tenant/${orgId}/websites`} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+          <Link href={`/tenant/${orgId}/websites`} className="text-sm text-brand hover:text-brand-700 font-medium">
             View all →
           </Link>
         </div>
         {websitesLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
+          <SectionLoading />
         ) : websites && websites.length > 0 ? (
           <div className="space-y-3">
             {websites.slice(0, 5).map(website => (
@@ -181,7 +178,7 @@ export default function TenantDashboardPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={website.status} />
-                  <Link href={`/tenant/${orgId}/websites/${website.id}`} className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                  <Link href={`/tenant/${orgId}/websites/${website.id}`} className="text-brand hover:text-brand-700 font-medium text-sm">
                     Edit →
                   </Link>
                 </div>
@@ -191,7 +188,7 @@ export default function TenantDashboardPage() {
         ) : (
           <div className="text-center py-8 text-gray-500">
             <p className="mb-3">No websites yet.</p>
-            <Link href={`/tenant/${orgId}/websites/new`} className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link href={`/tenant/${orgId}/websites/new`} className="text-brand hover:text-brand-700 font-medium">
               Create your first website →
             </Link>
           </div>
@@ -203,7 +200,7 @@ export default function TenantDashboardPage() {
         <div className="space-y-3">
           {websites && websites.slice(0, 3).map(website => (
             <div key={website.id} className="flex items-center gap-3 text-sm">
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${website.status === 'PUBLISHED' ? 'bg-green-500' : website.status === 'FAILED' ? 'bg-red-500' : 'bg-blue-500'}`} />
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${website.status === 'PUBLISHED' ? 'bg-green-500' : website.status === 'FAILED' ? 'bg-red-500' : 'bg-brand'}`} />
               <span className="text-gray-700">
                 <span className="font-medium">{website.name}</span>
                 {' — '}

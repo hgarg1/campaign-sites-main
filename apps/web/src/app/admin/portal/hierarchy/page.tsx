@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/shared';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface OrgTreeNode {
   id: string;
@@ -315,9 +316,7 @@ export default function HierarchyPage() {
 
         <div className="p-4">
           {loading && (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
+            <PageLoading />
           )}
 
           {error && (

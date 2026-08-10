@@ -247,7 +247,7 @@ export default function ChangePasswordPage() {
                     {/* Progress bar */}
                     <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                       <div
-                        className={`h-full ${passwordStrength.color} transition-all duration-300`}
+                        className={`h-full ${passwordStrength.color} transition-[width] duration-300`}
                         style={{ width: `${passwordStrength.score}%` }}
                       ></div>
                     </div>

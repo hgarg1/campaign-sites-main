@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FeatureFlag } from '@/hooks/useSettings';
 import { useState } from 'react';
 import { useToast } from '../shared/ToastContext';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface FeatureFlagsManagerProps {
   flags: FeatureFlag[];
@@ -54,9 +55,7 @@ export function FeatureFlagsManager({
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </div>
     );
   }
@@ -65,9 +64,9 @@ export function FeatureFlagsManager({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 overflow-hidden"
     >
       {/* Header */}
@@ -93,9 +92,9 @@ export function FeatureFlagsManager({
             return (
               <motion.div
                 key={flag.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
                 className="p-6 hover:bg-gray-50"
               >
                 <div className="flex items-start justify-between mb-4">

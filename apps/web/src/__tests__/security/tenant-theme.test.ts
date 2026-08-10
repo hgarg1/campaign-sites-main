@@ -87,6 +87,40 @@ describe('buildCssVars', () => {
     expect(vars['--t-primary-ring']).not.toBe(vars['--t-primary']);
   });
 
+  it('emits a tint ramp that gets monotonically lighter', () => {
+    // `bg-brand-50` sits behind `text-brand-800`. If the ramp were not ordered,
+    // some party would get emphasis text lighter than the wash under it.
+    for (const [party, partial] of Object.entries(PARTY_THEMES)) {
+      const vars = buildCssVars(mergeTheme(DEFAULT_THEME, partial));
+      const ramp = [
+        vars['--t-primary-900'],
+        vars['--t-primary-800'],
+        vars['--t-primary'],
+        vars['--t-primary-300'],
+        vars['--t-primary-200'],
+        vars['--t-primary-100'],
+        vars['--t-primary-50'],
+      ].map(luminance);
+
+      for (let i = 1; i < ramp.length; i += 1) {
+        expect({ party, step: i, ok: ramp[i] > ramp[i - 1] }).toEqual({
+          party,
+          step: i,
+          ok: true,
+        });
+      }
+    }
+  });
+
+  it('keeps emphasis text readable on its own wash for every party', () => {
+    for (const [party, partial] of Object.entries(PARTY_THEMES)) {
+      const vars = buildCssVars(mergeTheme(DEFAULT_THEME, partial));
+      // The `text-brand-800 on bg-brand-50` pairing used by notices and badges.
+      const ratio = contrastRatio(vars['--t-primary-800'], vars['--t-primary-50']);
+      expect({ party, readable: ratio >= 4.5 }).toEqual({ party, readable: true });
+    }
+  });
+
   it('derives the foreground from the tenant override, not the default', () => {
     const amber = mergeTheme(DEFAULT_THEME, PARTY_THEMES.LIBERTARIAN);
     const vars = buildCssVars(mergeTheme(amber, { primaryColor: '#fcd34d' }));

@@ -42,9 +42,9 @@ export function PricingModal({ plan, isOpen, onClose }: PricingModalProps) {
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             className="relative w-full max-w-2xl max-h-[calc(100vh-32px)] rounded-3xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden flex flex-col"
           >
@@ -113,7 +113,7 @@ export function PricingModal({ plan, isOpen, onClose }: PricingModalProps) {
               <Link
                 href={plan.name === 'Enterprise' ? '/contact' : '/get-started'}
                 className={[
-                  'flex-1 inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold transition-all',
+                  'flex-1 inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold transition-colors',
                   plan.highlight
                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl'
                     : 'bg-blue-600 text-white hover:bg-blue-700',
@@ -123,7 +123,7 @@ export function PricingModal({ plan, isOpen, onClose }: PricingModalProps) {
               </Link>
               <button type="button"
                 onClick={onClose}
-                className="flex-1 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-6 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                className="flex-1 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-6 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Learn More
               </button>

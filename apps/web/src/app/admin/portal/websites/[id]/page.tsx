@@ -18,6 +18,7 @@ import {
 } from '@/hooks/useWebsites';
 import { useBuildJobs, useLLMLogs } from '@/hooks/useBuildJobs';
 import { useToast } from '@/components/admin/shared/ToastContext';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 export default function WebsiteDetailPage() {
   const params = useParams();
@@ -65,9 +66,7 @@ export default function WebsiteDetailPage() {
   if (loading) {
     return (
       <AdminLayout title="Loading..." subtitle="">
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </AdminLayout>
     );
   }

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { SystemMetrics } from '@/hooks/useMonitoring';
 import { useState } from 'react';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface MetricsChartProps {
   metrics: SystemMetrics[];
@@ -46,9 +47,7 @@ export function MetricsChart({ metrics, loading, timeRange, onTimeRangeChange }:
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </div>
     );
   }
@@ -103,7 +102,7 @@ export function MetricsChart({ metrics, loading, timeRange, onTimeRangeChange }:
               <button type="button"
                 key={metric}
                 onClick={() => setSelectedMetric(metric)}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
+                className={`p-4 rounded-lg border-2 transition-colors text-left ${
                   isSelected
                     ? 'border-blue-600 bg-blue-50'
                     : 'border-gray-200 bg-white hover:border-gray-300'
@@ -134,7 +133,7 @@ export function MetricsChart({ metrics, loading, timeRange, onTimeRangeChange }:
                 key={index}
                 initial={{ height: 0 }}
                 animate={{ height: `${heightPercent}%` }}
-                transition={{ duration: 0.5, delay: index * 0.01 }}
+                transition={{ duration: 0.5, delay: Math.min(index, 6) * 0.04 }}
                 className={`flex-1 min-w-[2px] rounded-t-sm ${metricColors[selectedMetric]} relative group`}
                 style={{ minHeight: '2px' }}
               >

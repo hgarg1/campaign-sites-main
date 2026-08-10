@@ -165,7 +165,7 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
           </p>
           <button type="button"
             onClick={() => setIsOpen(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg transition hover:scale-105 active:scale-95"
           >
             Start Application →
           </button>
@@ -176,10 +176,10 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
         {isOpen && (
           <motion.div
             id="application-wizard-form"
-            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             className="rounded-3xl border border-green-100 bg-white p-6 md:p-10 shadow-sm"
           >
             <div className="mb-6">
@@ -193,7 +193,7 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
                 <span>{Math.round(progress)}%</span>
               </div>
               <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-600 to-emerald-600 transition-all" style={{ width: `${progress}%` }} />
+                <div className="h-full bg-gradient-to-r from-green-600 to-emerald-600 transition" style={{ width: `${progress}%` }} />
               </div>
             </div>
 
@@ -287,7 +287,7 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
                 type="button"
                 onClick={() => setIsOpen(false)}
                 disabled={submitting}
-                className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
+                className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
               >
                 Cancel
               </button>
@@ -297,7 +297,7 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
                   type="button"
                   onClick={prevStep}
                   disabled={step === 1 || submitting}
-                  className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
+                  className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
                 >
                   Back
                 </button>
@@ -307,7 +307,7 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
                     type="button"
                     onClick={nextStep}
                     disabled={submitting}
-                    className="px-6 py-2 rounded-full bg-green-600 text-white font-semibold hover:bg-green-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="px-6 py-2 rounded-full bg-green-600 text-white font-semibold hover:bg-green-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     Continue
                   </button>
@@ -315,7 +315,7 @@ export function ApplicationWizard({ jobSlug, jobTitle }: ApplicationWizardProps)
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-6 py-2 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="px-6 py-2 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {submitting ? 'Submitting...' : 'Submit Application'}
                   </button>

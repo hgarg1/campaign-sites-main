@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantSettings } from '@/hooks/useTenant';
 import { useEffectiveRestrictions, RestrictionBanner } from '@/hooks/useRestrictions';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 type Tab = 'general' | 'branding' | 'billing' | 'notifications';
 
@@ -83,14 +84,12 @@ export default function SettingsPage() {
   };
 
   const inputClass =
-    'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+    'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   if (loading) {
     return (
       <TenantLayout title="Settings" orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
@@ -112,7 +111,7 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
                   activeTab === tab.id
-                    ? 'bg-blue-50 text-blue-700'
+                    ? 'bg-brand-50 text-brand-700'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -219,7 +218,7 @@ export default function SettingsPage() {
                       type="text"
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-brand"
                       placeholder="#2563EB"
                     />
                   </div>
@@ -252,11 +251,11 @@ export default function SettingsPage() {
             {activeTab === 'billing' && (
               <div className="space-y-4">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Billing</h2>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-700">
+                <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
+                  <p className="text-sm font-medium text-brand-700">
                     Current Plan: <strong>Pro</strong>
                   </p>
-                  <p className="text-sm text-blue-600 mt-1">$49/month · Renews on the 1st</p>
+                  <p className="text-sm text-brand mt-1">$49/month · Renews on the 1st</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                   <p className="text-sm font-semibold text-gray-900 mb-2">Plan Features</p>
@@ -270,7 +269,7 @@ export default function SettingsPage() {
                 </div>
                 <Link
                   href={`/tenant/${orgId}/settings/billing`}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium inline-block"
+                  className="text-brand hover:text-brand-700 text-sm font-medium inline-block"
                 >
                   Manage billing and invoices →
                 </Link>
@@ -310,7 +309,7 @@ export default function SettingsPage() {
                         id={n.id}
                         checked={n.checked}
                         onChange={(e) => n.onChange(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                        className="h-4 w-4 rounded border-gray-300 text-brand"
                       />
                       <label htmlFor={n.id} className="text-sm font-medium text-gray-700">
                         {n.label}
@@ -358,7 +357,7 @@ export default function SettingsPage() {
                         ? blockedReason('branding', 'update')
                         : undefined
                   }
-                  className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? 'Saving...' : 'Save Settings'}
                 </button>

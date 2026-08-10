@@ -96,8 +96,8 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
         animate={{ opacity: 1 }}
         className="space-y-4"
       >
-        <div className="animate-pulse bg-gray-200 h-10 rounded-lg w-40" />
-        <div className="animate-pulse bg-gray-100 h-96 rounded-lg" />
+        <div className="skeleton h-10 rounded-lg w-40" />
+        <div className="skeleton h-96 rounded-lg" />
       </motion.div>
     );
   }
@@ -117,7 +117,7 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
@@ -149,7 +149,7 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
             onClick={() => setActiveTab('html')}
             className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
               activeTab === 'html'
-                ? 'bg-white text-blue-600 shadow-sm'
+                ? 'bg-white text-blue-600 shadow-raised'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -159,7 +159,7 @@ export function TemplatePreview({ templateKey, variables = {} }: TemplatePreview
             onClick={() => setActiveTab('text')}
             className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
               activeTab === 'text'
-                ? 'bg-white text-blue-600 shadow-sm'
+                ? 'bg-white text-blue-600 shadow-raised'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >

@@ -124,9 +124,9 @@ export function RoleAssignmentPanel({
   return (
     <motion.div
       className="bg-white rounded-xl border border-blue-200 bg-blue-50 p-6"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
+      transition={{ duration: 0.2, delay: 0.2 }}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">System Admin Roles</h3>
@@ -144,7 +144,7 @@ export function RoleAssignmentPanel({
       {assignedRole ? (
         <motion.div
           className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200"
-          initial={{ opacity: 0, x: -10 }}
+          initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
         >
           <div>
@@ -208,7 +208,7 @@ export function RoleAssignmentPanel({
       {/* Role selection overlay when assign modal is open */}
       {showAssignModal && (
         <div className="fixed inset-0 flex items-center justify-center z-[60] p-4 pointer-events-none">
-          <div className="bg-white rounded-lg shadow-lg p-4 max-w-xs w-full pointer-events-auto">
+          <div className="bg-white rounded-lg shadow-floating p-4 max-w-xs w-full pointer-events-auto">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Role <span className="text-red-500">*</span>
             </label>

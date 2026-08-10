@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantWebsiteIntegrations, TenantWebsiteIntegration } from '@/hooks/useTenantWebsites';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface ProviderDef {
   id: string;
@@ -65,16 +66,14 @@ export default function WebsiteIntegrationsPage() {
   return (
     <TenantLayout title="Website Integrations" subtitle="Connect third-party services" orgId={orgId}>
       <div className="mb-4 flex items-center gap-4">
-        <Link href={`/tenant/${orgId}/websites/${websiteId}`} className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+        <Link href={`/tenant/${orgId}/websites/${websiteId}`} className="text-brand hover:text-brand-700 font-medium text-sm">
           ← Back to Website
         </Link>
         {msg && <p className="text-sm text-green-700">{msg}</p>}
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       ) : (
         <div className="space-y-4">
           {PROVIDERS.map(provider => {
@@ -114,7 +113,7 @@ export default function WebsiteIntegrationsPage() {
                       <button type="button"
                         onClick={() => handleEnable(provider)}
                         disabled={saving === provider.id}
-                        className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                        className="bg-brand text-white hover:bg-brand-700 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                       >
                         {saving === provider.id ? 'Enabling...' : 'Enable'}
                       </button>

@@ -100,7 +100,7 @@ export default function PasswordPage() {
   return (
     <AdminLayout title="Change Password" subtitle="Update your sign-in password securely">
       <div className="max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 lg:col-span-1">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-raised p-6 lg:col-span-1">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">Password Policy</h3>
           <ul className="space-y-2 text-xs text-gray-600">
             {passwordChecks.map((check) => (
@@ -115,7 +115,7 @@ export default function PasswordPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 lg:col-span-2">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-raised p-6 lg:col-span-2">
         {loading ? (
           <p className="text-sm text-gray-600">Loading account context...</p>
         ) : (

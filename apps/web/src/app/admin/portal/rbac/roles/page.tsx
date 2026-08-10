@@ -4,6 +4,7 @@ import { AdminLayout, ProtectedAdminLayout } from '@/components/admin/shared';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface Role {
   id: string;
@@ -286,7 +287,7 @@ export default function RolesPage() {
     <>
       {error && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
         >
@@ -319,9 +320,9 @@ export default function RolesPage() {
         {roles.map(role => (
           <motion.div
             key={role.id}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-floating transition-shadow"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -382,7 +383,7 @@ export default function RolesPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+              className="bg-white rounded-lg shadow-overlay max-w-md w-full p-6"
             >
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Role</h2>
               
@@ -446,7 +447,7 @@ export default function RolesPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+              className="bg-white rounded-lg shadow-overlay max-w-md w-full p-6"
             >
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Edit Role</h2>
               
@@ -510,7 +511,7 @@ export default function RolesPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col"
+              className="bg-white rounded-lg shadow-overlay max-w-3xl w-full max-h-[90vh] flex flex-col"
             >
               {/* Fixed Header */}
               <div className="flex-shrink-0 border-b border-gray-200 p-6">
@@ -616,9 +617,7 @@ export default function RolesPage() {
   if (loading) {
     return (
       <AdminLayout title="System Admin Roles" subtitle="Create and manage roles with permissions">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </AdminLayout>
     );
   }

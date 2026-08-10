@@ -67,7 +67,7 @@ export default function EmailPortalPage() {
       <div>
         {/* Error State */}
         {error && (
-          <div className="mb-8 rounded-md bg-red-50 p-4 text-sm text-red-700">
+          <div className="mb-8 rounded-lg bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -100,7 +100,7 @@ export default function EmailPortalPage() {
         {loading && (
           <div className="mb-12 grid grid-cols-1 gap-4 md:grid-cols-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 animate-pulse rounded-lg bg-gray-200" />
+              <div key={i} className="skeleton h-32 rounded-lg" />
             ))}
           </div>
         )}
@@ -109,7 +109,7 @@ export default function EmailPortalPage() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {features.map((feature) => (
             <Link key={feature.href} href={feature.href}>
-              <div className="group h-full rounded-lg border border-gray-200 bg-white p-6 transition-all duration-200 hover:border-gray-300 hover:shadow-lg">
+              <div className="group h-full rounded-lg border border-gray-200 bg-white p-6 transition duration-200 hover:border-gray-300 hover:shadow-floating">
                 <div
                   className={`inline-flex rounded-lg ${feature.color} p-3 transition-transform group-hover:scale-110 text-2xl`}
                 >

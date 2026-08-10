@@ -51,7 +51,7 @@ export default function NotificationsPage() {
       title="Notifications"
       subtitle="Manage your personal admin notification preferences"
     >
-      <div className="max-w-2xl bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-5">
+      <div className="max-w-2xl bg-white rounded-lg border border-gray-200 shadow-raised p-6 space-y-5">
         <label className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-gray-900">Product updates</p>

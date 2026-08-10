@@ -11,13 +11,13 @@ interface ReportLibraryProps {
 
 export function ReportLibrary({ reports, loading, onDownload }: ReportLibraryProps) {
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
+    return <div className="skeleton h-96 rounded-lg" />;
   }
 
   if (reports.length === 0) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-lg border border-gray-200 p-12 text-center"
       >
@@ -55,7 +55,7 @@ export function ReportLibrary({ reports, loading, onDownload }: ReportLibraryPro
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
@@ -67,10 +67,10 @@ export function ReportLibrary({ reports, loading, onDownload }: ReportLibraryPro
         {reports.map((report, index) => (
           <motion.div
             key={report.id}
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+            transition={{ delay: Math.min(index, 6) * 0.04 }}
+            className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-floating transition-shadow"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 flex-1">

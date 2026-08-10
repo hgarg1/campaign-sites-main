@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface Activity {
   id: string;
@@ -34,17 +35,15 @@ const activityColors = {
 export function UserActivityTimeline({ activities, loading = false }: UserActivityTimelineProps) {
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <SectionLoading />
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
+      transition={{ duration: 0.2, delay: 0.1 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-bold text-gray-900 mb-6">Activity Timeline</h3>
@@ -61,13 +60,13 @@ export function UserActivityTimeline({ activities, loading = false }: UserActivi
           {activities.map((activity, index) => (
             <motion.div
               key={activity.id}
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
               className="relative pl-16"
             >
               {/* Timeline dot */}
-              <div className={`absolute left-0 w-10 h-10 rounded-full flex items-center justify-center text-lg ${activityColors[activity.type]} border-4 border-white shadow-sm`}>
+              <div className={`absolute left-0 w-10 h-10 rounded-full flex items-center justify-center text-lg ${activityColors[activity.type]} border-4 border-white shadow-raised`}>
                 {activityIcons[activity.type]}
               </div>
 

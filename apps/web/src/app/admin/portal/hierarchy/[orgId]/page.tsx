@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/shared';
 import { HierarchyGraph } from '@/components/shared/HierarchyGraph';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface OrgTreeNode {
   id: string;
@@ -198,9 +199,7 @@ export default function HierarchyOrgDetailPage() {
   if (loading) {
     return (
       <AdminLayout title="Loading..." subtitle="">
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </AdminLayout>
     );
   }
@@ -436,7 +435,7 @@ export default function HierarchyOrgDetailPage() {
       {/* Parent Assignment Modal */}
       {showParentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+          <div className="bg-white rounded-xl shadow-overlay w-full max-w-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign Parent Organization</h3>
             <input
               type="text"
@@ -484,7 +483,7 @@ export default function HierarchyOrgDetailPage() {
       {/* Suspend Confirmation Modal */}
       {showSuspendModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-overlay w-full max-w-md p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Suspend Organization</h3>
             <p className="text-sm text-gray-600 mb-2">
               This will suspend <strong>{org.name}</strong>
@@ -512,7 +511,7 @@ export default function HierarchyOrgDetailPage() {
       {/* Deactivate Confirmation Modal */}
       {showDeactivateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-xl shadow-overlay w-full max-w-md p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <span className="text-red-600 text-lg">⚠</span>

@@ -101,7 +101,7 @@ export default function OwnershipPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 animate-pulse rounded bg-gray-100" />
+            <div key={i} className="skeleton h-12 rounded" />
           ))}
         </div>
       ) : (
@@ -125,7 +125,7 @@ export default function OwnershipPage() {
                         <div className="truncate text-sm font-medium text-gray-900">
                           {o.parentOrg.name}
                           {o.isPrimary && (
-                            <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-xs font-normal text-blue-700">
+                            <span className="ml-2 rounded bg-brand-50 px-1.5 py-0.5 text-xs font-normal text-brand-700">
                               Primary
                             </span>
                           )}
@@ -144,7 +144,7 @@ export default function OwnershipPage() {
                       <div className="w-40 shrink-0">
                         <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                           <div
-                            className="h-full bg-blue-500"
+                            className="h-full bg-brand"
                             style={{
                               width: `${
                                 unallocated

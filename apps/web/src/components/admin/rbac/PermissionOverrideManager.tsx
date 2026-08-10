@@ -163,7 +163,7 @@ export function PermissionOverrideManager({
       {/* Header */}
       <motion.div
         className="bg-white rounded-xl border border-gray-200 p-6"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-start justify-between">
@@ -195,7 +195,7 @@ export function PermissionOverrideManager({
       {/* Active Overrides */}
       <motion.div
         className="bg-white rounded-xl border border-gray-200 p-6"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
@@ -241,9 +241,9 @@ export function PermissionOverrideManager({
                       ? 'bg-green-50 border-green-200'
                       : 'bg-red-50 border-red-200'
                   }`}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
+                  exit={{ opacity: 0, x: 8 }}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -299,7 +299,7 @@ export function PermissionOverrideManager({
       {/* Permission Finder */}
       <motion.div
         className="bg-white rounded-xl border border-gray-200 p-6"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
@@ -428,7 +428,7 @@ export function PermissionOverrideManager({
       {/* Create Form Overlay (separate from modal) */}
       {showCreateModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full pointer-events-auto space-y-4">
+          <div className="bg-white rounded-lg shadow-floating p-6 max-w-sm w-full pointer-events-auto space-y-4">
             <h3 className="font-semibold text-gray-900">Override Settings</h3>
 
             <div>

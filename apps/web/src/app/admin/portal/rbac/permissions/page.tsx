@@ -3,6 +3,7 @@
 import { AdminLayout } from '@/components/admin/shared';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface Permission {
   id: string;
@@ -63,9 +64,7 @@ export default function PermissionsPage() {
   if (loading) {
     return (
       <AdminLayout title="Permissions" subtitle="View all system admin permissions">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </AdminLayout>
     );
   }
@@ -128,9 +127,9 @@ export default function PermissionsPage() {
           filteredPermissions.map(perm => (
             <motion.div
               key={perm.id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-floating transition-shadow"
             >
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-sm font-mono font-semibold text-gray-900 flex-1 break-all">

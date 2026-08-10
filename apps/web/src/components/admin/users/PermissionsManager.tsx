@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { ChangeRoleModal } from './ChangeRoleModal';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface Organization {
   id: string;
@@ -84,9 +85,9 @@ export function PermissionsManager({
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={{ duration: 0.2, delay: 0.2 }}
         className="bg-white rounded-xl border border-gray-200 p-6"
       >
         <h3 className="text-lg font-bold text-gray-900 mb-6">Permissions & Roles</h3>
@@ -132,9 +133,9 @@ export function PermissionsManager({
               {organizations.map((org, index) => (
                 <motion.div
                   key={org.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 + index * 0.05 }}
+                  transition={{ duration: 0.2, delay: 0.3 + index * 0.05 }}
                   className="p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between"
                 >
                   <div>
@@ -168,7 +169,7 @@ export function PermissionsManager({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col"
+            className="bg-white rounded-lg shadow-overlay max-w-3xl w-full max-h-[90vh] flex flex-col"
           >
             {/* Header */}
             <div className="flex-shrink-0 border-b border-gray-200 p-6">
@@ -192,9 +193,7 @@ export function PermissionsManager({
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {loadingPermissions ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
+                <SectionLoading />
               ) : userPermissions ? (
                 <>
                   {/* Role Permissions */}

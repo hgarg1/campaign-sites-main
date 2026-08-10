@@ -121,7 +121,7 @@ export function ChangeRoleModal({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col"
+            className="bg-white rounded-lg shadow-overlay max-w-2xl w-full max-h-[90vh] flex flex-col"
           >
             {/* Header */}
             <div className="flex-shrink-0 border-b border-gray-200 p-6">

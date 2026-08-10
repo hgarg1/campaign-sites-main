@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LLMLog } from '@/hooks/useBuildJobs';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface LLMLogsViewerProps {
   logs: LLMLog[];
@@ -17,9 +18,7 @@ export function LLMLogsViewer({ logs, loading }: LLMLogsViewerProps) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">LLM Execution Logs</h3>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </div>
     );
   }
@@ -79,9 +78,9 @@ export function LLMLogsViewer({ logs, loading }: LLMLogsViewerProps) {
         {filteredLogs.map((log, index) => (
           <motion.div
             key={log.id}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: index * 0.02 }}
+            transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
             className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors cursor-pointer"
             onClick={() => setSelectedLog(log)}
           >
@@ -155,7 +154,7 @@ export function LLMLogsViewer({ logs, loading }: LLMLogsViewerProps) {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              className="bg-white rounded-xl shadow-modal max-w-4xl w-full max-h-[90vh] overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6 border-b border-gray-200">

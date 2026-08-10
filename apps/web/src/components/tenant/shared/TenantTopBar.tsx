@@ -123,9 +123,9 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
   );
 
   const menuVariants = {
-    hidden: { opacity: 0, y: -10, scale: 0.95 },
+    hidden: { opacity: 0, y: -8, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1 },
-    exit: { opacity: 0, y: -10, scale: 0.95 },
+    exit: { opacity: 0, y: -8, scale: 0.95 },
   };
 
   const handleSignOut = async () => {
@@ -144,15 +144,19 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
   };
 
   return (
-    <nav className="sticky top-0 border-b border-gray-200 shadow-sm z-40" style={{ backgroundColor: 'var(--t-topbar-bg)' }}>
+    <nav className="sticky top-0 border-b border-gray-200 shadow-raised z-40" style={{ backgroundColor: 'var(--t-topbar-bg)' }}>
       <div className="px-6 py-4 flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 font-medium">{orgName}</span>
             <span className="text-gray-300">·</span>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-[var(--t-primary)] to-[var(--t-secondary)] bg-clip-text text-transparent">
-              {title}
-            </h1>
+            {/*
+             * Ink, matching the admin portal. The tenant's colour belongs on the
+             * controls a person acts through — buttons, active nav, focus rings —
+             * not on a page title that then has no computed colour at all in
+             * forced-colors mode.
+             */}
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{title}</h1>
           </div>
           {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
         </div>
@@ -177,7 +181,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                 variants={menuVariants}
                 initial="hidden" animate="visible" exit="exit"
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+                className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-floating border border-gray-200 overflow-hidden z-50"
               >
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-900">Governance Notifications</span>
@@ -199,7 +203,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                         }
                       }}
                       disabled={markingRead}
-                      className="text-xs text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                      className="text-xs text-brand hover:text-brand-800 disabled:opacity-50"
                     >
                       {markingRead ? 'Marking…' : 'Mark all read'}
                     </button>
@@ -213,7 +217,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                       {notifs.slice(0, 10).map((n) => (
                         <div
                           key={n.id}
-                          className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${!n.readAt ? 'bg-blue-50' : ''}`}
+                          className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${!n.readAt ? 'bg-brand-50' : ''}`}
                         >
                           <div className="text-xs font-medium text-gray-900">
                             {humanizeNotifType(n.type)}
@@ -235,7 +239,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                   )}
                 </div>
                 <div className="px-4 py-2 border-t border-gray-100">
-                  <a href={`/tenant/${orgId}/governance?tab=pending`} className="text-xs text-blue-600 hover:text-blue-800" onClick={() => setNotifOpen(false)}>
+                  <a href={`/tenant/${orgId}/governance?tab=pending`} className="text-xs text-brand hover:text-brand-800" onClick={() => setNotifOpen(false)}>
                     View all in Governance →
                   </a>
                 </div>
@@ -250,7 +254,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-purple-500 flex items-center justify-center text-white font-bold">
               {avatarLetter}
             </div>
             <div className="text-left">
@@ -270,7 +274,7 @@ export function TenantTopBar({ title, subtitle, orgId }: TenantTopBarProps) {
                 animate="visible"
                 exit="exit"
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+                className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-floating border border-gray-200 overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900">{displayName}</p>

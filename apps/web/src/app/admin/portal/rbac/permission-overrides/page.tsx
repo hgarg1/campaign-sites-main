@@ -98,7 +98,7 @@ export default function PermissionOverridesPage() {
         {/* Header */}
         <motion.div
           className="mb-8"
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <button type="button"
@@ -117,7 +117,7 @@ export default function PermissionOverridesPage() {
         {/* Admin Selector */}
         <motion.div
           className="bg-white rounded-xl border border-gray-200 p-6 mb-8"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -128,7 +128,7 @@ export default function PermissionOverridesPage() {
               <button type="button"
                 key={admin.id}
                 onClick={() => setSelectedAdminId(admin.id)}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
+                className={`p-4 rounded-lg border-2 transition-colors text-left ${
                   selectedAdminId === admin.id
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 bg-white hover:border-gray-300'

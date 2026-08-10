@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { ToastProvider } from '@/components/admin/shared/ToastContext';
+import { MotionProvider } from '@/components/ui/MotionProvider';
 
 export const metadata: Metadata = {
   title: 'CampaignSites - AI-Powered Campaign Website Builder',
@@ -71,9 +72,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <MotionProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </MotionProvider>
         <Analytics />
       </body>
     </html>

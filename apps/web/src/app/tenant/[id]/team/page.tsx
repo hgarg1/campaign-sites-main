@@ -6,10 +6,11 @@ import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantMembers, TenantMember } from '@/hooks/useTenant';
 import { useEffectiveRestrictions, RestrictionBanner } from '@/hooks/useRestrictions';
+import { PageLoading, SectionLoading } from '@/components/ui/Skeleton';
 
 const ROLE_COLORS: Record<string, string> = {
   OWNER: 'bg-purple-100 text-purple-700',
-  ADMIN: 'bg-blue-100 text-blue-700',
+  ADMIN: 'bg-brand-100 text-brand-700',
   MEMBER: 'bg-gray-100 text-gray-700',
 };
 
@@ -386,7 +387,7 @@ export default function TeamPage() {
         </div>
         <Link
           href={`/tenant/${orgId}/team/invite`}
-          className={`bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium ${inviteBlocked ? 'opacity-50 pointer-events-none' : ''}`}
+          className={`bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium ${inviteBlocked ? 'opacity-50 pointer-events-none' : ''}`}
           aria-disabled={inviteBlocked}
           title={inviteBlocked ? 'Inviting members is restricted by policy' : undefined}
         >
@@ -401,7 +402,7 @@ export default function TeamPage() {
             onClick={() => setActiveTab('members')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'members'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand text-brand'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -411,7 +412,7 @@ export default function TeamPage() {
             onClick={() => setActiveTab('invites')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'invites'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand text-brand'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -421,7 +422,7 @@ export default function TeamPage() {
             onClick={() => setActiveTab('activity')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'activity'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-brand text-brand'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -440,9 +441,7 @@ export default function TeamPage() {
       {activeTab === 'members' && (
         <>
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-            </div>
+            <PageLoading />
           ) : error ? (
             <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
               Failed to load team members: {error.message}
@@ -456,14 +455,14 @@ export default function TeamPage() {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search by name or email…"
-                  className="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
               {/* Bulk action bar */}
               {selected.size > 0 && (
-                <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <span className="text-sm font-medium text-blue-700">{selected.size} selected</span>
+                <div className="flex items-center gap-3 mb-4 px-4 py-3 bg-brand-50 border border-brand-200 rounded-lg">
+                  <span className="text-sm font-medium text-brand-700">{selected.size} selected</span>
                   <button type="button"
                     onClick={() => setBulkConfirm(true)}
                     className="text-xs font-medium px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
@@ -485,7 +484,7 @@ export default function TeamPage() {
                     type="checkbox"
                     checked={filtered.length > 0 && selected.size === filtered.length}
                     onChange={toggleAll}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                    className="h-4 w-4 rounded border-gray-300 text-brand"
                   />
                   <p className="text-sm font-semibold text-gray-700">
                     {filtered.length} member{filtered.length !== 1 ? 's' : ''}
@@ -506,13 +505,13 @@ export default function TeamPage() {
                             type="checkbox"
                             checked={selected.has(member.id)}
                             onChange={() => toggleSelect(member.id)}
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                            className="h-4 w-4 rounded border-gray-300 text-brand"
                           />
                           <button
                             type="button"
                             onClick={() => openPermDrawer(member)}
                             title="View permissions"
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold hover:opacity-80 transition-opacity"
+                            className="w-10 h-10 rounded-full bg-gradient-to-br from-brand to-purple-500 flex items-center justify-center text-white font-bold hover:opacity-80 transition-opacity"
                           >
                             {(member.user.name || member.user.email).charAt(0).toUpperCase()}
                           </button>
@@ -520,7 +519,7 @@ export default function TeamPage() {
                             <button
                               type="button"
                               onClick={() => openPermDrawer(member)}
-                              className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-left"
+                              className="font-medium text-gray-900 hover:text-brand transition-colors text-left"
                             >
                               {member.user.name || '(No name)'}
                             </button>
@@ -550,7 +549,7 @@ export default function TeamPage() {
                               memberName: member.user.name || member.user.email,
                               newRole: e.target.value as 'OWNER' | 'ADMIN' | 'MEMBER',
                             })}
-                            className="rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="rounded border border-gray-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-brand"
                           >
                             <option value="MEMBER">MEMBER</option>
                             <option value="ADMIN">ADMIN</option>
@@ -596,9 +595,7 @@ export default function TeamPage() {
       {activeTab === 'invites' && (
         <>
           {invitesLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-            </div>
+            <PageLoading />
           ) : invites.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500">
               No invites yet. Click &ldquo;+ Invite Member&rdquo; to send one.
@@ -643,7 +640,7 @@ export default function TeamPage() {
                           {invite.status === 'PENDING' && (
                             <button type="button"
                               onClick={() => copyInviteLink(invite.token)}
-                              className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                              className="text-xs text-brand hover:text-brand-700 font-medium flex items-center gap-1"
                               title={`/join/${invite.token}`}
                             >
                               {copiedToken === invite.token ? '✓ Copied' : '📋 Copy'}
@@ -663,7 +660,7 @@ export default function TeamPage() {
                               <button type="button"
                                 onClick={() => handleResend(invite.id)}
                                 disabled={inviteAction === invite.id}
-                                className="text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 disabled:opacity-50"
+                                className="text-xs text-brand hover:text-brand-700 font-medium px-2 py-1 rounded border border-brand-200 hover:bg-brand-50 disabled:opacity-50"
                               >
                                 Resend
                               </button>
@@ -688,9 +685,7 @@ export default function TeamPage() {
             <p className="text-xs text-gray-500 mt-0.5">Last 50 events for this organization</p>
           </div>
           {auditLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-            </div>
+            <SectionLoading />
           ) : auditLogs.length === 0 ? (
             <div className="p-12 text-center text-gray-500">No activity recorded yet.</div>
           ) : (
@@ -702,7 +697,7 @@ export default function TeamPage() {
                 const roleChange = meta.fromRole && meta.toRole ? ` (${meta.fromRole} → ${meta.toRole})` : (meta.toRole ? ` as ${meta.toRole}` : '');
                 return (
                   <li key={entry.id} className="px-6 py-3 flex items-start gap-3">
-                    <span className="mt-0.5 w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    <span className="mt-0.5 w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
                       {label.charAt(0)}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -728,7 +723,7 @@ export default function TeamPage() {
       {/* ── Role change confirmation modal ── */}
       {roleConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-overlay">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Change Role</h3>
             <p className="text-sm text-gray-600 mb-6">
               Change <strong>{roleConfirm.memberName}</strong>&apos;s role to{' '}
@@ -744,7 +739,7 @@ export default function TeamPage() {
               <button type="button"
                 onClick={handleRoleConfirm}
                 disabled={updatingRole}
-                className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {updatingRole ? 'Updating…' : 'Confirm'}
               </button>
@@ -762,7 +757,7 @@ export default function TeamPage() {
       {/* ── Bulk remove confirmation modal ── */}
       {bulkConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-overlay">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Remove Members</h3>
             <p className="text-sm text-gray-600 mb-3">
               The following {selectedMembers.length} member{selectedMembers.length !== 1 ? 's' : ''} will be removed:
@@ -770,7 +765,7 @@ export default function TeamPage() {
             <ul className="mb-6 space-y-1 max-h-48 overflow-y-auto">
               {selectedMembers.map(m => (
                 <li key={m.id} className="text-sm text-gray-800 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold">
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-300 to-purple-400 flex items-center justify-center text-white text-xs font-bold">
                     {(m.user.name || m.user.email).charAt(0).toUpperCase()}
                   </span>
                   {m.user.name || m.user.email}
@@ -799,7 +794,7 @@ export default function TeamPage() {
       {/* ── Assign Custom Role modal ── */}
       {assignModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-sm shadow-xl">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-sm shadow-overlay">
             <h3 className="text-lg font-bold text-gray-900 mb-1">Assign Custom Role</h3>
             <p className="text-sm text-gray-500 mb-4">
               for <strong>{assignModal.memberName}</strong>
@@ -807,7 +802,7 @@ export default function TeamPage() {
             <select
               value={assignRoleId ?? ''}
               onChange={e => setAssignRoleId(e.target.value || null)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-5"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand mb-5"
             >
               <option value="">None (use base role only)</option>
               {customRoles.map(r => (
@@ -820,7 +815,7 @@ export default function TeamPage() {
               <button type="button"
                 onClick={handleAssignRole}
                 disabled={assigning}
-                className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {assigning ? 'Saving…' : 'Save'}
               </button>
@@ -844,7 +839,7 @@ export default function TeamPage() {
             onClick={() => setPermDrawer(null)}
           />
           {/* Drawer panel */}
-          <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+          <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-modal z-50 flex flex-col">
             {/* Drawer header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-bold text-gray-900">Member Permissions</h3>
@@ -859,7 +854,7 @@ export default function TeamPage() {
             <div className="flex-1 overflow-y-auto px-6 py-5">
               {/* Member info */}
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-purple-500 flex items-center justify-center text-white font-bold text-lg">
                   {(permDrawer.member.user.name || permDrawer.member.user.email)
                     .charAt(0)
                     .toUpperCase()}
@@ -896,9 +891,7 @@ export default function TeamPage() {
               {/* Permission grid */}
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Effective Permissions</h4>
               {permLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-                </div>
+                <SectionLoading />
               ) : permData.length === 0 ? (
                 <div className="text-sm text-gray-400 italic py-4">
                   No permission data available for this member.

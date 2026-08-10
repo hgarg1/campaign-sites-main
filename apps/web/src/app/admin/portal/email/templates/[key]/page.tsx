@@ -110,7 +110,7 @@ export default async function TemplateDetailPage({
           </div>
 
           {/* Error */}
-          <div className="rounded-md bg-red-50 p-4 flex gap-3">
+          <div className="rounded-lg bg-red-50 p-4 flex gap-3">
             <span className="text-red-600 flex-shrink-0 mt-0.5">⚠️</span>
             <div>
               <h3 className="font-medium text-red-900">Error Loading Template</h3>

@@ -76,7 +76,7 @@ export default async function CareerDetailPage({
           <div className="mb-8">
             <Link
               href="/careers"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-100 bg-white text-sm font-semibold text-green-700 hover:text-green-800 hover:shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-green-100 bg-white text-sm font-semibold text-green-700 hover:text-green-800 hover:shadow-sm transition"
             >
               ← Back to Careers
             </Link>
@@ -115,19 +115,19 @@ export default async function CareerDetailPage({
             <div id="apply" className="flex flex-wrap items-center gap-3">
               <a
                 href="#application-wizard"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:shadow-lg transition hover:scale-105 active:scale-95"
               >
                 Apply Now →
               </a>
               <a
                 href={job.applyUrl}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-emerald-200 text-emerald-700 font-semibold hover:bg-emerald-50 transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-emerald-200 text-emerald-700 font-semibold hover:bg-emerald-50 transition-colors"
               >
                 External Apply Link
               </a>
               <Link
                 href="/careers#jobs"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
               >
                 View Other Roles
               </Link>

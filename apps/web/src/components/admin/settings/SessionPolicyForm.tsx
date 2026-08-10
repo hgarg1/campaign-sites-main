@@ -33,14 +33,14 @@ export function SessionPolicyForm({ policy, loading, onUpdate }: SessionPolicyFo
   };
 
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-64 rounded-lg" />;
+    return <div className="skeleton h-64 rounded-lg" />;
   }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
+      transition={{ duration: 0.2, delay: 0.1 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-6">Session Policy</h3>

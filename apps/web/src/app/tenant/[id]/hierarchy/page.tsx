@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 // Types
 interface OrgTreeNode {
@@ -144,7 +145,7 @@ function CoOwnersSection({
         <h2 className="text-lg font-bold text-gray-900">🔗 Co-Parent Owners</h2>
         <button type="button"
           onClick={() => { setShowAddForm(!showAddForm); setAddError(null); }}
-          className="bg-blue-600 text-white rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-blue-700"
+          className="bg-brand text-white rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-brand-700"
         >
           {showAddForm ? 'Cancel' : '+ Add Co-Parent'}
         </button>
@@ -152,7 +153,7 @@ function CoOwnersSection({
       <p className="text-sm text-gray-500 mb-4">Organizations that co-own and govern this org</p>
 
       {activeOwnerships.length <= 1 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700 mb-4">
+        <div className="bg-brand-50 border border-brand-200 rounded-lg px-4 py-3 text-sm text-brand-700 mb-4">
           This org has a single parent. Add co-parents to enable governance consensus voting.
         </div>
       )}
@@ -166,12 +167,12 @@ function CoOwnersSection({
               value={newParentOrgId}
               onChange={(e) => setNewParentOrgId(e.target.value)}
               placeholder="Enter parent org ID"
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
             <button type="button"
               onClick={handleAdd}
               disabled={addLoading || !newParentOrgId.trim()}
-              className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
             >
               {addLoading ? 'Adding...' : 'Add'}
             </button>
@@ -189,13 +190,13 @@ function CoOwnersSection({
               <div className="flex-1 min-w-0">
                 <Link
                   href={`/tenant/${owner.parentOrg.id}`}
-                  className="font-medium text-gray-900 hover:text-blue-600 truncate block"
+                  className="font-medium text-gray-900 hover:text-brand truncate block"
                 >
                   {owner.parentOrg.name}
                 </Link>
                 <p className="text-xs text-gray-400">
                   Added {new Date(owner.addedAt).toLocaleDateString()}
-                  {owner.isPrimary && <span className="ml-2 text-blue-600 font-medium">· Primary</span>}
+                  {owner.isPrimary && <span className="ml-2 text-brand font-medium">· Primary</span>}
                 </p>
               </div>
               <OwnershipStatusBadge status={owner.status} />
@@ -304,9 +305,7 @@ export default function HierarchyPage() {
   if (loading) {
     return (
       <TenantLayout title="Organization Hierarchy" orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
@@ -329,7 +328,7 @@ export default function HierarchyPage() {
           {sortedAncestors.map((anc, i) => (
             <span key={anc.id} className="flex items-center gap-2">
               {i > 0 && <span className="text-gray-400">→</span>}
-              <Link href={`/tenant/${anc.id}`} className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link href={`/tenant/${anc.id}`} className="text-brand hover:text-brand-700 font-medium">
                 {anc.name}
               </Link>
             </span>
@@ -341,12 +340,12 @@ export default function HierarchyPage() {
 
       {/* Governance info banner */}
       {governanceMessage && (
-        <div className="mb-6 flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+        <div className="mb-6 flex items-start gap-3 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3 text-sm text-brand-800">
           <span className="mt-0.5">ℹ️</span>
           <span className="flex-1">{governanceMessage}</span>
           <button type="button"
             onClick={() => setGovernanceMessage(null)}
-            className="text-blue-600 hover:text-blue-800 font-bold text-base leading-none ml-2"
+            className="text-brand hover:text-brand-800 font-bold text-base leading-none ml-2"
             aria-label="Dismiss"
           >
             ×
@@ -383,7 +382,7 @@ export default function HierarchyPage() {
         {canCreateChildren && (
           <Link
             href={`/tenant/${orgId}/hierarchy/new`}
-            className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700"
+            className="bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-700"
           >
             + Create Child Organization
           </Link>
@@ -397,7 +396,7 @@ export default function HierarchyPage() {
           {canCreateChildren && (
             <Link
               href={`/tenant/${orgId}/hierarchy/new`}
-              className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 inline-block"
+              className="bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-700 inline-block"
             >
               Create your first child org
             </Link>
@@ -411,7 +410,7 @@ export default function HierarchyPage() {
                 <div>
                   <Link
                     href={`/tenant/${orgId}/hierarchy/${child.id}`}
-                    className="font-bold text-gray-900 hover:text-blue-600 transition-colors"
+                    className="font-bold text-gray-900 hover:text-brand transition-colors"
                   >
                     {child.name}
                   </Link>
@@ -451,7 +450,7 @@ export default function HierarchyPage() {
                   <button type="button"
                     onClick={() => handleReactivate(child.id)}
                     disabled={actionLoading === child.id + '-reactivate'}
-                    className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                    className="bg-brand text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
                   >
                     {actionLoading === child.id + '-reactivate' ? '...' : 'Reactivate'}
                   </button>

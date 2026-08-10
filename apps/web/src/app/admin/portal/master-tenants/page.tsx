@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AdminLayout } from '@/components/admin/shared';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 type PartyAffiliation = 'REPUBLICAN' | 'DEMOCRAT' | 'LIBERTARIAN' | 'GREEN' | 'INDEPENDENT' | 'NONPARTISAN' | 'OTHER';
 
@@ -172,15 +173,15 @@ export default function MasterTenantsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-raised">
           <p className="text-xs text-gray-500 mb-1">Total Parties</p>
           <p className="text-2xl font-bold text-gray-900">{ALL_PARTIES.length}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-raised">
           <p className="text-xs text-gray-500 mb-1">Assigned</p>
           <p className="text-2xl font-bold text-blue-600">{assignedCount}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-raised">
           <p className="text-xs text-gray-500 mb-1">Active</p>
           <p className="text-2xl font-bold text-green-600">{activeAssigned}</p>
         </div>
@@ -199,9 +200,7 @@ export default function MasterTenantsPage() {
 
       {/* Cards */}
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-        </div>
+        <PageLoading />
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-700">
           <p className="font-medium mb-2">{error}</p>
@@ -217,7 +216,7 @@ export default function MasterTenantsPage() {
             return (
               <div
                 key={party}
-                className={`bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col transition-shadow hover:shadow-md ${
+                className={`bg-white rounded-xl border shadow-raised overflow-hidden flex flex-col transition-shadow hover:shadow-floating ${
                   tenant ? 'border-gray-200' : 'border-dashed border-gray-300'
                 }`}
               >
@@ -298,7 +297,7 @@ export default function MasterTenantsPage() {
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setEditingParty(null); }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden max-h-[90vh]">
+          <div className="bg-white rounded-xl shadow-modal w-full max-w-lg flex flex-col overflow-hidden max-h-[90vh]">
             <div className={`px-6 py-4 flex items-center gap-3 ${PARTY_META[editingParty].bg} border-b ${PARTY_META[editingParty].border}`}>
               <div className="flex-1">
                 <h3 className={`text-base font-semibold ${PARTY_META[editingParty].color}`}>

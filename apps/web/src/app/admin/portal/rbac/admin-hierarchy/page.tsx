@@ -83,9 +83,9 @@ export default function AdminHierarchyPage() {
         {/* Header Card */}
         <motion.div
           className="bg-white rounded-xl border border-gray-200 p-6"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
         >
           <div className="flex items-start justify-between">
             <div>
@@ -119,7 +119,7 @@ export default function AdminHierarchyPage() {
         {error && (
           <motion.div
             className="bg-red-50 border border-red-200 rounded-xl p-4"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <p className="text-sm text-red-900">
@@ -149,9 +149,9 @@ export default function AdminHierarchyPage() {
         {!loading && hierarchyData && (
           <motion.div
             className="bg-white rounded-xl border border-gray-200 overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
           >
             <ReactFlowProvider>
               <AdminHierarchyGraph
@@ -167,9 +167,9 @@ export default function AdminHierarchyPage() {
         {!loading && hierarchyData && (
           <motion.div
             className="bg-white rounded-xl border border-gray-200 p-6"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
+            transition={{ duration: 0.2, delay: 0.2 }}
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-4">System Admins</h3>
             <div className="space-y-3">
@@ -181,7 +181,7 @@ export default function AdminHierarchyPage() {
                       ? 'bg-blue-50 border-blue-200'
                       : 'bg-gray-50 border-gray-200 opacity-60'
                   }`}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                 >
                   <div className="flex items-start justify-between">

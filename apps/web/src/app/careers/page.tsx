@@ -108,10 +108,10 @@ export default function CareersPage() {
             ].map((benefit, idx) => (
               <motion.div
                 key={benefit.title}
-                className="p-8 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 hover:shadow-lg transition-all hover:border-green-300"
-                initial={{ opacity: 0, y: 20 }}
+                className="p-8 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 hover:shadow-lg transition hover:border-green-300"
+                initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 <div className="text-4xl mb-4">{benefit.icon}</div>
                 <h3 className="text-xl font-bold mb-2">{benefit.title}</h3>
@@ -137,10 +137,10 @@ export default function CareersPage() {
               {featuredJobs.map((job, idx) => (
                 <motion.article
                   key={job.id}
-                  className="p-8 rounded-2xl bg-white border-2 border-green-200 hover:shadow-xl transition-all hover:border-green-400"
+                  className="p-8 rounded-2xl bg-white border-2 border-green-200 hover:shadow-xl transition hover:border-green-400"
                   initial={{ opacity: 0, scale: 0.95 }}
                   whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.1 }}
+                  transition={{ delay: Math.min(idx, 6) * 0.04 }}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -160,7 +160,7 @@ export default function CareersPage() {
                   <p className="text-gray-600 mb-6 line-clamp-3">{job.description}</p>
                   <Link
                     href={`/careers/${job.slug}#apply`}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full font-semibold hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full font-semibold hover:shadow-lg transition hover:scale-105 active:scale-95"
                   >
                     Learn More & Apply →
                   </Link>
@@ -183,7 +183,7 @@ export default function CareersPage() {
           <div className="mb-12 flex flex-wrap items-center gap-3">
             <button type="button"
               onClick={() => setSelectedDepartment(null)}
-              className={`px-4 py-2 rounded-full font-medium transition-all ${
+              className={`px-4 py-2 rounded-full font-medium transition ${
                 selectedDepartment === null
                   ? 'bg-green-600 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -195,7 +195,7 @@ export default function CareersPage() {
               <button type="button"
                 key={dept}
                 onClick={() => setSelectedDepartment(dept)}
-                className={`px-4 py-2 rounded-full font-medium transition-all ${
+                className={`px-4 py-2 rounded-full font-medium transition ${
                   selectedDepartment === dept
                     ? 'bg-green-600 text-white shadow-lg'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -228,14 +228,14 @@ export default function CareersPage() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 space-y-3">
-                        <div className="h-6 w-2/5 rounded bg-gray-100 animate-pulse" />
+                        <div className="skeleton h-6 w-2/5 rounded" />
                         <div className="flex flex-wrap items-center gap-3">
-                          <div className="h-4 w-24 rounded bg-gray-100 animate-pulse" />
-                          <div className="h-4 w-20 rounded bg-gray-100 animate-pulse" />
-                          <div className="h-4 w-28 rounded bg-gray-100 animate-pulse" />
+                          <div className="skeleton h-4 w-24 rounded" />
+                          <div className="skeleton h-4 w-20 rounded" />
+                          <div className="skeleton h-4 w-28 rounded" />
                         </div>
                       </div>
-                      <div className="h-10 w-20 rounded-full bg-gray-100 animate-pulse" />
+                      <div className="skeleton h-10 w-20 rounded-full" />
                     </div>
                   </div>
                 ))}
@@ -250,10 +250,10 @@ export default function CareersPage() {
               {filteredJobs.map((job, idx) => (
                 <motion.div
                   key={job.id}
-                  className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all hover:border-green-300 hover:bg-green-50"
-                  initial={{ opacity: 0, x: -20 }}
+                  className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition hover:border-green-300 hover:bg-green-50"
+                  initial={{ opacity: 0, x: -8 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
+                  transition={{ delay: Math.min(idx, 6) * 0.04 }}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -271,7 +271,7 @@ export default function CareersPage() {
                     </div>
                     <Link
                       href={`/careers/${job.slug}`}
-                      className="px-6 py-2 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-all text-sm whitespace-nowrap"
+                      className="px-6 py-2 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition-colors text-sm whitespace-nowrap"
                     >
                       View
                     </Link>
@@ -316,7 +316,7 @@ export default function CareersPage() {
                 className="group p-6 rounded-xl bg-white border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
-                transition={{ delay: idx * 0.05 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 <summary className="flex justify-between items-start font-bold text-lg cursor-pointer select-none">
                   {faq.q}
@@ -341,7 +341,7 @@ export default function CareersPage() {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               href="mailto:jobs@campaignsites.com"
-              className="inline-block px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl transition-all"
+              className="inline-block px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl transition"
             >
               Get in Touch
             </Link>

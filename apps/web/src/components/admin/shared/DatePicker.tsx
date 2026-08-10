@@ -161,7 +161,7 @@ export function DatePicker({
   while (cells.length % 7 !== 0) cells.push(null);
 
   const calendar = (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-lg p-4 w-72 select-none">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-floating p-4 w-72 select-none">
       {/* Month/Year header */}
       <div className="flex items-center justify-between mb-3">
         <button

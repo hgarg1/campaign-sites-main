@@ -101,8 +101,8 @@ export function DateRangePicker({
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full mt-2 right-0 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-80"
+            transition={{ duration: 0.2 }}
+            className="absolute top-full mt-2 right-0 z-50 bg-white border border-gray-200 rounded-xl shadow-overlay p-4 w-80"
             onClick={e => e.stopPropagation()}
           >
             {/* Quick select */}

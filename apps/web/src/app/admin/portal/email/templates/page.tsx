@@ -54,7 +54,7 @@ export default function EmailTemplatesPage() {
       <div>
         {/* Error State */}
         {error && selectedTemplate && (
-          <div className="mb-6 rounded-md bg-red-50 p-4 flex gap-3">
+          <div className="mb-6 rounded-lg bg-red-50 p-4 flex gap-3">
             <span className="text-red-600 flex-shrink-0 mt-0.5">⚠️</span>
             <div>
               <h3 className="font-medium text-red-900">Error Loading Template</h3>

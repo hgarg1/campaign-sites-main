@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantIntegrations, TenantIntegration } from '@/hooks/useTenant';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface ProviderDef {
   id: string;
@@ -75,7 +76,7 @@ const PROVIDERS: ProviderDef[] = [
 const TYPE_BADGE: Record<string, string> = {
   FUNDRAISING: 'bg-green-100 text-green-700',
   CRM: 'bg-purple-100 text-purple-700',
-  EMAIL: 'bg-blue-100 text-blue-700',
+  EMAIL: 'bg-brand-100 text-brand-700',
   ANALYTICS: 'bg-orange-100 text-orange-700',
 };
 
@@ -175,12 +176,12 @@ export default function OrgIntegrationsPage() {
     }
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   return (
     <TenantLayout title="Integrations" subtitle="Connect services to your organization" orgId={orgId}>
       {/* Security note */}
-      <div className="mb-5 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-700">
+      <div className="mb-5 flex items-start gap-2 bg-brand-50 border border-brand-200 rounded-lg px-4 py-3 text-sm text-brand-700">
         <span>🔒</span>
         <span>Credentials are encrypted at rest. Secret fields are masked after saving.</span>
       </div>
@@ -191,9 +192,7 @@ export default function OrgIntegrationsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-        </div>
+        <PageLoading />
       ) : (
         <div className="space-y-4">
           {PROVIDERS.map(provider => {
@@ -234,7 +233,7 @@ export default function OrgIntegrationsPage() {
                         <button type="button"
                           onClick={() => handleTest(existing.id)}
                           disabled={testing === existing.id}
-                          className="text-xs font-medium px-2 py-1 rounded border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 flex items-center gap-1"
+                          className="text-xs font-medium px-2 py-1 rounded border border-brand-200 text-brand hover:bg-brand-50 disabled:opacity-50 flex items-center gap-1"
                         >
                           {testing === existing.id ? (
                             <><span className="animate-spin inline-block">⟳</span> Testing…</>
@@ -267,7 +266,7 @@ export default function OrgIntegrationsPage() {
                         <span className="text-xs text-gray-400">Not configured</span>
                         <button type="button"
                           onClick={() => openModal(provider)}
-                          className="text-xs font-medium px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700"
+                          className="text-xs font-medium px-3 py-1.5 rounded bg-brand text-white hover:bg-brand-700"
                         >
                           Configure
                         </button>
@@ -313,7 +312,7 @@ export default function OrgIntegrationsPage() {
       {/* ── Configure / Edit Modal ── */}
       {modalProvider && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-overlay">
             <h3 className="text-lg font-bold text-gray-900 mb-1">
               Configure {modalProvider.name}
             </h3>
@@ -339,7 +338,7 @@ export default function OrgIntegrationsPage() {
               <button type="button"
                 onClick={handleModalSave}
                 disabled={saving}
-                className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save & Enable'}
               </button>

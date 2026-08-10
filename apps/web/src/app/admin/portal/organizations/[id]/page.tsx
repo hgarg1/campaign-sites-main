@@ -21,6 +21,7 @@ import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { logSystemAdminAction } from '@/lib/audit-log';
 import { useSystemAdminPermissions } from '@/hooks/use-system-admin-permissions';
 import { PermissionGatedButton } from '@/components/admin/rbac/PermissionGate';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 // ─── Hierarchy tab types ────────────────────────────────────────────────────
 
@@ -187,9 +188,7 @@ function HierarchyTab({ orgId }: { orgId: string }) {
 
   if (hierarchyLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <PageLoading />
     );
   }
 
@@ -543,9 +542,7 @@ function PoliciesTab({ orgId }: { orgId: string }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <PageLoading />
     );
   }
 
@@ -750,9 +747,7 @@ export default function OrganizationDetailPage() {
   if (loading) {
     return (
       <AdminLayout title="Loading..." subtitle="">
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </AdminLayout>
     );
   }

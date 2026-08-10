@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface UserProfile {
   id: string;
@@ -108,15 +109,13 @@ export default function ProfilePage() {
     }
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
   const avatarLetter = (name || email || 'U').charAt(0).toUpperCase();
 
   if (loading) {
     return (
       <TenantLayout title="Profile" orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
@@ -126,7 +125,7 @@ export default function ProfilePage() {
       <div className="max-w-2xl space-y-6">
         {/* Avatar */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand to-purple-500 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
             {avatarLetter}
           </div>
           <div>
@@ -150,7 +149,7 @@ export default function ProfilePage() {
             {profileMsg && (
               <p className={`text-sm ${profileMsg.includes('success') ? 'text-green-700' : 'text-red-600'}`}>{profileMsg}</p>
             )}
-            <button type="submit" disabled={savingProfile} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+            <button type="submit" disabled={savingProfile} className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
               {savingProfile ? 'Saving...' : 'Save Profile'}
             </button>
           </form>
@@ -176,7 +175,7 @@ export default function ProfilePage() {
             {passwordMsg && (
               <p className={`text-sm ${passwordMsg.includes('success') ? 'text-green-700' : 'text-red-600'}`}>{passwordMsg}</p>
             )}
-            <button type="submit" disabled={savingPassword} className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+            <button type="submit" disabled={savingPassword} className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
               {savingPassword ? 'Changing...' : 'Change Password'}
             </button>
           </form>

@@ -108,8 +108,8 @@ export function Dialog({
 
   const panel =
     side === 'right'
-      ? `relative ml-auto h-full w-full ${sizes[size]} bg-white shadow-xl flex flex-col`
-      : `relative w-full ${sizes[size]} max-h-[90vh] rounded-xl bg-white shadow-xl flex flex-col`;
+      ? `relative ml-auto h-full w-full ${sizes[size]} bg-white shadow-overlay flex flex-col`
+      : `relative w-full ${sizes[size]} max-h-[90vh] rounded-xl bg-white shadow-overlay flex flex-col`;
 
   return (
     <div

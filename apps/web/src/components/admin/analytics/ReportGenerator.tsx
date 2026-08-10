@@ -74,7 +74,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100"
     >
@@ -87,7 +87,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
             <button type="button"
               key={type}
               onClick={() => setReportType(type)}
-              className={`py-2 px-3 rounded-lg border-2 font-medium text-sm text-center transition-all ${
+              className={`py-2 px-3 rounded-lg border-2 font-medium text-sm text-center transition-colors ${
                 reportType === type
                   ? 'border-blue-600 bg-blue-50 text-blue-900'
                   : 'border-gray-200 hover:border-gray-300 text-gray-700'
@@ -139,7 +139,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
             <button type="button"
               key={metric.id}
               onClick={() => toggleMetric(metric.id)}
-              className={`p-3 rounded-lg border-2 text-center transition-all ${
+              className={`p-3 rounded-lg border-2 text-center transition-colors ${
                 selectedMetrics.includes(metric.id)
                   ? 'border-purple-600 bg-purple-50'
                   : 'border-gray-200 hover:border-gray-300'
@@ -160,7 +160,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
             <button type="button"
               key={dimension.id}
               onClick={() => toggleDimension(dimension.id)}
-              className={`p-3 rounded-lg border-2 text-center transition-all ${
+              className={`p-3 rounded-lg border-2 text-center transition-colors ${
                 selectedDimensions.includes(dimension.id)
                   ? 'border-green-600 bg-green-50'
                   : 'border-gray-200 hover:border-gray-300'
@@ -181,7 +181,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
             <button type="button"
               key={f}
               onClick={() => setFormat(f)}
-              className={`py-2 px-3 rounded-lg border-2 font-semibold text-sm transition-all ${
+              className={`py-2 px-3 rounded-lg border-2 font-semibold text-sm transition-colors ${
                 format === f
                   ? 'border-orange-600 bg-orange-50 text-orange-900'
                   : 'border-gray-200 hover:border-gray-300 text-gray-700'
@@ -198,7 +198,7 @@ export function ReportGenerator({ loading, onGenerate }: ReportGeneratorProps) {
         <button type="button"
           onClick={handleGenerate}
           disabled={loading}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg hover:shadow-floating transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

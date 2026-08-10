@@ -17,9 +17,9 @@ export function PermissionAlert({
 }: PermissionAlertProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="rounded-lg border border-red-200 bg-red-50 p-4"
     >
       <div className="flex gap-3">
@@ -53,7 +53,7 @@ export function PermissionErrorPage({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="flex items-center justify-center min-h-[400px]"
     >
       <div className="text-center max-w-md">

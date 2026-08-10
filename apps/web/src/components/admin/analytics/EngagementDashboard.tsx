@@ -10,7 +10,7 @@ interface EngagementDashboardProps {
 
 export function EngagementDashboard({ data, loading }: EngagementDashboardProps) {
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
+    return <div className="skeleton h-96 rounded-lg" />;
   }
 
   if (!data || !Array.isArray(data) || data.length === 0) {
@@ -40,7 +40,7 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
@@ -53,9 +53,9 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
           return (
             <motion.div
               key={metric.metric}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: Math.min(index, 6) * 0.04 }}
               className={`${colorClass} rounded-lg p-4 border border-current border-opacity-20`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -99,7 +99,7 @@ export function EngagementDashboard({ data, loading }: EngagementDashboardProps)
               </div>
               <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${
+                  className={`h-full rounded-full transition-[width] duration-500 ${
                     scorePercentage >= 75
                       ? 'bg-green-500'
                       : scorePercentage >= 50

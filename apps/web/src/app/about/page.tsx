@@ -49,10 +49,10 @@ export default function AboutPage() {
             ].map((item, idx) => (
               <motion.div
                 key={item.title}
-                className="p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 hover:shadow-lg transition-all hover:border-blue-300"
-                initial={{ opacity: 0, y: 20 }}
+                className="p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 hover:shadow-lg transition hover:border-blue-300"
+                initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 <div className="text-4xl mb-4">{item.icon}</div>
                 <h3 className="text-xl font-bold mb-2">{item.title}</h3>
@@ -90,10 +90,10 @@ export default function AboutPage() {
             ].map((item, idx) => (
               <motion.div
                 key={item.heading}
-                className="p-8 rounded-2xl bg-white border border-gray-200 hover:shadow-lg transition-all"
+                className="p-8 rounded-2xl bg-white border border-gray-200 hover:shadow-lg transition"
                 initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 <div className="flex items-start gap-4">
                   <div className="text-3xl flex-shrink-0">{item.icon}</div>
@@ -145,10 +145,10 @@ export default function AboutPage() {
             ].map((value, idx) => (
               <motion.div
                 key={value.title}
-                className="p-8 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition-all hover:border-blue-300"
+                className="p-8 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition hover:border-blue-300"
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.05 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 <h3 className="text-xl font-bold mb-3">{value.title}</h3>
                 <p className="text-gray-600">{value.desc}</p>
@@ -199,7 +199,7 @@ export default function AboutPage() {
                 className="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 {idx % 2 === 0 ? (
                   <>
@@ -207,14 +207,14 @@ export default function AboutPage() {
                       <div className="text-3xl font-bold text-blue-600 mb-2">{item.year}</div>
                       <div className="hidden md:block w-1 h-12 bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full"></div>
                     </div>
-                    <div className="md:w-2/3 p-6 rounded-2xl bg-white border border-blue-200 hover:shadow-lg transition-all">
+                    <div className="md:w-2/3 p-6 rounded-2xl bg-white border border-blue-200 hover:shadow-lg transition">
                       <h3 className="text-xl font-bold mb-2">{item.title}</h3>
                       <p className="text-gray-600">{item.desc}</p>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="md:w-2/3 p-6 rounded-2xl bg-white border border-blue-200 hover:shadow-lg transition-all">
+                    <div className="md:w-2/3 p-6 rounded-2xl bg-white border border-blue-200 hover:shadow-lg transition">
                       <h3 className="text-xl font-bold mb-2">{item.title}</h3>
                       <p className="text-gray-600">{item.desc}</p>
                     </div>
@@ -246,10 +246,10 @@ export default function AboutPage() {
             ].map((item, idx) => (
               <motion.div
                 key={item.stat}
-                className="text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 hover:shadow-lg transition-all"
-                initial={{ opacity: 0, y: 20 }}
+                className="text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 hover:shadow-lg transition"
+                initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 <div className="text-4xl font-bold text-blue-600 mb-2">{item.stat}</div>
                 <p className="text-gray-600 font-medium">{item.label}</p>
@@ -286,10 +286,10 @@ export default function AboutPage() {
             ].map((item, idx) => (
               <motion.div
                 key={item.author}
-                className="p-8 rounded-2xl bg-white border border-gray-200 hover:shadow-lg transition-all"
+                className="p-8 rounded-2xl bg-white border border-gray-200 hover:shadow-lg transition"
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.1 }}
+                transition={{ delay: Math.min(idx, 6) * 0.04 }}
               >
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(5)].map((_, i) => (
@@ -322,7 +322,7 @@ export default function AboutPage() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/get-started"
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl transition-all inline-block"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl transition inline-block"
               >
                 Get Started Today
               </Link>
@@ -330,7 +330,7 @@ export default function AboutPage() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/features"
-                className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition-all inline-block"
+                className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition inline-block"
               >
                 Explore Features
               </Link>

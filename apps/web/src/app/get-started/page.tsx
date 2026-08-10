@@ -312,7 +312,7 @@ export default function GetStartedPage() {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
+              transition={{ duration: 0.2 }}
               className="rounded-3xl border border-blue-100 bg-white shadow-xl p-8 md:p-10 text-center"
             >
               <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-2xl mb-4">
@@ -326,13 +326,13 @@ export default function GetStartedPage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/welcome"
-                  className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all"
+                  className="px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition"
                 >
                   Continue to Welcome
                 </Link>
                 <Link
                   href="/contact"
-                  className="px-6 py-3 rounded-full border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all"
+                  className="px-6 py-3 rounded-full border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                 >
                   Contact Support
                 </Link>
@@ -368,16 +368,16 @@ export default function GetStartedPage() {
                 <motion.div
                   className="h-full bg-gradient-to-r from-blue-600 to-purple-600"
                   animate={{ width: `${stepProgress}%` }}
-                  transition={{ duration: 0.25 }}
+                  transition={{ duration: 0.2 }}
                 />
               </div>
 
               <motion.div
                 key={`encouragement-${step}`}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 className="mt-6 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-purple-50 p-4"
               >
                 <p className="text-lg font-semibold text-gray-900">{encouragementMessages[step].text}</p>
@@ -389,9 +389,9 @@ export default function GetStartedPage() {
               <AnimatePresence mode="wait">
                 <motion.div
                   key={step}
-                  initial={{ opacity: 0, x: 24 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -24 }}
+                  exit={{ opacity: 0, x: -8 }}
                   transition={{ duration: 0.2 }}
                 >
                   {step === 1 && (
@@ -484,7 +484,7 @@ export default function GetStartedPage() {
                         <p className="text-sm font-semibold text-gray-700 mb-2">Launch Timeline *</p>
                         <div className="flex flex-wrap gap-2">
                           {timelineOptions.map((option) => (
-                            <button key={option} type="button" onClick={() => setTimeline(option)} className={`px-4 py-2 rounded-full border transition-all ${timeline === option ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'}`}>
+                            <button key={option} type="button" onClick={() => setTimeline(option)} className={`px-4 py-2 rounded-full border transition-colors ${timeline === option ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'}`}>
                               {option}
                             </button>
                           ))}
@@ -494,7 +494,7 @@ export default function GetStartedPage() {
                         <p className="text-sm font-semibold text-gray-700 mb-2">Team Size *</p>
                         <div className="flex flex-wrap gap-2">
                           {teamSizeOptions.map((option) => (
-                            <button key={option} type="button" onClick={() => setTeamSize(option)} className={`px-4 py-2 rounded-full border transition-all ${teamSize === option ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'}`}>
+                            <button key={option} type="button" onClick={() => setTeamSize(option)} className={`px-4 py-2 rounded-full border transition-colors ${teamSize === option ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'}`}>
                               {option}
                             </button>
                           ))}
@@ -504,7 +504,7 @@ export default function GetStartedPage() {
                         <p className="text-sm font-semibold text-gray-700 mb-2">Budget Range *</p>
                         <div className="flex flex-wrap gap-2">
                           {budgetOptions.map((option) => (
-                            <button key={option} type="button" onClick={() => setBudgetRange(option)} className={`px-4 py-2 rounded-full border transition-all ${budgetRange === option ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'}`}>
+                            <button key={option} type="button" onClick={() => setBudgetRange(option)} className={`px-4 py-2 rounded-full border transition-colors ${budgetRange === option ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'}`}>
                               {option}
                             </button>
                           ))}
@@ -543,7 +543,7 @@ export default function GetStartedPage() {
                         <p className="text-sm font-semibold text-gray-700 mb-2">Primary Goals *</p>
                         <div className="flex flex-wrap gap-2">
                           {goalOptions.map((goal) => (
-                            <button key={goal} type="button" onClick={() => toggleGoal(goal)} className={`px-4 py-2 rounded-full border transition-all ${goals.includes(goal) ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-700 border-gray-300 hover:border-purple-300'}`}>
+                            <button key={goal} type="button" onClick={() => toggleGoal(goal)} className={`px-4 py-2 rounded-full border transition-colors ${goals.includes(goal) ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-700 border-gray-300 hover:border-purple-300'}`}>
                               {goal}
                             </button>
                           ))}
@@ -609,16 +609,16 @@ export default function GetStartedPage() {
               {success && <p className="text-sm text-green-700">{success}</p>}
 
               <div className="flex items-center justify-between pt-2">
-                <button type="button" onClick={back} disabled={step === 1 || submitting} className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all">
+                <button type="button" onClick={back} disabled={step === 1 || submitting} className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition">
                   Back
                 </button>
 
                 {step < 7 ? (
-                  <button type="button" onClick={next} disabled={submitting} className="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                  <button type="button" onClick={next} disabled={submitting} className="px-6 py-2 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed">
                     Continue
                   </button>
                 ) : (
-                  <button type="submit" disabled={submitting} className="px-6 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                  <button type="submit" disabled={submitting} className="px-6 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
                     {submitting ? 'Submitting...' : 'Create Account & Submit'}
                   </button>
                 )}

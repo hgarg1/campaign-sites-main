@@ -117,7 +117,7 @@ export default function PricingPage() {
               <article
                 key={plan.name}
                 className={[
-                  'rounded-3xl border transition-all duration-300 cursor-pointer hover:shadow-2xl',
+                  'rounded-3xl border transition duration-300 cursor-pointer hover:shadow-2xl',
                   plan.highlight
                     ? 'border-blue-400 shadow-2xl shadow-blue-200/50 scale-105 bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900/10'
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-xl hover:border-gray-300',
@@ -152,7 +152,7 @@ export default function PricingPage() {
                       setSelectedPlan(plan.name);
                     }}
                     className={[
-                      'w-full rounded-full px-6 py-3 font-semibold transition-all',
+                      'w-full rounded-full px-6 py-3 font-semibold transition-colors',
                       plan.highlight
                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl'
                         : 'border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700',
@@ -245,13 +245,13 @@ export default function PricingPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/contact"
-              className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all"
+              className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition"
             >
               Talk to Sales
             </Link>
             <Link
               href="/product"
-              className="px-8 py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-full text-lg font-semibold hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-lg transition-all"
+              className="px-8 py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-full text-lg font-semibold hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-lg transition"
             >
               Product Tour
             </Link>

@@ -57,9 +57,9 @@ export function BatchActionsToolbar({
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
+        exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.2 }}
         className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between"
       >

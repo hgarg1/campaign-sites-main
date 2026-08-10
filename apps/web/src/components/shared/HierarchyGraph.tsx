@@ -71,7 +71,9 @@ function OrganizationNode({ data }: { data: OrgNodeData }) {
         borderColor: colors.border,
         color: colors.text,
       }}
-      className="shadow-lg hover:shadow-xl hover:scale-105 transform transition-all"
+      // Elevation rather than scale — these nodes carry an org name and two
+      // counts, and scaling resampled all of it on hover.
+      className="shadow-floating transition-shadow duration-base ease-enter hover:shadow-overlay"
     >
       <div className="font-bold">{data.label}</div>
       {(data.org.memberCount !== undefined || data.org.websiteCount !== undefined) && (

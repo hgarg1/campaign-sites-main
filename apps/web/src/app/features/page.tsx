@@ -244,7 +244,7 @@ export default function FeaturesPage() {
             ].map((item) => (
               <motion.article
                 key={item.title}
-                className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-8 hover:shadow-xl transition-all hover:border-blue-300"
+                className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-8 hover:shadow-xl transition hover:border-blue-300"
                 whileHover={{ y: -4 }}
               >
                 <div className="text-4xl mb-3">{item.icon}</div>
@@ -277,10 +277,10 @@ export default function FeaturesPage() {
             ].map((item, index) => (
               <motion.div
                 key={item.step}
-                className="rounded-2xl bg-white p-6 border border-gray-200 hover:shadow-lg transition-all hover:border-blue-300"
-                initial={{ opacity: 0, y: 20 }}
+                className="rounded-2xl bg-white p-6 border border-gray-200 hover:shadow-lg transition hover:border-blue-300"
+                initial={{ opacity: 0, y: 8 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: Math.min(index, 6) * 0.04 }}
               >
                 <div className="text-3xl mb-3">{item.icon}</div>
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center mb-4 text-sm">
@@ -311,8 +311,10 @@ export default function FeaturesPage() {
               <motion.button
                 key={integration.id}
                 onClick={() => setSelectedIntegration(integration)}
-                className="group rounded-xl bg-white border-2 border-gray-200 hover:border-blue-400 p-5 text-left transition-all hover:shadow-lg hover:scale-105 active:scale-95"
-                whileHover={{ y: -2 }}
+                // Lift, don't zoom: `hover:scale-105` resampled the card's text on
+                // every hover, and it fought `whileHover={{ y: -2 }}` and
+                // a blanket `transition-colors` for control of the same gesture.
+                className="group rounded-xl bg-white border-2 border-gray-200 p-5 text-left shadow-raised transition-[transform,box-shadow,border-color] duration-base ease-enter hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-floating active:translate-y-0"
               >
                 <div className="text-4xl mb-3">{integration.icon}</div>
                 <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
@@ -347,10 +349,10 @@ export default function FeaturesPage() {
             ].map((item, index) => (
               <motion.div
                 key={item.title}
-                className="rounded-2xl border border-gray-200 p-7 bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition-all hover:border-green-300"
+                className="rounded-2xl border border-gray-200 p-7 bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition hover:border-green-300"
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: Math.min(index, 6) * 0.04 }}
               >
                 <div className="text-3xl mb-3">{item.icon}</div>
                 <h3 className="text-xl font-bold mb-2">{item.title}</h3>
@@ -433,10 +435,10 @@ export default function FeaturesPage() {
             ].map((item, index) => (
               <motion.div
                 key={item.q}
-                className="rounded-2xl border border-gray-200 bg-white p-6 hover:shadow-lg transition-all hover:border-purple-300"
-                initial={{ opacity: 0, x: -20 }}
+                className="rounded-2xl border border-gray-200 bg-white p-6 hover:shadow-lg transition hover:border-purple-300"
+                initial={{ opacity: 0, x: -8 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: Math.min(index, 6) * 0.04 }}
               >
                 <div className="flex items-start gap-4">
                   <span className="text-2xl flex-shrink-0">{item.icon}</span>
@@ -463,7 +465,7 @@ export default function FeaturesPage() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/get-started"
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl transition-all inline-block"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl transition inline-block"
               >
                 Start Building Today
               </Link>
@@ -471,7 +473,7 @@ export default function FeaturesPage() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 href="/pricing"
-                className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition-all inline-block"
+                className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition inline-block"
               >
                 View Pricing
               </Link>

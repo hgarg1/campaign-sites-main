@@ -128,7 +128,7 @@ export default function AdminPasskeyManagementPage() {
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-raised overflow-hidden">
           <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <span>User</span>
             <span>Passkeys</span>
@@ -138,7 +138,7 @@ export default function AdminPasskeyManagementPage() {
 
           {loading ? (
             <div className="p-6 space-y-3">
-              {[1, 2, 3].map((i) => <div key={i} className="animate-pulse bg-gray-100 h-10 rounded" />)}
+              {[1, 2, 3].map((i) => <div key={i} className="skeleton h-10 rounded" />)}
             </div>
           ) : users.length === 0 ? (
             <div className="p-8 text-center text-gray-400 text-sm">No admin users found.</div>

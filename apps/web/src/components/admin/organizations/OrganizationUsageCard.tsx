@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { OrganizationUsage } from '@/hooks/useOrganizations';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface OrganizationUsageProps {
   usage: OrganizationUsage | null;
@@ -12,9 +13,7 @@ export function OrganizationUsageCard({ usage, loading }: OrganizationUsageProps
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </div>
     );
   }
@@ -28,9 +27,9 @@ export function OrganizationUsageCard({ usage, loading }: OrganizationUsageProps
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.3 }}
+      transition={{ duration: 0.2, delay: 0.3 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Usage & Billing</h3>

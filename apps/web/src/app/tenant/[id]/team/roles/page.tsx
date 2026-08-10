@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useEffectiveRestrictions } from '@/hooks/useRestrictions';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface OrgCustomRole {
   id: string;
@@ -214,7 +215,7 @@ export default function RolesPage() {
         </h2>
         <button type="button"
           onClick={openCreate}
-          className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium"
+          className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium"
         >
           + Create Role
         </button>
@@ -222,9 +223,7 @@ export default function RolesPage() {
 
       {/* Role cards */}
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-        </div>
+        <PageLoading />
       ) : roles.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500">
           No custom roles yet. Click &ldquo;+ Create Role&rdquo; to get started.
@@ -249,7 +248,7 @@ export default function RolesPage() {
                   <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                     <button type="button"
                       onClick={() => openEdit(role)}
-                      className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50"
+                      className="text-xs text-brand hover:text-brand-700 px-2 py-1 rounded hover:bg-brand-50"
                     >
                       Edit
                     </button>
@@ -290,7 +289,7 @@ export default function RolesPage() {
       {/* ── Create / Edit Modal ── */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-gray-200 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-xl border border-gray-200 w-full max-w-2xl shadow-overlay max-h-[90vh] flex flex-col">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-bold text-gray-900">
@@ -316,7 +315,7 @@ export default function RolesPage() {
                   value={formName}
                   onChange={e => setFormName(e.target.value)}
                   placeholder="e.g. Content Editor"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
@@ -330,7 +329,7 @@ export default function RolesPage() {
                   onChange={e => setFormDesc(e.target.value)}
                   placeholder="Optional: describe what this role can do"
                   rows={2}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
 
@@ -403,7 +402,7 @@ export default function RolesPage() {
                                     checked={checked}
                                     disabled={blocked}
                                     onChange={() => !blocked && togglePerm(resource, action)}
-                                    className={`h-4 w-4 rounded border-gray-300 text-blue-600 ${
+                                    className={`h-4 w-4 rounded border-gray-300 text-brand ${
                                       blocked
                                         ? 'opacity-40 cursor-not-allowed'
                                         : 'cursor-pointer'
@@ -426,7 +425,7 @@ export default function RolesPage() {
               <button type="button"
                 onClick={handleSave}
                 disabled={saving || !formName.trim()}
-                className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save Role'}
               </button>
@@ -444,7 +443,7 @@ export default function RolesPage() {
       {/* ── Delete confirmation ── */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md shadow-overlay">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Role</h3>
             <p className="text-sm text-gray-600 mb-6">
               Are you sure you want to delete the role{' '}

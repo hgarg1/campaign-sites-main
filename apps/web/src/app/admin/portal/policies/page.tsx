@@ -162,7 +162,7 @@ function PolicyModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-modal w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="px-7 py-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
           <div>
@@ -356,7 +356,7 @@ export default function PoliciesPage() {
 
         {loading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => <div key={i} className="animate-pulse bg-gray-100 h-20 rounded-xl" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="skeleton h-20 rounded-xl" />)}
           </div>
         ) : policies.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
@@ -371,7 +371,7 @@ export default function PoliciesPage() {
         ) : (
           <div className="space-y-3">
             {policies.map((policy) => (
-              <div key={policy.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+              <div key={policy.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-raised">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">

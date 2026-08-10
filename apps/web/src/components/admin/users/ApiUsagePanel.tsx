@@ -85,9 +85,9 @@ export function ApiUsagePanel({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.3 }}
+      transition={{ duration: 0.2, delay: 0.3 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-bold text-gray-900 mb-6">API Usage & Quotas</h3>
@@ -103,7 +103,7 @@ export function ApiUsagePanel({
           return (
             <motion.div
               key={item.label}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2, delay: 0.05 * idx }}
             >
@@ -155,7 +155,7 @@ export function ApiUsagePanel({
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
+        transition={{ duration: 0.2, delay: 0.4 }}
         className="mt-6 pt-6 border-t border-gray-200"
       >
         <button type="button" className="w-full px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">

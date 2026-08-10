@@ -48,7 +48,7 @@ export function CascadeImpact({
     };
   }, [orgId, action]);
 
-  if (loading) return <div className="h-10 animate-pulse rounded bg-gray-100" />;
+  if (loading) return <div className="skeleton h-10 rounded" />;
 
   // Never imply a cascade is small just because the preview failed to load.
   if (failed || !data) {

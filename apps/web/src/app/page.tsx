@@ -18,7 +18,7 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="p-8 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="p-8 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl hover:shadow-xl transition hover:-translate-y-1">
               <h3 className="text-xl font-bold mb-2">Lightning Fast</h3>
               <p className="text-gray-600 mb-5">Generate complete campaign websites in minutes with our multi-LLM AI pipeline.</p>
               <Link href="/features" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
@@ -26,7 +26,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="p-8 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="p-8 bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl hover:shadow-xl transition hover:-translate-y-1">
               <h3 className="text-xl font-bold mb-2">Secure & Compliant</h3>
               <p className="text-gray-600 mb-5">Built-in security audits and WCAG 2.1 AA accessibility compliance checks.</p>
               <Link href="/security" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
@@ -34,7 +34,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="p-8 bg-gradient-to-br from-pink-50 to-pink-100/50 rounded-2xl hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="p-8 bg-gradient-to-br from-pink-50 to-pink-100/50 rounded-2xl hover:shadow-xl transition hover:-translate-y-1">
               <h3 className="text-xl font-bold mb-2">Fully Customizable</h3>
               <p className="text-gray-600 mb-5">Start from templates or scratch. Every element is customizable to match your brand.</p>
               <Link href="/templates" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
@@ -42,7 +42,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="p-8 bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="p-8 bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl hover:shadow-xl transition hover:-translate-y-1">
               <h3 className="text-xl font-bold mb-2">Deep Integrations</h3>
               <p className="text-gray-600 mb-5">Connect ActBlue, Anedot, Salesforce, and HubSpot with one click.</p>
               <Link href="/integrations" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
@@ -50,7 +50,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="p-8 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="p-8 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl hover:shadow-xl transition hover:-translate-y-1">
               <h3 className="text-xl font-bold mb-2">Party Neutral</h3>
               <p className="text-gray-600 mb-5">Built for all campaigns. No bias, no partisanship, just great technology.</p>
               <Link href="/about" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
@@ -58,7 +58,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="p-8 bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-2xl hover:shadow-xl transition-all hover:-translate-y-1">
+            <div className="p-8 bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-2xl hover:shadow-xl transition hover:-translate-y-1">
               <h3 className="text-xl font-bold mb-2">White Label Ready</h3>
               <p className="text-gray-600 mb-5">Political parties can white-label the entire platform with custom branding.</p>
               <Link href="/pricing" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
@@ -152,7 +152,7 @@ export default function Home() {
           <p className="text-xl text-gray-600 mb-12">Join campaigns using CampaignSites to build beautiful, effective websites in minutes.</p>
           <Link
             href="/get-started"
-            className="inline-flex px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-xl font-semibold hover:shadow-2xl hover:scale-105 transition-all"
+            className="inline-flex px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-xl font-semibold hover:shadow-2xl hover:scale-105 transition"
           >
             Get Started Free
           </Link>

@@ -276,7 +276,7 @@ export default function UsersPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-8 flex flex-col max-h-[90vh]"
+              className="bg-white rounded-lg shadow-overlay max-w-2xl w-full p-8 flex flex-col max-h-[90vh]"
             >
               <div className="mb-8">
                 <h2 className="text-3xl font-bold text-gray-900">Create New User</h2>
@@ -304,9 +304,9 @@ export default function UsersPage() {
               {/* Step 1: Email & Name */}
               {wizardStep === 1 && (
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -8 }}
                   className="space-y-4"
                 >
                   <div>
@@ -358,9 +358,9 @@ export default function UsersPage() {
               {/* Step 2: Role Selection */}
               {wizardStep === 2 && (
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -8 }}
                   className="space-y-4"
                 >
                   <label className="block text-sm font-medium text-gray-700 mb-4">
@@ -425,9 +425,9 @@ export default function UsersPage() {
               {/* Step 3: Justification */}
               {wizardStep === 3 && (
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -8 }}
                   className="space-y-4"
                 >
                   <div>
@@ -470,9 +470,9 @@ export default function UsersPage() {
               {/* Step 4: Success */}
               {wizardStep === 4 && createdUser && (
                 <motion.div
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -8 }}
                   className="flex flex-col h-full"
                 >
                   <div className="max-h-[calc(100vh-300px)] overflow-y-auto pr-2 space-y-4">

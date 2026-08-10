@@ -10,7 +10,7 @@ interface GrowthMetricsProps {
 
 export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
+    return <div className="skeleton h-96 rounded-lg" />;
   }
 
   if (!data) {
@@ -25,7 +25,7 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
@@ -34,9 +34,9 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: Math.min(index, 6) * 0.04 }}
             className={`${metric.color} rounded-lg p-6 border border-current border-opacity-20`}
           >
             <div className="text-sm font-medium opacity-75">{metric.label}</div>
@@ -77,7 +77,7 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
                     <div className="w-10 shrink-0 text-xs text-gray-600">Users</div>
                     <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-blue-500 h-full rounded-full transition-all duration-300"
+                        className="bg-blue-500 h-full rounded-full transition duration-300"
                         style={{ width: `${userWidth}%` }}
                       />
                     </div>
@@ -87,7 +87,7 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
                     <div className="w-10 shrink-0 text-xs text-gray-600">Orgs</div>
                     <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-purple-500 h-full rounded-full transition-all duration-300"
+                        className="bg-purple-500 h-full rounded-full transition duration-300"
                         style={{ width: `${orgWidth}%` }}
                       />
                     </div>
@@ -97,7 +97,7 @@ export function GrowthMetrics({ data, loading }: GrowthMetricsProps) {
                     <div className="w-10 shrink-0 text-xs text-gray-600">Sites</div>
                     <div className="flex-1 min-w-0 bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div
-                        className="bg-green-500 h-full rounded-full transition-all duration-300"
+                        className="bg-green-500 h-full rounded-full transition duration-300"
                         style={{ width: `${websiteWidth}%` }}
                       />
                     </div>

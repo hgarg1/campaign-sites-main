@@ -65,7 +65,7 @@ function ToastItem({ id, title, message, type, duration = 5000, action, onClose 
       initial={{ opacity: 0, x: 400, y: 0 }}
       animate={{ opacity: 1, x: 0, y: 0 }}
       exit={{ opacity: 0, x: 400, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className={`${style.bg} border ${style.border} rounded-lg p-4 mb-3 max-w-md`}
     >
       <div className="flex gap-3">

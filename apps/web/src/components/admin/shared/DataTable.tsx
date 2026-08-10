@@ -2,6 +2,7 @@
 
 import { ReactNode, useMemo, useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface Column<T> {
   key: keyof T | 'actions';
@@ -101,9 +102,7 @@ export function DataTable<T extends Record<string, any>>({
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <PageLoading />
     );
   }
 
@@ -119,7 +118,7 @@ export function DataTable<T extends Record<string, any>>({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 overflow-hidden"
     >
       <div className="overflow-x-auto">
@@ -162,9 +161,9 @@ export function DataTable<T extends Record<string, any>>({
             {sortedData.map((row, rowIndex) => (
               <motion.tr
                 key={String(row[keyField])}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: rowIndex * 0.02 }}
+                transition={{ duration: 0.2, delay: Math.min(rowIndex, 6) * 0.04 }}
                 onClick={() => !selectable && onRowClick?.(row)}
                 className={`${
                   !selectable && onRowClick ? 'cursor-pointer hover:bg-blue-50' : ''

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { ApiKey } from '@/hooks/useSettings';
 import { useToast } from '../shared/ToastContext';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface ApiKeysManagerProps {
   keys: ApiKey[];
@@ -77,9 +78,7 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </div>
     );
   }
@@ -103,7 +102,7 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
       {/* Create Form */}
       {showCreate && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-xl border border-gray-200 p-6"
         >
@@ -209,9 +208,9 @@ export function ApiKeysManager({ keys, loading, onCreate, onRevoke }: ApiKeysMan
             {keys.map((key, index) => (
               <motion.div
                 key={key.id}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
                 className="p-6 hover:bg-gray-50"
               >
                 <div className="flex items-start justify-between">

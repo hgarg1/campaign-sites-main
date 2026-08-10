@@ -10,7 +10,7 @@ interface UsageAnalyticsProps {
 
 export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
+    return <div className="skeleton h-96 rounded-lg" />;
   }
 
   if (!data || data.length === 0) {
@@ -73,7 +73,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
@@ -82,9 +82,9 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: Math.min(index, 6) * 0.04 }}
             className={`${metric.bgColor} rounded-lg p-4 border border-gray-200`}
           >
             <div className="flex items-start justify-between gap-1">
@@ -128,7 +128,7 @@ export function UsageAnalytics({ data, loading }: UsageAnalyticsProps) {
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-blue-500 to-green-500 h-full rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-blue-500 to-green-500 h-full rounded-full transition duration-300"
                     style={{ width: `${apiCallsWidth}%` }}
                   />
                 </div>

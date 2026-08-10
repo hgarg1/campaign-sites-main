@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { PerformanceMetrics } from '@/hooks/useMonitoring';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface PerformanceMonitorProps {
   metrics: PerformanceMetrics | null;
@@ -57,9 +58,7 @@ export function PerformanceMonitor({ metrics, loading }: PerformanceMonitorProps
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </div>
     );
   }
@@ -90,9 +89,9 @@ export function PerformanceMonitor({ metrics, loading }: PerformanceMonitorProps
           return (
             <motion.div
               key={category.key}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
               className={`rounded-lg border-2 ${colors.border} ${colors.bg} p-6`}
             >
               {/* Header */}

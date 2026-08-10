@@ -118,9 +118,9 @@ export function UserProfile({ user, onEmailChange }: UserProfileProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 p-6 mb-6"
     >
       <div className="flex items-start justify-between mb-6">

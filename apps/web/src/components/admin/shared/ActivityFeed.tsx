@@ -25,7 +25,7 @@ export function ActivityFeed({ activities, maxItems = 5 }: ActivityFeedProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
@@ -36,9 +36,9 @@ export function ActivityFeed({ activities, maxItems = 5 }: ActivityFeedProps) {
         {displayActivities.map((activity, index) => (
           <motion.div
             key={activity.id}
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
+            transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
             className="flex gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0"
           >
             <div className="text-2xl flex-shrink-0 pt-1">

@@ -74,7 +74,7 @@ export function TenantNavigation({ orgId, onNavigate }: TenantNavigationProps) {
         </Link>
         <Link
           href="/tenant-chooser"
-          className="mt-4 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 hover:border-white/30 text-slate-200 hover:text-white text-sm font-medium transition-all duration-200"
+          className="mt-4 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 hover:border-white/30 text-slate-200 hover:text-white text-sm font-medium transition-colors duration-200"
         >
           <span>⇄</span>
           Switch Organization
@@ -92,16 +92,16 @@ export function TenantNavigation({ orgId, onNavigate }: TenantNavigationProps) {
           return (
             <motion.div
               key={item.href}
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
             >
               <Link
                 href={item.href}
                 onClick={onNavigate}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition duration-200 ${
                   isActive
-                    ? 'text-white shadow-lg'
+                    ? 'text-white shadow-floating'
                     : 'text-slate-300 hover:bg-white/10 hover:text-white'
                 }`}
                 style={isActive ? { backgroundColor: 'var(--t-primary)' } : undefined}

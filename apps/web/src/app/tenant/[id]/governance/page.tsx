@@ -207,7 +207,7 @@ function ProposalDetailSlideOver({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-xl bg-white shadow-xl flex flex-col overflow-y-auto">
+      <div className="relative w-full max-w-xl bg-white shadow-overlay flex flex-col overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">Proposal Details</h2>
           <button
@@ -222,7 +222,7 @@ function ProposalDetailSlideOver({
         {loading ? (
           <div className="p-6 space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse bg-gray-200 rounded h-4 w-full" />
+              <div key={i} className="skeleton rounded h-4 w-full" />
             ))}
           </div>
         ) : !proposal ? (
@@ -752,7 +752,7 @@ function NewProposalSlideOver({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-xl bg-white shadow-xl flex flex-col overflow-y-auto">
+      <div className="relative w-full max-w-xl bg-white shadow-overlay flex flex-col overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">New Proposal</h2>
           <button
@@ -769,7 +769,7 @@ function NewProposalSlideOver({
               Child Org *
             </label>
             {childOrgsLoading ? (
-              <div className="animate-pulse bg-gray-200 rounded h-9 w-full" />
+              <div className="skeleton rounded h-9 w-full" />
             ) : childOrgsFetchFailed ? (
               <input
                 id="f4df7726"
@@ -843,7 +843,7 @@ function NewProposalSlideOver({
               disabled={
                 submitting || (!childOrgsFetchFailed && !childOrgsLoading && childOrgs.length === 0)
               }
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50"
+              className="flex-1 bg-brand hover:bg-brand-700 text-white font-medium py-2 rounded-lg text-sm disabled:opacity-50"
             >
               {submitting ? 'Submitting…' : 'Create Proposal'}
             </button>
@@ -955,7 +955,7 @@ function PendingVoteTab({
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-200 rounded h-20" />
+          <div key={i} className="skeleton rounded h-20" />
         ))}
       </div>
     );
@@ -966,7 +966,7 @@ function PendingVoteTab({
         <button
           type="button"
           onClick={load}
-          className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
+          className="text-sm text-brand hover:text-brand-800 border border-brand-200 rounded px-3 py-1.5"
         >
           🔄 Retry
         </button>
@@ -989,7 +989,7 @@ function PendingVoteTab({
         const expiringSoon = isExpiringSoon(p.expiresAt);
 
         return (
-          <div key={p.id} className="border rounded-xl p-5 bg-white shadow-sm">
+          <div key={p.id} className="border rounded-xl p-5 bg-white shadow-raised">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="font-semibold text-gray-900">
@@ -1012,7 +1012,7 @@ function PendingVoteTab({
                 <button
                   type="button"
                   onClick={() => onViewDetail(p.id)}
-                  className="text-blue-600 hover:text-blue-800 text-xs font-medium border border-blue-200 rounded px-2 py-1"
+                  className="text-brand hover:text-brand-800 text-xs font-medium border border-brand-200 rounded px-2 py-1"
                 >
                   👁️ Details
                 </button>
@@ -1035,7 +1035,7 @@ function PendingVoteTab({
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2">
                 <div
-                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  className="bg-brand h-2 rounded-full transition"
                   style={{
                     width: `${p.requiredVoterCount > 0 ? ((approvals + rejections) / p.requiredVoterCount) * 100 : 0}%`,
                   }}
@@ -1198,7 +1198,7 @@ function MyProposalsTab({
     return (
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-200 rounded h-12" />
+          <div key={i} className="skeleton rounded h-12" />
         ))}
       </div>
     );
@@ -1282,7 +1282,7 @@ function MyProposalsTab({
                     <button
                       type="button"
                       onClick={() => onViewDetail(p.id)}
-                      className="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                      className="text-brand hover:text-brand-800 text-xs font-medium"
                     >
                       👁️ View
                     </button>
@@ -1341,7 +1341,7 @@ function IncomingTab({
     return (
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-200 rounded h-12" />
+          <div key={i} className="skeleton rounded h-12" />
         ))}
       </div>
     );
@@ -1352,7 +1352,7 @@ function IncomingTab({
         <button
           type="button"
           onClick={load}
-          className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
+          className="text-sm text-brand hover:text-brand-800 border border-brand-200 rounded px-3 py-1.5"
         >
           🔄 Retry
         </button>
@@ -1470,7 +1470,7 @@ function HistoryTab({
     return (
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-200 rounded h-12" />
+          <div key={i} className="skeleton rounded h-12" />
         ))}
       </div>
     );
@@ -1481,7 +1481,7 @@ function HistoryTab({
         <button
           type="button"
           onClick={load}
-          className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded px-3 py-1.5"
+          className="text-sm text-brand hover:text-brand-800 border border-brand-200 rounded px-3 py-1.5"
         >
           🔄 Retry
         </button>
@@ -1641,7 +1641,7 @@ export default function GovernancePage() {
                 type="button"
                 key={t.key}
                 onClick={() => switchTab(t.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition ${
                   activeTab === t.key
                     ? 'bg-white shadow text-gray-900'
                     : 'text-gray-500 hover:text-gray-700'
@@ -1650,7 +1650,7 @@ export default function GovernancePage() {
                 {t.icon} {t.label}
                 {t.count !== undefined && t.count > 0 && (
                   <span
-                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${activeTab === t.key ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700'}`}
+                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${activeTab === t.key ? 'bg-brand text-white' : 'bg-gray-300 text-gray-700'}`}
                   >
                     {t.count}
                   </span>
@@ -1661,7 +1661,7 @@ export default function GovernancePage() {
           <button
             type="button"
             onClick={() => setShowNewProposal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-2"
+            className="bg-brand hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-2"
           >
             + New Proposal
           </button>

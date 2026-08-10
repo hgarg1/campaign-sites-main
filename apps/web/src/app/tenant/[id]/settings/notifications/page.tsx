@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantSettings, WebhookLogEntry } from '@/hooks/useTenant';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 interface TestWebhookResult {
   success: boolean;
@@ -95,14 +96,12 @@ export default function NotificationsPage() {
     }
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   if (loading) {
     return (
       <TenantLayout title="Notifications" orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
@@ -111,7 +110,7 @@ export default function NotificationsPage() {
 
   return (
     <TenantLayout title="Notifications" subtitle="Configure your notification preferences" orgId={orgId}>
-      <Link href={`/tenant/${orgId}/settings`} className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-6 inline-block">
+      <Link href={`/tenant/${orgId}/settings`} className="text-brand hover:text-brand-700 font-medium text-sm mb-6 inline-block">
         ← Back to Settings
       </Link>
 
@@ -127,7 +126,7 @@ export default function NotificationsPage() {
               { id: 'teamChanges', label: 'Team changes', description: 'When members join or leave the organization.', checked: notifyOnTeamChanges, onChange: setNotifyOnTeamChanges },
             ].map(n => (
               <div key={n.id} className="flex items-start gap-3 p-4 rounded-lg border border-gray-100 hover:bg-gray-50">
-                <input type="checkbox" id={n.id} checked={n.checked} onChange={e => n.onChange(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600" />
+                <input type="checkbox" id={n.id} checked={n.checked} onChange={e => n.onChange(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand" />
                 <div>
                   <label htmlFor={n.id} className="text-sm font-medium text-gray-900 cursor-pointer">{n.label}</label>
                   <p className="text-xs text-gray-500 mt-0.5">{n.description}</p>
@@ -162,10 +161,10 @@ export default function NotificationsPage() {
             <button type="button"
               onClick={handleTestWebhook}
               disabled={!canTest || !webhookUrl}
-              className="text-sm font-medium px-3 py-2 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="text-sm font-medium px-3 py-2 rounded-lg border border-brand-200 text-brand hover:bg-brand-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {testingWebhook ? (
-                <><span className="animate-spin inline-block h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full" /> Testing…</>
+                <><span className="animate-spin inline-block h-3 w-3 border-2 border-brand border-t-transparent rounded-full" /> Testing…</>
               ) : 'Send Test Webhook'}
             </button>
 
@@ -223,7 +222,7 @@ export default function NotificationsPage() {
         <button type="button"
           onClick={handleSave}
           disabled={saving || !!webhookUrlError}
-          className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+          className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save Preferences'}
         </button>

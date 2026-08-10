@@ -87,7 +87,7 @@ export default function DownloadPage() {
         <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
           {/* App header */}
           <div className="flex items-center gap-4 p-6 border-b border-slate-700">
-            <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-16 h-16 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
               <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.955 11.955 0 003 12c0 4.21 1.82 7.99 4.71 10.58A11.966 11.966 0 0012 24c1.88 0 3.66-.43 5.24-1.2a11.966 11.966 0 001.87-1.22A11.955 11.955 0 0021 12c0-2.21-.6-4.28-1.64-6.06" />
               </svg>
@@ -177,7 +177,7 @@ export default function DownloadPage() {
                     <a
                       key={asset.name}
                       href={asset.browser_download_url}
-                      className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                      className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
                         isCurrentPlatform
                           ? 'bg-blue-600/20 border-blue-500 hover:bg-blue-600/30'
                           : 'bg-slate-700/50 border-slate-600 hover:bg-slate-700'

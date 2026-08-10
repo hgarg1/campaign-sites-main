@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { parseAndVerifySessionToken } from '@/lib/session-auth';
 import { prisma } from '@/lib/database';
 import { getEffectiveStatus } from '@/lib/ancestry';
+import { DEFAULT_THEME } from '@/lib/tenant-theme';
+import { resolveEffectiveTheme, themeStyle } from '@/lib/tenant-theme-server';
 
 export const metadata = { title: 'Tenant Portal | CampaignSites' };
 
@@ -49,5 +51,24 @@ export default async function TenantPortalLayout({
     // If ancestry check fails, allow through — better to show content than block
   }
 
-  return <>{children}</>;
+  /*
+   * The tenant's colour is on the page before the first paint.
+   *
+   * `TenantThemeProvider` sets these same variables from a `useEffect`, which
+   * meant a themed portal rendered platform-blue for one frame and then flipped.
+   * That was survivable when two components read the variables; now that primary
+   * buttons, links, focus rings and washes all resolve through them, the flash
+   * would be the whole interface changing colour. The client provider still runs
+   * underneath and takes over once branding is re-fetched.
+   *
+   * `display: contents` keeps this wrapper out of the layout — custom properties
+   * inherit through it regardless.
+   */
+  const theme = await resolveEffectiveTheme(params.id).catch(() => DEFAULT_THEME);
+
+  return (
+    <div data-tenant-theme="" style={{ display: 'contents', ...themeStyle(theme) }}>
+      {children}
+    </div>
+  );
 }

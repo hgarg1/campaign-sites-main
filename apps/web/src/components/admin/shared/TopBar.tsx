@@ -119,9 +119,9 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   );
 
   const menuVariants = {
-    hidden: { opacity: 0, y: -10, scale: 0.95 },
+    hidden: { opacity: 0, y: -8, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1 },
-    exit: { opacity: 0, y: -10, scale: 0.95 },
+    exit: { opacity: 0, y: -8, scale: 0.95 },
   };
 
   const handleSignOut = async () => {
@@ -140,7 +140,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   };
 
   return (
-    <nav className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-40">
+    <nav className="sticky top-0 bg-white border-b border-gray-200 shadow-raised z-40">
       <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
         {/* Hamburger — mobile only */}
         <button type="button"
@@ -155,7 +155,17 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
 
         {/* Title */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
+          {/*
+           * Plain ink, not the marketing gradient.
+           *
+           * The product had three unrelated identities — an indigo-to-violet
+           * gradient on the marketing site, flat blue in the application, and
+           * seven party palettes in the tenant portals — and this title was the
+           * marketing one leaking into the operator tool. A page title is also
+           * the worst place for `bg-clip-text text-transparent`: the text has no
+           * computed colour, so it disappears entirely in forced-colors mode.
+           */}
+          <h1 className="truncate text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
             {title}
           </h1>
           {subtitle && <p className="text-xs sm:text-sm text-gray-600 truncate">{subtitle}</p>}
@@ -183,7 +193,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
                   variants={menuVariants}
                   initial="hidden" animate="visible" exit="exit"
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+                  className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-floating border border-gray-200 overflow-hidden z-50"
                 >
                   <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-900">Notifications</span>
@@ -254,7 +264,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
                   animate="visible"
                   exit="exit"
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-floating border border-gray-200 overflow-hidden"
                 >
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">{displayName}</p>

@@ -97,14 +97,14 @@ export function ConfirmationModal({
 
           {/* Modal - centered with proper mobile padding */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full">
+            <div className="bg-white rounded-xl shadow-modal overflow-hidden max-w-md w-full">
               {/* Header with gradient */}
               <div
                 className={`px-6 pt-6 pb-4 bg-gradient-to-r ${
@@ -133,7 +133,7 @@ export function ConfirmationModal({
 
               {/* Content */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
                 className="px-6 py-4 space-y-4"
@@ -161,7 +161,7 @@ export function ConfirmationModal({
 
               {/* Footer with actions */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3 justify-end"
@@ -179,10 +179,10 @@ export function ConfirmationModal({
                   whileTap={{ scale: isLoading_ ? 1 : 0.98 }}
                   onClick={handleConfirm}
                   disabled={isLoading_ || (showJustification && !justification.trim())}
-                  className={`px-5 py-2.5 rounded-lg font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`px-5 py-2.5 rounded-lg font-medium text-white transition disabled:opacity-50 disabled:cursor-not-allowed ${
                     isDangerous
-                      ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg shadow-red-500/20'
-                      : 'bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 shadow-lg shadow-blue-500/20'
+                      ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-floating shadow-red-500/20'
+                      : 'bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 shadow-floating shadow-blue-500/20'
                   }`}
                 >
                   {isLoading_ ? (

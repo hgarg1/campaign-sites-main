@@ -73,7 +73,7 @@ export function StakeAllocationEditor({
         <button
           type="button"
           onClick={distributeEvenly}
-          className="text-xs text-blue-600 hover:underline"
+          className="text-xs text-brand hover:underline"
         >
           Split evenly
         </button>
@@ -100,7 +100,7 @@ export function StakeAllocationEditor({
               <button
                 type="button"
                 onClick={() => giveRemainderTo(o.parentOrgId)}
-                className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+                className="text-xs text-brand hover:underline whitespace-nowrap"
                 title="Give this owner whatever is left over"
               >
                 take rest

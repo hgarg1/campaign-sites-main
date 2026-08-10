@@ -55,9 +55,26 @@ function PasskeyLoginButton({ onError }: { onError: (msg: string) => void }) {
       type="button"
       onClick={handlePasskeyLogin}
       disabled={loading}
-      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-semibold hover:border-blue-400 hover:text-blue-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full border-2 border-gray-300 bg-white text-gray-700 font-semibold hover:border-blue-400 hover:text-blue-700 transition-colors duration-fast ease-enter disabled:opacity-60 disabled:cursor-not-allowed"
     >
-      <span className="text-lg">🔑</span>
+      {/*
+       * An inline SVG rather than a 🔑 emoji: the emoji renders as a different
+       * object on every platform, is announced aloud by screen readers as "key",
+       * and cannot inherit the button's colour on hover.
+       */}
+      <svg
+        aria-hidden="true"
+        className="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="7.5" cy="15.5" r="4" />
+        <path d="M10.5 12.5 21 2m-4 4 2.5 2.5M14 9l2.5 2.5" />
+      </svg>
       {loading ? 'Authenticating…' : 'Sign in with Passkey'}
     </button>
   );
@@ -116,35 +133,73 @@ export default function LoginPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Log in</h1>
           <p className="text-gray-600 mb-6">Existing user? Sign in and continue your intake.</p>
 
+          {/*
+           * Labelled, not placeholder-only.
+           *
+           * Both fields previously carried their identity in the placeholder, which
+           * disappears the moment the user starts typing — so anyone returning to a
+           * half-filled form, or using a screen reader, had no way to tell which
+           * field was which. `focus:outline-none` also removed the global focus ring
+           * without replacing it with anything a keyboard user could see.
+           */}
           <form onSubmit={onSubmit} className="space-y-4">
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Work Email"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none"
-              required
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onKeyDown={updateCapsLockState}
-              onKeyUp={updateCapsLockState}
-              onBlur={() => setCapsLockOn(false)}
-              placeholder="Password"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none"
-              required
-            />
+            <div>
+              <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-gray-700">
+                Work email
+              </label>
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 transition-colors duration-fast focus:border-blue-500"
+                required
+              />
+            </div>
 
-            {capsLockOn && <p className="text-sm text-amber-700">Caps Lock is on.</p>}
+            <div>
+              <label
+                htmlFor="login-password"
+                className="mb-1.5 block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                onKeyDown={updateCapsLockState}
+                onKeyUp={updateCapsLockState}
+                onBlur={() => setCapsLockOn(false)}
+                aria-describedby={capsLockOn ? 'login-caps' : undefined}
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 transition-colors duration-fast focus:border-blue-500"
+                required
+              />
+            </div>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {/*
+             * Announced rather than merely shown — a caps-lock warning is useless to
+             * someone who cannot see it, and they are the likeliest to hit it.
+             */}
+            <p id="login-caps" aria-live="polite" className="text-sm text-amber-700 empty:hidden">
+              {capsLockOn && 'Caps Lock is on.'}
+            </p>
+
+            {error && (
+              <p role="alert" className="text-sm text-red-600">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-raised transition-shadow duration-base ease-enter hover:shadow-floating disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-raised"
             >
               {submitting ? 'Logging in...' : 'Log In'}
             </button>

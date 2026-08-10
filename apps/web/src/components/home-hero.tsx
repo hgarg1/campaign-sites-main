@@ -49,13 +49,13 @@ export function HomeHero() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Link
             href="/get-started"
-            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all"
+            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-lg font-semibold hover:shadow-2xl hover:scale-105 transition"
           >
             Start Building Free
           </Link>
           <Link
             href="/product"
-            className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition-all"
+            className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-full text-lg font-semibold hover:border-gray-400 hover:shadow-lg transition"
           >
             Explore Product
           </Link>
@@ -64,7 +64,7 @@ export function HomeHero() {
         <div className="mt-14">
           <a
             href="#home-content"
-            className="group inline-flex items-center gap-3 rounded-full border border-blue-200/80 bg-white/90 px-5 py-3 text-sm font-semibold text-blue-700 shadow-lg shadow-blue-100/70 ring-1 ring-blue-100 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-xl hover:shadow-blue-200/70"
+            className="group inline-flex items-center gap-3 rounded-full border border-blue-200/80 bg-white/90 px-5 py-3 text-sm font-semibold text-blue-700 shadow-lg shadow-blue-100/70 ring-1 ring-blue-100 backdrop-blur-sm transition hover:-translate-y-0.5 hover:bg-white hover:shadow-xl hover:shadow-blue-200/70"
           >
             <span className="tracking-wide">Scroll to explore</span>
             <span className="inline-flex h-7 w-7 items-center justify-center text-blue-700 animate-bounce group-hover:animate-none group-hover:scale-110 transition-transform">

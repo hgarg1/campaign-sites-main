@@ -89,7 +89,7 @@ export function AdminHierarchyGraph({
       className="w-full h-[600px] border border-gray-200 rounded-xl overflow-hidden bg-gray-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
     >
       <ReactFlow
         nodes={nodes}
@@ -109,9 +109,9 @@ export function AdminHierarchyGraph({
       {hasChanges && (
         <motion.div
           className="absolute bottom-4 left-4 flex gap-2"
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
+          exit={{ opacity: 0, y: 8 }}
         >
           <button type="button"
             onClick={() => {

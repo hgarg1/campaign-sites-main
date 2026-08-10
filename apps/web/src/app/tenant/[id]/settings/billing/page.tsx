@@ -40,7 +40,7 @@ export default function BillingPage() {
 
   return (
     <TenantLayout title="Billing" subtitle="Manage your subscription and invoices" orgId={orgId}>
-      <Link href={`/tenant/${orgId}/settings`} className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-6 inline-block">
+      <Link href={`/tenant/${orgId}/settings`} className="text-brand hover:text-brand-700 font-medium text-sm mb-6 inline-block">
         ← Back to Settings
       </Link>
 
@@ -48,12 +48,12 @@ export default function BillingPage() {
         {/* Current plan */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Current Plan</h2>
-          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-brand-50 border border-brand-200 rounded-lg">
             <div>
-              <p className="font-semibold text-blue-900">Pro Plan</p>
-              <p className="text-sm text-blue-700">$49/month · Next billing: Jan 1, 2025</p>
+              <p className="font-semibold text-brand-900">Pro Plan</p>
+              <p className="text-sm text-brand-700">$49/month · Next billing: Jan 1, 2025</p>
             </div>
-            <span className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-full">Active</span>
+            <span className="px-3 py-1 bg-brand text-white text-xs font-medium rounded-full">Active</span>
           </div>
         </div>
 
@@ -64,11 +64,11 @@ export default function BillingPage() {
             {PLANS.map(plan => (
               <div
                 key={plan.name}
-                className={`rounded-xl border p-5 ${plan.current ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`}
+                className={`rounded-xl border p-5 ${plan.current ? 'border-brand-300 bg-brand-50' : 'border-gray-200'}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <p className="font-bold text-gray-900">{plan.name}</p>
-                  {plan.current && <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Current</span>}
+                  {plan.current && <span className="text-xs bg-brand text-white px-2 py-0.5 rounded-full">Current</span>}
                 </div>
                 <p className="text-2xl font-bold text-gray-900 mb-1">
                   {plan.price}<span className="text-sm font-normal text-gray-500">{plan.period}</span>
@@ -82,7 +82,7 @@ export default function BillingPage() {
                 </ul>
                 <button type="button"
                   disabled={plan.current}
-                  className={`w-full rounded-lg px-4 py-2 text-sm font-medium ${plan.current ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                  className={`w-full rounded-lg px-4 py-2 text-sm font-medium ${plan.current ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-brand text-white hover:bg-brand-700'}`}
                 >
                   {plan.current ? 'Current Plan' : `Switch to ${plan.name}`}
                 </button>
@@ -102,7 +102,7 @@ export default function BillingPage() {
                 <p className="text-sm text-gray-500">Expires 12/2027</p>
               </div>
             </div>
-            <button type="button" className="text-blue-600 hover:text-blue-700 text-sm font-medium">Update</button>
+            <button type="button" className="text-brand hover:text-brand-700 text-sm font-medium">Update</button>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export default function BillingPage() {
                 <div className="flex items-center gap-4">
                   <span className="font-medium text-gray-900">{inv.amount}</span>
                   <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">{inv.status}</span>
-                  <button type="button" className="text-blue-600 hover:text-blue-700 text-sm font-medium">Download</button>
+                  <button type="button" className="text-brand hover:text-brand-700 text-sm font-medium">Download</button>
                 </div>
               </div>
             ))}

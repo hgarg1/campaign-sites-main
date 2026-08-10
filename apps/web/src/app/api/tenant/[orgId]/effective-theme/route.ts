@@ -4,13 +4,7 @@ import { prisma } from '@/lib/database';
 import { isDatabaseEnabled } from '@/lib/runtime-config';
 import { parseAndVerifySessionToken } from '@/lib/session-auth';
 import { verifyOrgAccess } from '@/app/api/tenant/auth-utils';
-import {
-  DEFAULT_THEME,
-  PARTY_THEMES,
-  TenantTheme,
-  mergeTheme,
-  themeFromBranding,
-} from '@/lib/tenant-theme';
+import { resolveEffectiveTheme } from '@/lib/tenant-theme-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,59 +40,21 @@ export async function GET(_req: NextRequest, { params }: { params: { orgId: stri
   }
 
   try {
-    // Walk up the parentId chain collecting org data (up to 5 levels)
-    type OrgRow = {
-      id: string;
-      name: string;
-      partyAffiliation: string | null;
-      branding: unknown;
-      parentId: string | null;
-    };
-    const chain: Array<{
-      id: string;
-      name: string;
-      partyAffiliation: string | null;
-      branding: any;
-    }> = [];
+    /*
+     * Resolution lives in `resolveEffectiveTheme` so this route and the tenant
+     * layout cannot drift. The layout emits the same variables during render, and
+     * two implementations of "which colour is this org" would eventually disagree
+     * — producing a portal that changes colour on hydration.
+     */
+    const theme = await resolveEffectiveTheme(params.orgId);
 
-    let currentId: string | null = params.orgId;
-    let depth = 0;
-    while (currentId && depth <= 5) {
-      const orgRow: OrgRow | null = (await prisma.organization.findUnique({
-        where: { id: currentId },
-        select: { id: true, name: true, partyAffiliation: true, branding: true, parentId: true },
-      })) as OrgRow | null;
-      if (!orgRow) break;
-      chain.unshift({
-        id: orgRow.id,
-        name: orgRow.name,
-        partyAffiliation: orgRow.partyAffiliation,
-        branding: orgRow.branding,
-      });
-      currentId = orgRow.parentId ?? null;
-      depth++;
-    }
+    // Only this route needs the attribution, so it stays here.
+    const org = await prisma.organization.findUnique({
+      where: { id: params.orgId },
+      select: { parent: { select: { name: true } } },
+    });
 
-    // Find the deepest ancestor's party affiliation (the root of the chain)
-    const rootParty = chain[0]?.partyAffiliation ?? null;
-
-    // Build effective theme: DEFAULT → party theme → ancestor brandings (oldest first) → own branding
-    let theme: TenantTheme = { ...DEFAULT_THEME };
-
-    if (rootParty && PARTY_THEMES[rootParty]) {
-      theme = mergeTheme(theme, PARTY_THEMES[rootParty]);
-    }
-
-    // Apply each level's branding in order (chain[0] is root/oldest, last is current org)
-    for (const level of chain) {
-      theme = mergeTheme(theme, themeFromBranding(level.branding as Record<string, any> | null));
-    }
-
-    // Determine if any field was inherited from a parent
-    const hasParents = chain.length > 1;
-    const inheritedFrom = hasParents ? (chain[chain.length - 2]?.name ?? null) : null;
-
-    return NextResponse.json({ theme, inheritedFrom });
+    return NextResponse.json({ theme, inheritedFrom: org?.parent?.name ?? null });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

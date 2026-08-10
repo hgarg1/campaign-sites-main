@@ -117,11 +117,26 @@ export function shade(hex: string, amount: number): string {
  * blue while the sidebar beside them turned red.
  */
 export function buildCssVars(theme: TenantTheme): Record<string, string> {
+  const p = theme.primaryColor;
   return {
-    '--t-primary': theme.primaryColor,
-    '--t-primary-fg': readableForeground(theme.primaryColor),
-    '--t-primary-hover': shade(theme.primaryColor, 0.86),
-    '--t-primary-ring': shade(theme.primaryColor, 1.55),
+    '--t-primary': p,
+    '--t-primary-fg': readableForeground(p),
+    '--t-primary-hover': shade(p, 0.86),
+    '--t-primary-ring': shade(p, 1.55),
+    /*
+     * A tint ramp, so a themed surface has more than one note to work with.
+     *
+     * The tenant tree used `bg-blue-50` for washes, `border-blue-200` for
+     * outlines and `text-blue-700` for emphasis — 130 utilities across the four
+     * shades. Without derived tints those either stay platform blue beside a
+     * themed button, or every call site has to invent its own opacity.
+     */
+    '--t-primary-50': shade(p, 1.88),
+    '--t-primary-100': shade(p, 1.78),
+    '--t-primary-200': shade(p, 1.6),
+    '--t-primary-300': shade(p, 1.35),
+    '--t-primary-800': shade(p, 0.72),
+    '--t-primary-900': shade(p, 0.58),
     '--t-secondary': theme.secondaryColor,
     '--t-accent': theme.accentColor,
     '--t-sidebar-from': theme.sidebarFrom,

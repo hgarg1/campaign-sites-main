@@ -111,7 +111,7 @@ export default function BlogPage() {
             <div className="flex flex-wrap items-center gap-3">
               <button type="button"
                 onClick={() => setSelectedTag(null)}
-                className={`px-4 py-2 rounded-full font-medium transition-all ${
+                className={`px-4 py-2 rounded-full font-medium transition ${
                   selectedTag === null
                     ? 'bg-blue-600 text-white shadow-lg'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -123,7 +123,7 @@ export default function BlogPage() {
                 <button type="button"
                   key={tag}
                   onClick={() => setSelectedTag(tag)}
-                  className={`px-4 py-2 rounded-full font-medium transition-all capitalize ${
+                  className={`px-4 py-2 rounded-full font-medium transition capitalize ${
                     selectedTag === tag
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -155,23 +155,23 @@ export default function BlogPage() {
                     key={idx}
                     className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm"
                   >
-                    <div className="h-48 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse" />
+                    <div className="skeleton h-48" />
                     <div className="p-6 space-y-4">
                       <div className="flex gap-2">
-                        <div className="h-6 w-20 rounded-full bg-gray-100 animate-pulse" />
-                        <div className="h-6 w-24 rounded-full bg-gray-100 animate-pulse" />
+                        <div className="skeleton h-6 w-20 rounded-full" />
+                        <div className="skeleton h-6 w-24 rounded-full" />
                       </div>
                       <div className="space-y-2">
-                        <div className="h-6 w-4/5 rounded bg-gray-100 animate-pulse" />
-                        <div className="h-4 w-full rounded bg-gray-100 animate-pulse" />
-                        <div className="h-4 w-2/3 rounded bg-gray-100 animate-pulse" />
+                        <div className="skeleton h-6 w-4/5 rounded" />
+                        <div className="skeleton h-4 w-full rounded" />
+                        <div className="skeleton h-4 w-2/3 rounded" />
                       </div>
                       <div className="flex items-center justify-between pt-2">
                         <div className="space-y-2">
-                          <div className="h-4 w-24 rounded bg-gray-100 animate-pulse" />
-                          <div className="h-3 w-20 rounded bg-gray-100 animate-pulse" />
+                          <div className="skeleton h-4 w-24 rounded" />
+                          <div className="skeleton h-3 w-20 rounded" />
                         </div>
-                        <div className="h-10 w-32 rounded-full bg-gray-100 animate-pulse" />
+                        <div className="skeleton h-10 w-32 rounded-full" />
                       </div>
                     </div>
                   </div>
@@ -187,10 +187,10 @@ export default function BlogPage() {
               {filteredPosts.map((post, idx) => (
                 <motion.article
                   key={post.id}
-                  className="rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all hover:border-blue-300 group"
-                  initial={{ opacity: 0, y: 20 }}
+                  className="rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition hover:border-blue-300 group"
+                  initial={{ opacity: 0, y: 8 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
+                  transition={{ delay: Math.min(idx, 6) * 0.04 }}
                 >
                   {post.coverImage && (
                     <div className="h-48 overflow-hidden bg-gray-200">
@@ -229,7 +229,7 @@ export default function BlogPage() {
                       </div>
                       <Link
                         href={`/blog/${post.slug}`}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold hover:shadow-lg transition-all hover:scale-105 active:scale-95"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold hover:shadow-lg transition hover:scale-105 active:scale-95"
                       >
                         Read Article
                         <span>→</span>
@@ -262,7 +262,7 @@ export default function BlogPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? 'Subscribing...' : 'Subscribe'}
             </button>

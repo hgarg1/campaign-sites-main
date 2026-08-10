@@ -28,9 +28,9 @@ export function WebsiteOverview({ website, onTriggerRebuild, onDelete, rebuildin
   const canDelete = hasPermission('system_admin_portal:websites:delete');
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <div className="flex items-start justify-between mb-6">

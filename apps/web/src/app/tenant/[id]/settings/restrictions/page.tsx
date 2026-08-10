@@ -82,7 +82,7 @@ export default function RestrictionsPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded bg-gray-100" />
+            <div key={i} className="skeleton h-14 rounded" />
           ))}
         </div>
       ) : !data ? null : (

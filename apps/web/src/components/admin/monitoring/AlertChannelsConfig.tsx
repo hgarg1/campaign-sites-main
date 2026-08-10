@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { AlertChannel } from '@/hooks/useMonitoring';
 import { useState } from 'react';
 import { useToast } from '../shared/ToastContext';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface AlertChannelsConfigProps {
   channels: AlertChannel[];
@@ -44,9 +45,7 @@ export function AlertChannelsConfig({ channels, loading, onToggleChannel }: Aler
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </div>
     );
   }
@@ -75,7 +74,7 @@ export function AlertChannelsConfig({ channels, loading, onToggleChannel }: Aler
               key={channel.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
+              transition={{ duration: 0.2, delay: Math.min(index, 6) * 0.04 }}
               className={`rounded-lg border-2 ${colors.border} ${colors.bg} p-6 ${
                 !channel.enabled ? 'opacity-60' : ''
               }`}

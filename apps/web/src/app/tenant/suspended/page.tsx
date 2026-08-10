@@ -18,7 +18,7 @@ export default function SuspendedPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+      <div className="bg-white rounded-xl shadow-modal max-w-md w-full p-8 text-center">
         <div className="text-5xl mb-4">❌</div>
         <h1 className="text-2xl font-bold text-gray-900 mb-3">Organization Suspended</h1>
         <p className="text-gray-600 mb-8 leading-relaxed">

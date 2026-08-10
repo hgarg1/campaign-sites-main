@@ -59,14 +59,14 @@ export default function NewWebsitePage() {
     }
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   const stepLabels = ['Campaign Info', 'Choose Template', 'Review & Launch'];
 
   return (
     <TenantLayout title="Create Website" subtitle="Launch your campaign website with AI" orgId={orgId}>
       <div className="max-w-2xl mx-auto">
-        <Link href={`/tenant/${orgId}/websites`} className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-6 inline-block">
+        <Link href={`/tenant/${orgId}/websites`} className="text-brand hover:text-brand-700 font-medium text-sm mb-6 inline-block">
           ← Back to Websites
         </Link>
 
@@ -74,7 +74,7 @@ export default function NewWebsitePage() {
           {[1, 2, 3].map(s => (
             <div key={s} className="flex items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                s < step ? 'bg-green-600 text-white' : s === step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                s < step ? 'bg-green-600 text-white' : s === step ? 'bg-brand text-white' : 'bg-gray-200 text-gray-500'
               }`}>
                 {s < step ? '✓' : s}
               </div>
@@ -89,7 +89,7 @@ export default function NewWebsitePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-8">
           <AnimatePresence mode="wait">
             {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <motion.div key="step1" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} className="space-y-4">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Campaign Information</h2>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Campaign / Candidate Name *</label>
@@ -118,15 +118,15 @@ export default function NewWebsitePage() {
             )}
 
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <motion.div key="step2" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}>
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Choose a Template</h2>
                 <div className="grid grid-cols-2 gap-4">
                   {TEMPLATES.map(t => (
                     <button type="button"
                       key={t.id}
                       onClick={() => setTemplateId(t.id)}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        templateId === t.id ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                      className={`p-4 rounded-xl border-2 text-left transition-colors ${
+                        templateId === t.id ? 'border-brand bg-brand-50' : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <p className="font-semibold text-gray-900">{t.name}</p>
@@ -138,7 +138,7 @@ export default function NewWebsitePage() {
             )}
 
             {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <motion.div key="step3" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}>
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Review & Launch</h2>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
                   <div className="flex justify-between"><span className="text-gray-600">Campaign Name</span><span className="font-medium">{campaignName}</span></div>
@@ -170,7 +170,7 @@ export default function NewWebsitePage() {
               <button type="button"
                 onClick={() => setStep(s => s + 1)}
                 disabled={!canGoNext}
-                className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                className="bg-brand text-white hover:bg-brand-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next →
               </button>
@@ -178,7 +178,7 @@ export default function NewWebsitePage() {
               <button type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-50"
+                className="bg-brand text-white hover:bg-brand-700 rounded-lg px-6 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {submitting ? 'Launching...' : 'Launch AI Builder'}
               </button>

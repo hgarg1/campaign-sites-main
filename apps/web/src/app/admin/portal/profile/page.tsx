@@ -150,12 +150,12 @@ function NotificationPreferencesSection() {
 
       {loading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => <div key={i} className="animate-pulse bg-gray-100 h-10 rounded-lg" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="skeleton h-10 rounded-lg" />)}
         </div>
       ) : (
         <div className="space-y-4">
           {/* Master in-app toggle */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-raised flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-800">In-App Notifications</p>
               <p className="text-xs text-gray-500 mt-0.5">Show notifications inside the admin portal.</p>
@@ -168,13 +168,13 @@ function NotificationPreferencesSection() {
                 className="sr-only peer"
                 disabled={saving}
               />
-              <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+              <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-colors peer-checked:bg-blue-600" />
             </label>
           </div>
 
           {/* Per-type toggles by category */}
           {NOTIFICATION_CATEGORIES.map((cat) => (
-            <div key={cat.label} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div key={cat.label} className="bg-white border border-gray-200 rounded-xl shadow-raised overflow-hidden">
               <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
                 <h3 className="text-sm font-semibold text-gray-700">{cat.label}</h3>
               </div>
@@ -192,7 +192,7 @@ function NotificationPreferencesSection() {
                           className="sr-only peer"
                           disabled={saving || !inApp}
                         />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-colors peer-checked:bg-blue-600" />
                       </label>
                     </li>
                   );
@@ -312,7 +312,7 @@ function PasskeySection({ requirePasskey }: { requirePasskey: boolean }) {
       )}
 
       {/* Register */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-raised">
         <h3 className="text-sm font-semibold text-gray-800 mb-3">Register a New Passkey</h3>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
@@ -334,14 +334,14 @@ function PasskeySection({ requirePasskey }: { requirePasskey: boolean }) {
       </div>
 
       {/* Active credentials */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-raised overflow-hidden">
         <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-700">Active Passkeys</h3>
           <span className="text-xs text-gray-400">{active.length} credential{active.length !== 1 ? 's' : ''}</span>
         </div>
         {loading ? (
           <div className="p-5 space-y-2">
-            {[1, 2].map((i) => <div key={i} className="animate-pulse bg-gray-100 h-10 rounded" />)}
+            {[1, 2].map((i) => <div key={i} className="skeleton h-10 rounded" />)}
           </div>
         ) : active.length === 0 ? (
           <div className="p-6 text-center">
@@ -377,7 +377,7 @@ function PasskeySection({ requirePasskey }: { requirePasskey: boolean }) {
 
       {/* Revoked */}
       {revoked.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-raised overflow-hidden">
           <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-500">Revoked ({revoked.length})</h3>
           </div>
@@ -462,7 +462,7 @@ export default function ProfilePage() {
         {/* Profile row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Avatar card */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-raised p-6">
             <div className="flex items-center gap-4 mb-5">
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                 {(user?.name?.charAt(0) || user?.email?.charAt(0) || 'A').toUpperCase()}
@@ -494,10 +494,10 @@ export default function ProfilePage() {
           </div>
 
           {/* Profile form */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 lg:col-span-2">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-raised p-6 lg:col-span-2">
             {loading ? (
               <div className="space-y-3">
-                {[1,2,3].map((i) => <div key={i} className="animate-pulse bg-gray-100 h-10 rounded-lg" />)}
+                {[1,2,3].map((i) => <div key={i} className="skeleton h-10 rounded-lg" />)}
               </div>
             ) : (
               <form className="space-y-5" onSubmit={onSave}>

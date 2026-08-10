@@ -76,13 +76,13 @@ export function FullScreenHero({
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
           <Link
             href={primaryCta.href}
-            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-base sm:text-lg font-semibold hover:shadow-2xl hover:scale-105 transition-all"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full text-base sm:text-lg font-semibold hover:shadow-2xl hover:scale-105 transition"
           >
             {primaryCta.label}
           </Link>
           <Link
             href={secondaryCta.href}
-            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-full text-base sm:text-lg font-semibold hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-lg transition-all"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-full text-base sm:text-lg font-semibold hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-lg transition"
           >
             {secondaryCta.label}
           </Link>
@@ -91,7 +91,7 @@ export function FullScreenHero({
         <div className="mt-8 sm:mt-14">
           <a
             href="#content-section"
-            className="group inline-flex items-center gap-3 rounded-full border border-blue-200/80 dark:border-blue-900/50 bg-white/90 dark:bg-gray-800/80 px-4 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300 shadow-lg shadow-blue-100/70 dark:shadow-blue-900/30 ring-1 ring-blue-100 dark:ring-blue-900/50 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:shadow-blue-200/70 dark:hover:shadow-blue-900/50"
+            className="group inline-flex items-center gap-3 rounded-full border border-blue-200/80 dark:border-blue-900/50 bg-white/90 dark:bg-gray-800/80 px-4 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300 shadow-lg shadow-blue-100/70 dark:shadow-blue-900/30 ring-1 ring-blue-100 dark:ring-blue-900/50 backdrop-blur-sm transition hover:-translate-y-0.5 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl hover:shadow-blue-200/70 dark:hover:shadow-blue-900/50"
           >
             <span className="tracking-wide">Scroll to explore</span>
             <span className="inline-flex h-7 w-7 items-center justify-center text-blue-700 dark:text-blue-300 animate-bounce group-hover:animate-none group-hover:scale-110 transition-transform">

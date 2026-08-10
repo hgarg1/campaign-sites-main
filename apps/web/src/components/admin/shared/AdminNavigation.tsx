@@ -113,7 +113,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           fixed inset-y-0 left-0 z-40 flex flex-col
           lg:relative lg:sticky lg:top-0 lg:z-auto lg:h-dscreen
           bg-gradient-to-b from-slate-900 to-slate-800 text-white border-r border-slate-700
-          transition-all duration-300 ease-in-out
+          transition-[width,transform] duration-slow ease-enter
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${sidebarCollapsed ? 'w-20' : 'w-64'}
         `}
@@ -199,16 +199,16 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
                       return (
                         <motion.div
                           key={item.href}
-                          initial={{ opacity: 0, x: -20 }}
+                          initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: (groupIndex * 5 + itemIndex) * 0.02 }}
+                          transition={{ duration: 0.2, delay: (groupIndex * 5 + itemIndex) * 0.02 }}
                         >
                           <Link
                             href={item.href}
                             onClick={onClose}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition duration-200 ${
                               isActive
-                                ? 'bg-blue-600 text-white shadow-lg'
+                                ? 'bg-blue-600 text-white shadow-floating'
                                 : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                             }`}
                             title={sidebarCollapsed ? item.label : undefined}
@@ -244,7 +244,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.2 }}
             className="flex-shrink-0 p-3 border-t border-slate-700"
           >
             <div className="flex items-center justify-between px-2 mb-2">
@@ -256,7 +256,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
               >
                 <motion.span
                   animate={{ rotate: orgsExpanded ? 180 : 0 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.2 }}
                   className="inline-block"
                 >
                   ▼
@@ -269,14 +269,14 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
               >
                 {userOrgs.slice(0, 3).map((org) => (
                   <Link
                     key={org.id}
                     href={`/tenant/${org.id}`}
                     onClick={onClose}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-all text-sm"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm"
                   >
                     <span className="text-xs">🏢</span>
                     <span className="truncate">{org.name}</span>
@@ -303,7 +303,7 @@ export function AdminNavigation({ isMobileOpen = false, onClose }: AdminNavigati
             <Link
               href="/tenant-chooser"
               onClick={onClose}
-              className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-700/50 hover:bg-slate-600 text-slate-200 text-sm font-medium transition-all"
+              className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg border border-slate-600 bg-slate-700/50 hover:bg-slate-600 text-slate-200 text-sm font-medium transition-colors"
             >
               <span>⇄</span>
               Switch to Tenant Portal

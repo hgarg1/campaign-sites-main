@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { TenantLayout } from '@/components/tenant/shared';
 import { useTenantSettings } from '@/hooks/useTenant';
 import { DEFAULT_THEME, PARTY_THEMES, TenantTheme } from '@/lib/tenant-theme';
+import { PageLoading } from '@/components/ui/Skeleton';
 
 function ColorField({
   label,
@@ -39,7 +40,7 @@ function ColorField({
           type="text"
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-brand"
           placeholder="#000000"
         />
         <div className="w-10 h-10 rounded-lg border border-gray-200 flex-shrink-0" style={{ backgroundColor: value }} />
@@ -135,7 +136,7 @@ export default function BrandingPage() {
     setTopbarBg(DEFAULT_THEME.topbarBg);
   };
 
-  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
   const isInherited = (field: keyof TenantTheme) => {
     if (!inheritedFrom || !inheritedTheme) return false;
@@ -146,16 +147,14 @@ export default function BrandingPage() {
   if (loading) {
     return (
       <TenantLayout title="Branding" orgId={orgId}>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       </TenantLayout>
     );
   }
 
   return (
     <TenantLayout title="Branding" subtitle="Customize your organization appearance" orgId={orgId}>
-      <Link href={`/tenant/${orgId}/settings`} className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-6 inline-block">
+      <Link href={`/tenant/${orgId}/settings`} className="text-brand hover:text-brand-700 font-medium text-sm mb-6 inline-block">
         ← Back to Settings
       </Link>
 
@@ -225,7 +224,7 @@ export default function BrandingPage() {
           <button type="button"
             onClick={handleSave}
             disabled={saving}
-            className="bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className="bg-brand text-white hover:bg-brand-700 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Branding'}
           </button>
@@ -234,7 +233,7 @@ export default function BrandingPage() {
         {/* Right: live preview */}
         <div className="sticky top-8">
           <p className="text-sm font-medium text-gray-700 mb-3">Portal Preview</p>
-          <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg w-48">
+          <div className="rounded-xl overflow-hidden border border-gray-200 shadow-floating w-48">
             <div className="h-36 p-3" style={{ background: `linear-gradient(to bottom, ${sidebarFrom}, ${sidebarTo})` }}>
               <div className="text-white text-xs font-bold mb-2">CampaignSites</div>
               {['Websites', 'Team', 'Analytics'].map(label => (

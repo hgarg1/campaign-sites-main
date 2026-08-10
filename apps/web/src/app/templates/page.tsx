@@ -34,7 +34,7 @@ export default function TemplatesPage() {
           ].map((cat) => (
             <div
               key={cat.name}
-              className="p-6 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all"
+              className="p-6 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition"
             >
               <div className="text-4xl mb-3">{cat.icon}</div>
               <h3 className="text-lg font-bold mb-2">{cat.name}</h3>
@@ -199,7 +199,7 @@ export default function TemplatesPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/get-started"
-              className="px-8 py-3 bg-white text-cyan-600 rounded-lg font-semibold hover:shadow-xl transition-all hover:-translate-y-1"
+              className="px-8 py-3 bg-white text-cyan-600 rounded-lg font-semibold hover:shadow-xl transition hover:-translate-y-1"
             >
               Get Started
             </Link>

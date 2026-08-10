@@ -69,7 +69,7 @@ export function WebsiteFilters({ onFilterChange, organizations = [] }: WebsiteFi
             placeholder="Search by name, slug, or domain..."
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
           />
         </div>
 
@@ -102,7 +102,7 @@ export function WebsiteFilters({ onFilterChange, organizations = [] }: WebsiteFi
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
           className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           {/* Status Filter */}

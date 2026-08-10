@@ -4,12 +4,13 @@ import { useParams } from 'next/navigation';
 import { TenantLayout } from '@/components/tenant/shared';
 import { MetricCard } from '@/components/admin/shared';
 import { useTenantAnalytics } from '@/hooks/useTenant';
+import { PageLoading } from '@/components/ui/Skeleton';
 
-function ProgressBar({ value, max, color = 'bg-blue-600' }: { value: number; max: number; color?: string }) {
+function ProgressBar({ value, max, color = 'bg-brand' }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
     <div className="w-full bg-gray-100 rounded-full h-2">
-      <div style={{ width: `${pct}%` }} className={`h-2 rounded-full ${color} transition-all duration-500`} />
+      <div style={{ width: `${pct}%` }} className={`h-2 rounded-full ${color} transition-[width] duration-500`} />
     </div>
   );
 }
@@ -26,9 +27,7 @@ export default function AnalyticsPage() {
   return (
     <TenantLayout title="Analytics" subtitle="Performance across all websites" orgId={orgId}>
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <PageLoading />
       ) : (
         <>
           <div className="grid md:grid-cols-4 gap-6 mb-8">
@@ -52,7 +51,7 @@ export default function AnalyticsPage() {
                         <span className="font-medium text-gray-900">{w.websiteName}</span>
                         <span className="text-gray-500">{w.visitors.toLocaleString()} visitors</span>
                       </div>
-                      <ProgressBar value={w.visitors} max={maxVisitors} color="bg-blue-600" />
+                      <ProgressBar value={w.visitors} max={maxVisitors} color="bg-brand" />
                     </div>
                   ))}
               </div>

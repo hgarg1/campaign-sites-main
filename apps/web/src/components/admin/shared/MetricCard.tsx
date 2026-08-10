@@ -36,31 +36,38 @@ export function MetricCard({ label, value, icon, trend, variant = 'default' }: M
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className={`rounded-xl border p-6 ${variantClasses[variant]} transition-all duration-200 hover:shadow-lg`}
+      transition={{ duration: 0.2 }}
+      className={`rounded-xl border p-6 ${variantClasses[variant]} shadow-raised transition duration-base hover:shadow-floating`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium text-gray-700">{label}</p>
-        <span className="text-2xl">{icon}</span>
+      <div className="mb-3 flex items-center justify-between">
+        {/*
+         * Three type roles rather than three independently-chosen sizes. The
+         * label, the figure and the comparison were all being assembled from
+         * size + weight + colour at each call site, which is why so many cards
+         * ended up flat.
+         */}
+        <p className="type-label">{label}</p>
+        <span className="text-2xl" aria-hidden="true">
+          {icon}
+        </span>
       </div>
-      <div className="flex items-end justify-between">
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+      <div className="flex items-end justify-between gap-3">
+        {/* tabular-nums via .type-metric, so a column of these lines up. */}
+        <p className="type-metric text-3xl">{value}</p>
         {trend && (
           <div
             className={`flex flex-col items-end ${trendClasses[trend.direction]}`}
             title={trend.label}
           >
-            <div className="flex items-center gap-1 text-sm font-medium">
+            <div className="flex items-center gap-1 text-sm font-medium tabular">
               <span aria-hidden="true">{trendArrows[trend.direction]}</span>
               <span>
                 {trend.direction === 'flat' ? 'no change' : `${Math.abs(trend.percentage)}%`}
               </span>
             </div>
-            {trend.label && (
-              <span className="text-xs text-gray-500 font-normal">{trend.label}</span>
-            )}
+            {trend.label && <span className="type-caption">{trend.label}</span>}
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { SmtpSettings } from '@/hooks/useSettings';
 import { useToast } from '../shared/ToastContext';
+import { SectionLoading } from '@/components/ui/Skeleton';
 
 interface SmtpSettingsFormProps {
   settings: SmtpSettings | null;
@@ -56,18 +57,16 @@ export function SmtpSettingsForm({ settings, loading, onUpdate, onTest }: SmtpSe
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
+        <SectionLoading />
       </div>
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="bg-white rounded-xl border border-gray-200 p-6"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-6">SMTP Configuration</h3>

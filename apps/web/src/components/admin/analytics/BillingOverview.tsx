@@ -10,7 +10,7 @@ interface BillingOverviewProps {
 
 export function BillingOverview({ data, loading }: BillingOverviewProps) {
   if (loading) {
-    return <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />;
+    return <div className="skeleton h-96 rounded-lg" />;
   }
 
   if (!data) {
@@ -50,14 +50,14 @@ export function BillingOverview({ data, loading }: BillingOverviewProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
       {/* Billing Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200"
@@ -68,7 +68,7 @@ export function BillingOverview({ data, loading }: BillingOverviewProps) {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
           className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200"
@@ -79,7 +79,7 @@ export function BillingOverview({ data, loading }: BillingOverviewProps) {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className={`rounded-lg p-6 border ${
@@ -106,7 +106,7 @@ export function BillingOverview({ data, loading }: BillingOverviewProps) {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200"
@@ -121,7 +121,7 @@ export function BillingOverview({ data, loading }: BillingOverviewProps) {
 
       {/* Payment History */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className="bg-white rounded-lg border border-gray-200 p-6"
@@ -154,7 +154,7 @@ export function BillingOverview({ data, loading }: BillingOverviewProps) {
 
       {/* Invoices Table */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className="bg-white rounded-lg border border-gray-200 overflow-hidden"

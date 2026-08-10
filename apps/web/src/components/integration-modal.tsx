@@ -73,9 +73,9 @@ export function IntegrationModal({
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             className="relative w-full max-w-3xl max-h-[calc(100vh-32px)] rounded-3xl bg-white dark:bg-gray-800 shadow-2xl overflow-hidden flex flex-col"
           >
@@ -179,13 +179,13 @@ export function IntegrationModal({
             <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 md:p-10 flex flex-col sm:flex-row gap-3">
               <Link
                 href="/get-started"
-                className={`flex-1 inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold transition-all hover:shadow-xl hover:scale-105 active:scale-95 ${colors.text} border-2 ${colors.border} hover:bg-gray-50 dark:hover:bg-gray-700`}
+                className={`flex-1 inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold transition hover:shadow-xl hover:scale-105 active:scale-95 ${colors.text} border-2 ${colors.border} hover:bg-gray-50 dark:hover:bg-gray-700`}
               >
                 Get Started with {integration.name}
               </Link>
               <button type="button"
                 onClick={onClose}
-                className="flex-1 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-6 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                className="flex-1 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-full px-6 py-3 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Close
               </button>

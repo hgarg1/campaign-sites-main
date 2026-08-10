@@ -134,10 +134,10 @@ export function TemplateDashboard() {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="animate-pulse bg-gray-200 h-24 rounded-lg" />
+            <div key={i} className="skeleton h-24 rounded-lg" />
           ))}
         </div>
-        <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />
+        <div className="skeleton h-96 rounded-lg" />
       </motion.div>
     );
   }
@@ -163,7 +163,7 @@ export function TemplateDashboard() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
@@ -182,7 +182,7 @@ export function TemplateDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Templates */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-6"
@@ -199,7 +199,7 @@ export function TemplateDashboard() {
 
         {/* Active Templates */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200 p-6"
@@ -216,7 +216,7 @@ export function TemplateDashboard() {
 
         {/* Recently Sent Tests */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200 p-6"
@@ -233,7 +233,7 @@ export function TemplateDashboard() {
 
         {/* Success Rate */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200 p-6"
@@ -253,7 +253,7 @@ export function TemplateDashboard() {
 
       {/* Templates Status Table */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
         className="bg-white rounded-xl border border-gray-200 overflow-hidden"
@@ -330,7 +330,7 @@ export function TemplateDashboard() {
       {/* Recently Sent Tests Table */}
       {recentTests.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
           className="bg-white rounded-xl border border-gray-200 overflow-hidden"
@@ -385,7 +385,7 @@ export function TemplateDashboard() {
       {/* Empty State for Recent Tests */}
       {recentTests.length === 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
           className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center"
